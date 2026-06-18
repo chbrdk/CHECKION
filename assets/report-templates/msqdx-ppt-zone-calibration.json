@@ -1,0 +1,388 @@
+{
+  "source": "MSQDX_PPT-Master_27-05-26.pptx",
+  "extractedAt": "2026-06-18",
+  "slideSize": {
+    "width": 13.333,
+    "height": 7.5
+  },
+  "layouts": {
+    "CONTENT": {
+      "title": {
+        "name": "Titelplatzhalter 7",
+        "phType": "title",
+        "phIdx": null,
+        "x": 0.477,
+        "y": 0.608,
+        "w": 10.241,
+        "h": 1.224,
+        "bottom": 1.832,
+        "fontPt": null,
+        "budget": {
+          "maxLines": 2,
+          "maxCharsPerLine": 39
+        }
+      },
+      "eyebrow": {
+        "name": "Text Placeholder 4",
+        "phType": "body",
+        "phIdx": "12",
+        "x": 0.476,
+        "y": 0.367,
+        "w": 7.165,
+        "h": 0.236,
+        "bottom": 0.603,
+        "fontPt": 14,
+        "budget": {
+          "maxLines": 1,
+          "maxCharsPerLine": 63
+        }
+      },
+      "body": {
+        "name": "Textplatzhalter 17",
+        "phType": null,
+        "phIdx": "1",
+        "x": 0.475,
+        "y": 2.023,
+        "w": 10.239,
+        "h": 4.981,
+        "bottom": 7.004,
+        "fontPt": null,
+        "budget": {
+          "maxLines": 21,
+          "maxCharsPerLine": 91,
+          "maxItems": 6
+        }
+      },
+      "footer": {
+        "y": 7.264
+      },
+      "chart": {
+        "x": 0.475,
+        "y": 2.023,
+        "w": 10.239,
+        "maxHeight": 4.568,
+        "minHeightBar": 2.3,
+        "minHeightLine": 2.45,
+        "minHeightRadar": 2.55,
+        "bulletBandHeight": 0.573,
+        "gap": 0.1
+      }
+    },
+    "TITLE": {
+      "title": {
+        "name": "Titel 1",
+        "phType": "title",
+        "phIdx": null,
+        "x": 0.475,
+        "y": 2.023,
+        "w": 8.191,
+        "h": 1.727,
+        "bottom": 3.75,
+        "fontPt": 54,
+        "budget": {
+          "maxLines": 1,
+          "maxCharsPerLine": 18
+        }
+      },
+      "eyebrow": {
+        "x": 0.475,
+        "y": 2.023,
+        "w": 8.191,
+        "h": 0.24,
+        "bottom": 2.263,
+        "fontPt": 14,
+        "budget": {
+          "maxLines": 1,
+          "maxCharsPerLine": 72
+        }
+      },
+      "body": {
+        "name": "Text Placeholder 16",
+        "phType": "body",
+        "phIdx": "11",
+        "x": 0.475,
+        "y": 4.196,
+        "w": 8.191,
+        "h": 0.587,
+        "bottom": 4.783,
+        "fontPt": 18,
+        "budget": {
+          "maxLines": 1,
+          "maxCharsPerLine": 56,
+          "maxItems": 6
+        }
+      },
+      "footer": {
+        "y": 7.264
+      },
+      "chart": {
+        "x": 0.475,
+        "y": 2.023,
+        "w": 10.239,
+        "maxHeight": 4.568,
+        "minHeightBar": 2.3,
+        "minHeightLine": 2.45,
+        "minHeightRadar": 2.55,
+        "bulletBandHeight": 0.573,
+        "gap": 0.1
+      }
+    },
+    "SECTION": {
+      "title": {
+        "name": "Titel 1",
+        "phType": "title",
+        "phIdx": null,
+        "x": 0.475,
+        "y": 3.333,
+        "w": 9.217,
+        "h": 1.795,
+        "bottom": 5.128,
+        "fontPt": 54,
+        "budget": {
+          "maxLines": 1,
+          "maxCharsPerLine": 21
+        }
+      },
+      "eyebrow": {
+        "x": 0.475,
+        "y": 3.333,
+        "w": 9.217,
+        "h": 0.24,
+        "bottom": 3.573,
+        "fontPt": 14,
+        "budget": {
+          "maxLines": 1,
+          "maxCharsPerLine": 82
+        }
+      },
+      "body": {
+        "name": "Text Placeholder 11",
+        "phType": "body",
+        "phIdx": "11",
+        "x": 0.475,
+        "y": 1.722,
+        "w": 2.038,
+        "h": 1.431,
+        "bottom": 3.153,
+        "fontPt": 88,
+        "budget": {
+          "maxLines": 1,
+          "maxCharsPerLine": 2,
+          "maxItems": 6
+        }
+      },
+      "footer": {
+        "y": 7.264
+      },
+      "chart": {
+        "x": 0.475,
+        "y": 2.023,
+        "w": 10.239,
+        "maxHeight": 4.568,
+        "minHeightBar": 2.3,
+        "minHeightLine": 2.45,
+        "minHeightRadar": 2.55,
+        "bulletBandHeight": 0.573,
+        "gap": 0.1
+      }
+    },
+    "TWO_COLUMN": {
+      "title": {
+        "name": "Titelplatzhalter 7",
+        "phType": "title",
+        "phIdx": null,
+        "x": 0.477,
+        "y": 0.608,
+        "w": 10.241,
+        "h": 1.224,
+        "bottom": 1.832,
+        "fontPt": null,
+        "budget": {
+          "maxLines": 2,
+          "maxCharsPerLine": 39
+        }
+      },
+      "eyebrow": {
+        "name": "Text Placeholder 4",
+        "phType": "body",
+        "phIdx": "12",
+        "x": 0.476,
+        "y": 0.367,
+        "w": 7.165,
+        "h": 0.236,
+        "bottom": 0.603,
+        "fontPt": 14,
+        "budget": {
+          "maxLines": 1,
+          "maxCharsPerLine": 63
+        }
+      },
+      "body": {
+        "name": "Textplatzhalter 17",
+        "phType": null,
+        "phIdx": "1",
+        "x": 0.475,
+        "y": 2.023,
+        "w": 6.141,
+        "h": 4.981,
+        "bottom": 7.004,
+        "fontPt": null,
+        "budget": {
+          "maxLines": 21,
+          "maxCharsPerLine": 54,
+          "maxItems": 6
+        }
+      },
+      "footer": {
+        "y": 7.264
+      },
+      "chart": {
+        "x": 0.475,
+        "y": 2.023,
+        "w": 10.239,
+        "maxHeight": 4.568,
+        "minHeightBar": 2.3,
+        "minHeightLine": 2.45,
+        "minHeightRadar": 2.55,
+        "bulletBandHeight": 0.573,
+        "gap": 0.1
+      },
+      "column": {
+        "name": "Textplatzhalter 17",
+        "phType": null,
+        "phIdx": "1",
+        "x": 0.475,
+        "y": 2.023,
+        "w": 6.141,
+        "h": 4.981,
+        "bottom": 7.004,
+        "fontPt": null,
+        "budget": {
+          "maxLines": 21,
+          "maxCharsPerLine": 54
+        }
+      }
+    },
+    "METRICS": {
+      "title": {
+        "name": "Titelplatzhalter 7",
+        "phType": "title",
+        "phIdx": null,
+        "x": 0.477,
+        "y": 0.608,
+        "w": 10.241,
+        "h": 1.224,
+        "bottom": 1.832,
+        "fontPt": null,
+        "budget": {
+          "maxLines": 2,
+          "maxCharsPerLine": 39
+        }
+      },
+      "eyebrow": {
+        "name": "Text Placeholder 4",
+        "phType": "body",
+        "phIdx": "12",
+        "x": 0.476,
+        "y": 0.367,
+        "w": 7.165,
+        "h": 0.236,
+        "bottom": 0.603,
+        "fontPt": 14,
+        "budget": {
+          "maxLines": 1,
+          "maxCharsPerLine": 55
+        }
+      },
+      "body": {
+        "name": "Textplatzhalter 12",
+        "phType": "body",
+        "phIdx": "34",
+        "x": 4.668,
+        "y": 2.026,
+        "w": 3.998,
+        "h": 4.98,
+        "bottom": 7.006,
+        "fontPt": 16,
+        "budget": {
+          "maxLines": 18,
+          "maxCharsPerLine": 31,
+          "maxItems": 6
+        }
+      },
+      "footer": {
+        "y": 7.264
+      },
+      "chart": {
+        "x": 0.475,
+        "y": 2.023,
+        "w": 10.239,
+        "maxHeight": 4.568,
+        "minHeightBar": 2.3,
+        "minHeightLine": 2.45,
+        "minHeightRadar": 2.55,
+        "bulletBandHeight": 0.573,
+        "gap": 0.1
+      }
+    },
+    "CLOSING": {
+      "title": {
+        "name": "Titel 8",
+        "phType": "title",
+        "phIdx": null,
+        "x": 2.618,
+        "y": 2.538,
+        "w": 9.125,
+        "h": 2.154,
+        "bottom": 4.692,
+        "fontPt": 42,
+        "budget": {
+          "maxLines": 3,
+          "maxCharsPerLine": 27
+        }
+      },
+      "eyebrow": {
+        "x": 2.618,
+        "y": 2.538,
+        "w": 9.125,
+        "h": 0.24,
+        "bottom": 2.778,
+        "fontPt": 14,
+        "budget": {
+          "maxLines": 1,
+          "maxCharsPerLine": 81
+        }
+      },
+      "body": {
+        "name": "Textplatzhalter 17",
+        "phType": null,
+        "phIdx": "1",
+        "x": 0.475,
+        "y": 2.023,
+        "w": 10.239,
+        "h": 4.981,
+        "bottom": 7.004,
+        "fontPt": null,
+        "budget": {
+          "maxLines": 12,
+          "maxCharsPerLine": 53,
+          "maxItems": 6
+        }
+      },
+      "footer": {
+        "y": 7.264
+      },
+      "chart": {
+        "x": 0.475,
+        "y": 2.023,
+        "w": 10.239,
+        "maxHeight": 4.568,
+        "minHeightBar": 2.3,
+        "minHeightLine": 2.45,
+        "minHeightRadar": 2.55,
+        "bulletBandHeight": 0.573,
+        "gap": 0.1
+      }
+    }
+  }
+}

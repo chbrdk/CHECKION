@@ -35,6 +35,7 @@ import {
     type ProjectReportPptxPlan,
     type ReportSlide,
 } from '@/lib/project-report/pptx/types';
+import { normalizePptxPlan } from '@/lib/project-report/pptx/normalize-pptx-plan';
 
 function isComprehensive(bundle: ProjectReportBundle): boolean {
     return bundle.variant === 'comprehensive' || bundle.variant === 'full';
@@ -544,6 +545,6 @@ export function buildProjectReportPptxPlan(bundle: ProjectReportBundle): Project
         locale: bundle.locale,
         variant: bundle.variant,
         projectName: bundle.project.name,
-        slides: slides.slice(0, maxSlides),
+        slides: normalizePptxPlan(slides, { maxSlides, locale: bundle.locale }),
     };
 }

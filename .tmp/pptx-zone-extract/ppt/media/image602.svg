@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke: #fff;
+      }
+
+      .cls-1, .cls-2 {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 4px;
+      }
+
+      .cls-2 {
+        stroke: #f256b6;
+      }
+    </style>
+  </defs>
+  <g>
+    <circle class="cls-2" cx="117.05" cy="121.15" r="9"/>
+    <polygon class="cls-2" points="66.05 48.15 55.05 33.15 66.05 19.15 19.05 19.15 19.05 48.15 66.05 48.15"/>
+    <polyline class="cls-2" points="117.05 112.15 117.05 31.15 69.05 31.15"/>
+    <line class="cls-2" x1="19.05" y1="70.15" x2="19.05" y2="48.15"/>
+  </g>
+  <g>
+    <g>
+      <path class="cls-1" d="M41.05,111.15h8c4.97,0,9,4.03,9,9v10h-26v-10c0-4.97,4.03-9,9-9Z" transform="translate(90.09 241.3) rotate(180)"/>
+      <path class="cls-1" d="M33.05,104.15h24c2.76,0,5-2.24,5-5v-26c0-9.39-7.61-17-17-17h0c-9.39,0-17,7.61-17,17v26c0,2.76,2.24,5,5,5Z"/>
+    </g>
+    <g>
+      <path class="cls-1" d="M85.05,98.15h8c4.97,0,9,4.03,9,9v10h-26v-10c0-4.97,4.03-9,9-9Z" transform="translate(178.09 215.3) rotate(180)"/>
+      <path class="cls-1" d="M77.05,91.15h24c2.76,0,5-2.24,5-5v-26c0-9.39-7.61-17-17-17h0c-9.39,0-17,7.61-17,17v26c0,2.76,2.24,5,5,5Z"/>
+    </g>
+  </g>
+</svg>

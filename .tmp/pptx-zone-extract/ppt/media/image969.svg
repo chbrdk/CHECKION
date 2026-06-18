@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke: #000;
+      }
+
+      .cls-1, .cls-2 {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 4px;
+      }
+
+      .cls-2 {
+        stroke: #ff6a3b;
+      }
+    </style>
+  </defs>
+  <line class="cls-1" x1="130.15" y1="56.41" x2="130.15" y2="71.41"/>
+  <g>
+    <path class="cls-1" d="M44.15,89.41v39.5c0,2.7-1.65,5.02-4,6"/>
+    <path class="cls-1" d="M22.15,103.41v25.5c0,3.59,2.91,6.5,6.5,6.5h0c3.59,0,6.5-2.91,6.5-6.5v-28.5"/>
+  </g>
+  <g>
+    <path class="cls-1" d="M127.15,89.41v39.5c0,2.7-1.65,5.02-4,6"/>
+    <path class="cls-1" d="M105.15,103.41v25.5c0,3.59,2.91,6.5,6.5,6.5h0c3.59,0,6.5-2.91,6.5-6.5v-28.5"/>
+  </g>
+  <circle class="cls-2" cx="71.15" cy="24.41" r="12"/>
+  <line class="cls-2" x1="136.15" y1="71.41" x2="107.15" y2="71.41"/>
+  <line class="cls-2" x1="107.15" y1="89.41" x2="136.15" y2="89.41"/>
+  <line class="cls-2" x1="28.15" y1="89.41" x2="97.15" y2="89.41"/>
+  <line class="cls-2" x1="12.15" y1="89.41" x2="18.15" y2="89.41"/>
+  <line class="cls-2" x1="18.15" y1="71.41" x2="12.15" y2="71.41"/>
+  <line class="cls-2" x1="49.15" y1="71.41" x2="28.15" y2="71.41"/>
+  <line class="cls-2" x1="92.15" y1="71.41" x2="97.15" y2="71.41"/>
+  <rect class="cls-2" x="55.15" y="42.41" width="31" height="47" rx="7" ry="7"/>
+  <line class="cls-2" x1="55.15" y1="79.41" x2="86.15" y2="79.41"/>
+  <circle class="cls-1" cx="34.15" cy="31.41" r="12"/>
+  <circle class="cls-1" cx="113.15" cy="32.41" r="12"/>
+  <path class="cls-1" d="M47.15,49.41h-22c-3.87,0-7,3.13-7,7v35c0,2.76,2.24,5,5,5h0c2.76,0,5-2.24,5-5v-27"/>
+  <path class="cls-1" d="M107.15,64.41v27c0,2.76-2.24,5-5,5h0c-2.76,0-5-2.24-5-5v-35c0-3.87,3.13-7,7-7h19c3.87,0,7,3.13,7,7"/>
+  <g>
+    <path class="cls-2" d="M57.15,96.41v16c0,2.76,2.24,5,5,5h0c2.76,0,5-2.24,5-5v-16"/>
+    <path class="cls-2" d="M74.15,96.41v16c0,2.76,2.24,5,5,5h0c2.76,0,5-2.24,5-5v-16"/>
+  </g>
+</svg>

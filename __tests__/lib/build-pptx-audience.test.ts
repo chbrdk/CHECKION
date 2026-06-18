@@ -64,5 +64,6 @@ describe('buildProjectReportPptxPlan audience', () => {
         expect(audienceBullets.length).toBeGreaterThanOrEqual(2);
         expect(personaCharts.length).toBeGreaterThanOrEqual(1);
         expect(personaCharts[0]?.bullets?.length).toBeGreaterThan(0);
+        expect(personaCharts[0]?.bullets?.length).toBeLessThanOrEqual(2);
     });
 });

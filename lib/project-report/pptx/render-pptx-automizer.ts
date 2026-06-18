@@ -14,6 +14,7 @@ import {
     setShapeBullets,
     setShapeText,
 } from '@/lib/project-report/pptx/pptx-automizer-text-style';
+import { computeChartLayout } from '@/lib/project-report/pptx/pptx-content-budget';
 import {
     MSQDX_SLIDE_SIZE,
     MSQDX_TEMPLATE_ALIAS,
@@ -72,39 +73,36 @@ function toAutomizerChartData(series: ReportSlideChartSeries[]) {
     }));
 }
 
-function chartArea(hasSubtitle: boolean, hasBullets: boolean) {
-    const top = hasSubtitle ? 1.75 : 1.45;
-    const bottom = hasBullets ? 1.1 : 0.45;
-    return {
-        x: 0.65,
-        y: top,
-        w: MSQDX_SLIDE_SIZE.width - 1.3,
-        h: MSQDX_SLIDE_SIZE.height - top - bottom,
-    };
-}
-
 function applyChartSlide(
     slide: ISlide,
     slidePlan: Extract<ReportSlide, { kind: 'chart' }>,
     onBlack: boolean
 ): void {
     const shapes = MSQDX_TEMPLATE_SHAPES.CONTENT;
+    const layout = computeChartLayout({
+        subtitle: slidePlan.subtitle,
+        bullets: slidePlan.bullets,
+        chartType: slidePlan.chartType,
+    });
+
     setText(slide, shapes.title, slidePlan.title, onBlack);
     clearText(slide, shapes.body, onBlack);
-    if (slidePlan.subtitle) {
-        setText(slide, shapes.eyebrow, slidePlan.subtitle, onBlack);
+    if (layout.fittedSubtitle) {
+        setText(slide, shapes.eyebrow, layout.fittedSubtitle, onBlack);
     } else {
         clearText(slide, shapes.eyebrow, onBlack);
     }
     setText(slide, shapes.footer, slidePlan.footer, onBlack, true);
 
-    const area = chartArea(Boolean(slidePlan.subtitle), Boolean(slidePlan.bullets?.length));
     const chartData = toAutomizerChartData(slidePlan.series);
     const colors = slidePlan.colors;
 
     slide.generate((pSlide, pptx) => {
         let opts: Record<string, unknown> = {
-            ...area,
+            x: layout.x,
+            y: layout.y,
+            w: layout.w,
+            h: layout.h,
             showTitle: false,
             showLegend: slidePlan.showLegend ?? slidePlan.series.length > 1,
             showValue: slidePlan.showValue ?? false,
@@ -137,14 +135,17 @@ function applyChartSlide(
                 break;
         }
 
-        if (slidePlan.bullets?.length) {
+        if (layout.onSlideBullets.length > 0) {
             pSlide.addText(
-                slidePlan.bullets.map((bullet) => ({ text: bullet, options: { bullet: true, breakLine: true } })),
+                layout.onSlideBullets.map((bullet) => ({
+                    text: bullet,
+                    options: { bullet: true, breakLine: true },
+                })),
                 {
-                    x: area.x,
-                    y: area.y + area.h + 0.08,
-                    w: area.w,
-                    h: 0.95,
+                    x: layout.x,
+                    y: layout.bulletTop,
+                    w: layout.w,
+                    h: layout.bulletHeight,
                     fontSize: 13,
                     color: onBlack ? MSQDX_TEXT_ON_BLACK : undefined,
                     valign: 'top',

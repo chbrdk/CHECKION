@@ -18,6 +18,10 @@ export const REPORT_PPTX_LOGO_BLACK_RELATIVE_PATH =
 
 export const REPORT_PPTX_BRAND_TOKENS_RELATIVE_PATH = 'assets/report-templates/brand-tokens.json';
 
+/** Placeholder geometry + text budgets extracted from MSQDX PPT master. */
+export const REPORT_PPTX_ZONE_CALIBRATION_RELATIVE_PATH =
+    'assets/report-templates/msqdx-ppt-zone-calibration.json';
+
 export function getReportPptxMasterAbsolutePath(cwd = process.cwd()): string {
     const fromEnv = process.env.CHECKION_REPORT_PPTX_MASTER_PATH?.trim();
     if (fromEnv) return fromEnv;
@@ -40,6 +44,12 @@ export function getReportPptxBrandTokensAbsolutePath(cwd = process.cwd()): strin
     const fromEnv = process.env.CHECKION_REPORT_PPTX_BRAND_TOKENS_PATH?.trim();
     if (fromEnv) return fromEnv;
     return path.join(cwd, REPORT_PPTX_BRAND_TOKENS_RELATIVE_PATH);
+}
+
+export function getReportPptxZoneCalibrationAbsolutePath(cwd = process.cwd()): string {
+    const fromEnv = process.env.CHECKION_REPORT_PPTX_ZONE_CALIBRATION_PATH?.trim();
+    if (fromEnv) return fromEnv;
+    return path.join(cwd, REPORT_PPTX_ZONE_CALIBRATION_RELATIVE_PATH);
 }
 
 /** @deprecated Use getReportPptxLogoBlackAbsolutePath */

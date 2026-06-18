@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke: #000;
+      }
+
+      .cls-1, .cls-2 {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 4px;
+      }
+
+      .cls-2 {
+        stroke: #00ca55;
+      }
+    </style>
+  </defs>
+  <g>
+    <circle class="cls-2" cx="117.05" cy="108.15" r="29"/>
+    <g>
+      <path class="cls-2" d="M108.05,115.15v2c0,2.76,2.24,5,5,5h8c2.76,0,5-2.24,5-5v-4c0-2.76-2.24-5-5-5h-8c-2.76,0-5-2.24-5-5v-4c0-2.76,2.24-5,5-5h8c2.76,0,5,2.24,5,5v2"/>
+      <line class="cls-2" x1="117.05" y1="94.15" x2="117.05" y2="89.15"/>
+      <line class="cls-2" x1="117.05" y1="127.15" x2="117.05" y2="122.15"/>
+    </g>
+  </g>
+  <g>
+    <path class="cls-1" d="M117.05,71.15V19.15c0-3.31-2.69-6-6-6H29.05c-3.31,0-6,2.69-6,6v112c0,3.31,2.69,6,6,6h66"/>
+    <line class="cls-1" x1="117.05" y1="43.15" x2="23.05" y2="43.15"/>
+    <line class="cls-1" x1="70.05" y1="43.15" x2="70.05" y2="137.15"/>
+    <line class="cls-1" x1="85.05" y1="90.15" x2="23.05" y2="90.15"/>
+    <g>
+      <line class="cls-1" x1="47.05" y1="55.15" x2="47.05" y2="79.15"/>
+      <line class="cls-1" x1="59.05" y1="67.15" x2="35.05" y2="67.15"/>
+    </g>
+    <g>
+      <line class="cls-1" x1="102.53" y1="58.67" x2="85.56" y2="75.64"/>
+      <line class="cls-1" x1="102.53" y1="75.64" x2="85.56" y2="58.67"/>
+    </g>
+    <g>
+      <line class="cls-1" x1="58.05" y1="118.15" x2="36.05" y2="118.15"/>
+      <line class="cls-1" x1="58.05" y1="108.15" x2="36.05" y2="108.15"/>
+    </g>
+    <line class="cls-1" x1="102.05" y1="29.15" x2="38.05" y2="29.15"/>
+  </g>
+</svg>

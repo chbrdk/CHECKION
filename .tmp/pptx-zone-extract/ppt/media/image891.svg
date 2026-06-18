@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke: #000;
+      }
+
+      .cls-1, .cls-2 {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 4px;
+      }
+
+      .cls-2 {
+        stroke: #ff6a3b;
+      }
+    </style>
+  </defs>
+  <polyline class="cls-1" points="10.11 24.09 26.73 24.09 47.19 106.69 132.63 98.62 137.56 42.19 52.68 42.19"/>
+  <path class="cls-1" d="M35.88,106.69h-.33c-3.62,0-6.56,2.64-6.56,5.9s2.94,5.9,6.56,5.9h90.21"/>
+  <ellipse class="cls-1" cx="52.59" cy="133.83" rx="7.08" ry="5.9"/>
+  <ellipse class="cls-1" cx="113.96" cy="133.83" rx="7.08" ry="5.9"/>
+  <line class="cls-2" x1="64.39" y1="50.77" x2="64.39" y2="83.81"/>
+  <line class="cls-2" x1="85.63" y1="50.77" x2="85.63" y2="83.81"/>
+  <line class="cls-2" x1="106.87" y1="50.77" x2="106.87" y2="83.81"/>
+  <line class="cls-2" x1="52.59" y1="60.21" x2="121.04" y2="60.21"/>
+  <line class="cls-2" x1="52.59" y1="74.37" x2="121.04" y2="74.37"/>
+</svg>

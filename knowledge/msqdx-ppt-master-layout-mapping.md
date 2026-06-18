@@ -44,3 +44,19 @@ The master uses German default placeholder names. Map by **type**, not custom na
 **Primary:** `pptx-automizer` clones slides from `MSQDX_PPT-Master_27-05-26.pptx` by layout (`PPTX_MSQDX_TEMPLATE_SLIDES` in `lib/paths/report-export-templates.ts`). Placeholders are filled via `modify.setText` / `setMultiText`; layouts named `*(BK)` get **white** body/title text (`pptx-automizer-text-style.ts`). Charts use light axis/legend labels on black slides.
 
 **Fallback:** If the master file is missing (e.g. local dev without assets), `render-pptx.ts` falls back to PptxGenJS `defineSlideMaster()` in `pptx-masters.ts`.
+
+## Text zones & budgets (`pptx-content-budget.ts`)
+
+Calibrated from placeholder bounding boxes in `MSQDX_PPT-Master_27-05-26.pptx` (see `assets/report-templates/msqdx-ppt-zone-calibration.json`). Re-extract with `extract-msqdx-ppt-zones.ts` when the master changes.
+
+**CONTENT layout (inches, measured):**
+
+| Zone | Position (y → bottom) | Size (w × h) | Budget |
+|------|----------------------|--------------|--------|
+| eyebrow (`idx=12`) | 0.367 → 0.603 | 7.165 × 0.236 | 1 line × 63 chars @ 14pt |
+| title (master) | 0.608 → 1.832 | 10.241 × 1.224 | 2 lines × 39 chars |
+| body (`idx=1`) | 2.023 → 7.004 | 10.239 × 4.981 | 6 bullets × 91 chars |
+| footer | from 7.264 | — | — |
+| chart overlay | starts 2.023 | 10.239 wide | max ~4.57" with 2 bullets |
+
+`normalizePptxPlan()` fits copy to these zones; overflow becomes `— Kontext` / `(Forts.)` slides. `computeChartLayout()` uses the same geometry as `render-pptx-automizer.ts`.

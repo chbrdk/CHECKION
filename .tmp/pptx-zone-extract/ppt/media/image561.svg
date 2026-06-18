@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke: #fff;
+      }
+
+      .cls-1, .cls-2 {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 4px;
+      }
+
+      .cls-2 {
+        stroke: #f256b6;
+      }
+    </style>
+  </defs>
+  <ellipse class="cls-1" cx="74.99" cy="77.74" rx="57.82" ry="56.64"/>
+  <path class="cls-2" d="M93.46,57.14s-.04-14.49-18.64-14.07c0,0-19.26-.75-19.48,14.76,0,0-.27,3.34,1.61,6.41,1.87,3.07,4.01,5.4,4.48,9.31.47,3.91-.36,11.06-6.51,26.14,0,0,8.66-4.4,20.12-2.5,4.09.69,8.23,1.01,12.38.77,2.51-.15,5.24-.37,7.62-.72"/>
+  <line class="cls-2" x1="50.21" y1="73.74" x2="90.33" y2="73.74"/>
+</svg>

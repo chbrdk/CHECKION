@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke: #000;
+      }
+
+      .cls-1, .cls-2 {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 4px;
+      }
+
+      .cls-2 {
+        stroke: #f256b6;
+      }
+    </style>
+  </defs>
+  <g>
+    <circle class="cls-2" cx="118.05" cy="111.15" r="26"/>
+    <ellipse class="cls-2" cx="118.05" cy="111.15" rx="12" ry="26"/>
+    <path class="cls-2" d="M95.95,124.83c4.58-3.41,12.77-5.68,22.1-5.68s17.52,2.27,22.1,5.68"/>
+    <path class="cls-2" d="M95.95,97.47c4.58,3.41,12.77,5.68,22.1,5.68s17.52-2.27,22.1-5.68"/>
+  </g>
+  <g>
+    <path class="cls-1" d="M84.05,111.15h-48c-8.84,0-16-7.16-16-16v-54c0-8.84,7.16-16,16-16h72c8.84,0,16,7.16,16,16v36"/>
+    <line class="cls-1" x1="20.05" y1="55.15" x2="124.05" y2="55.15"/>
+    <line class="cls-2" x1="80.55" y1="31.65" x2="63.55" y2="48.65"/>
+    <polyline class="cls-2" points="56.55 31.65 48.05 40.15 56.55 48.65"/>
+    <polyline class="cls-2" points="87.55 31.65 96.05 40.15 87.55 48.65"/>
+    <path class="cls-1" d="M86.05,100.15h-45c-4.42,0-8-3.58-8-8v-17c0-4.42,3.58-8,8-8h62c4.42,0,8,3.58,8,8v2"/>
+  </g>
+</svg>
