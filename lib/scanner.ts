@@ -14,7 +14,7 @@ import {
 import { createScanPhaseTimer } from '@/lib/scan-phase-timing';
 import fs from 'fs';
 import path from 'path';
-import { dismissCookieBanner } from './cookie-banner-dismiss';
+import { dismissCookieBanner, registerCookieBannerHideOnNewDocument } from './cookie-banner-dismiss';
 import { AXE_RULE_WCAG_LEVEL } from './axe-wcag-levels';
 import { getRemediationUrl } from './remediation-urls';
 import { buildPageIndex } from './page-index';
@@ -215,6 +215,8 @@ export async function runScan(
     const viewport = VIEWPORTS[device];
     await page.setViewport(viewport);
     report('browser_ready');
+
+    await registerCookieBannerHideOnNewDocument(page);
 
     // Inject CLS, LCP, INP observers immediately
     await page.evaluateOnNewDocument(function () {

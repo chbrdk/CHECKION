@@ -11,9 +11,12 @@ Damit Scans (Screenshot, axe/htmlcs) nicht durch Cookie-/Consent-Banner verfäls
 
 ## Ablauf
 
-1. **CSS ausblenden**: Ein `<style>` mit vielen Selektoren wird injiziert (`display: none !important` etc.) für bekannte Container (OneTrust, Cookiebot, CookieYes, …) und generische Muster (`[id*="cookie"]`, `[aria-label*="consent"]` usw.).
-2. **Klick per Selektor**: Feste Selektoren für typische „Akzeptieren“-Buttons (z. B. `#onetrust-accept-btn-handler`, `.cky-btn-accept`, …) werden nacheinander geprüft; der erste sichtbare wird geklickt.
-3. **Klick per Text**: Alle `button`, `a`, `[role="button"]`, `input[type="submit"]` werden gesammelt; deren Text (inkl. `aria-label`) wird normalisiert und mit einer mehrsprachigen Liste von Akzeptieren-Texten abgeglichen; der erste Treffer wird geklickt.
+1. **Früh ausblenden (`registerCookieBannerHideOnNewDocument`)**: Hide-CSS wird per `evaluateOnNewDocument` injiziert, **bevor** die Seite lädt — wichtig für asynchrone CMPs wie Usercentrics.
+2. **CSS ausblenden**: Ein `<style>` mit vielen Selektoren wird injiziert (`display: none !important` etc.) für bekannte Container (OneTrust, Cookiebot, **Usercentrics**, Funding Choices, …) und generische Muster.
+3. **Shadow-DOM-Klick**: Für offene Shadow Roots (Usercentrics `#usercentrics-root`, Google `.fc-consent-root`) wird `shadowRoot.querySelector(...)` genutzt — normales CSS/Klicken reicht dort nicht.
+4. **Klick per Selektor**: Feste Selektoren für typische „Akzeptieren“-Buttons.
+5. **Klick per Text**: Mehrsprachige Button-Texte.
+6. **Retries**: `dismissCookieBanner` wiederholt Ausblenden/Klick (Standard 2×, 700 ms Abstand) für verzögert geladene Banner; vor Screenshot erneut.
 
 ## Abgedeckte Anbieter / Integrationen (CSS + ggf. Klick)
 
@@ -29,6 +32,9 @@ Damit Scans (Screenshot, axe/htmlcs) nicht durch Cookie-/Consent-Banner verfäls
 - Didomi  
 - Axeptio  
 - Tarteaucitron  
+- **Usercentrics** (CSS auf Host + Shadow-DOM `uc-accept-all-button`) — z. B. [pronovabkk.de](https://www.pronovabkk.de/)  
+- **Google Funding Choices** (`.fc-consent-root`)  
+- Borlabs Cookie  
 - Generische Muster (cookie, consent, gdpr, cc-window, …)
 
 ## Sprachen für Button-Erkennung

@@ -165,6 +165,44 @@ export const COOKIE_BANNER_HIDE_CSS = `
     height: 0 !important;
     overflow: hidden !important;
   }
+  /* Usercentrics (host; hides open shadow UI e.g. pronovabkk.de) */
+  #usercentrics-root,
+  #usercentrics-cmp-as-widget,
+  [id^="usercentrics-"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    max-height: 0 !important;
+    position: fixed !important;
+    z-index: -1 !important;
+  }
+  /* Google Funding Choices */
+  .fc-consent-root,
+  #fc-consent-root {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    max-height: 0 !important;
+    position: fixed !important;
+    z-index: -1 !important;
+  }
+  /* Borlabs Cookie */
+  #BorlabsCookieBox,
+  .BorlabsCookie,
+  [id^="BorlabsCookie"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
   /* Cookie Notice (generic plugin) */
   .cookie-notice,
   #cookie-notice,
@@ -279,6 +317,16 @@ export const ACCEPT_BUTTON_SELECTORS = [
   '#consent-accept',
   '.gdpr-accept',
   '#gdpr-accept',
+  /* Usercentrics (shadow host; click runs via SHADOW_DOM_ACCEPT_TARGETS) */
+  '#usercentrics-root button[data-testid="uc-accept-all-button"]',
+];
+
+/** Open-shadow CMP hosts and inner accept selectors (CSS cannot pierce shadow roots for clicks). */
+export const SHADOW_DOM_ACCEPT_TARGETS: ReadonlyArray<{ host: string; button: string }> = [
+  { host: '#usercentrics-root', button: 'button[data-testid="uc-accept-all-button"]' },
+  { host: '#usercentrics-root', button: 'button[data-testid="uc-save-button"]' },
+  { host: '.fc-consent-root', button: '.fc-cta-consent' },
+  { host: '.fc-consent-root', button: 'button.fc-cta-consent' },
 ];
 
 /**
@@ -464,6 +512,30 @@ export const ACCEPT_BUTTON_TEXTS: string[] = [
   'אישור',
 ];
 
+/** Inject hide CSS as early as possible (before async CMP loaders run). */
+export function registerCookieBannerHideOnNewDocument(page: {
+  evaluateOnNewDocument: (fn: (hideCss: string) => void, hideCss: string) => Promise<unknown>;
+}): Promise<unknown> {
+  const hideCss = COOKIE_BANNER_HIDE_CSS.replace(/\s+/g, ' ').trim();
+  return page.evaluateOnNewDocument((css: string) => {
+    function injectHide() {
+      try {
+        if (document.getElementById('checkion-cookie-banner-hide')) return;
+        const style = document.createElement('style');
+        style.id = 'checkion-cookie-banner-hide';
+        style.textContent = css;
+        (document.head || document.documentElement).appendChild(style);
+      } catch {
+        /* ignore */
+      }
+    }
+    injectHide();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', injectHide);
+    }
+  }, hideCss);
+}
+
 /**
  * Erzeugt ein Skript, das im Browser-Kontext läuft (z. B. pa11y beforeScript):
  * 1) Injiziert CSS zum Ausblenden aller bekannten Cookie-Banner.
@@ -474,6 +546,7 @@ export function getCookieBannerDismissScript(): string {
   const css = COOKIE_BANNER_HIDE_CSS.replace(/\s+/g, ' ').trim();
   const selectorsJson = JSON.stringify(ACCEPT_BUTTON_SELECTORS);
   const textsJson = JSON.stringify(ACCEPT_BUTTON_TEXTS);
+  const shadowTargetsJson = JSON.stringify(SHADOW_DOM_ACCEPT_TARGETS);
 
   return `
 (function() {
@@ -485,6 +558,29 @@ export function getCookieBannerDismissScript(): string {
       (document.head || document.documentElement).appendChild(style);
     }
   } catch (e) {}
+
+  var shadowTargets = ${shadowTargetsJson};
+  function clickInOpenShadow(hostSelector, innerSelector) {
+    try {
+      var host = document.querySelector(hostSelector);
+      if (!host || !host.shadowRoot) return false;
+      var nodes = host.shadowRoot.querySelectorAll(innerSelector);
+      for (var s = 0; s < nodes.length; s++) {
+        var el = nodes[s];
+        if (!el || el.offsetParent === null) continue;
+        var rect = el.getBoundingClientRect();
+        if (rect.width < 2 || rect.height < 2) continue;
+        try {
+          el.click();
+          return true;
+        } catch (err) {}
+      }
+    } catch (err) {}
+    return false;
+  }
+  for (var st = 0; st < shadowTargets.length; st++) {
+    if (clickInOpenShadow(shadowTargets[st].host, shadowTargets[st].button)) break;
+  }
 
   var selectors = ${selectorsJson};
   var acceptTexts = ${textsJson};
@@ -533,20 +629,41 @@ export function getCookieBannerDismissScript(): string {
 /**
  * Puppeteer: Cookie-Banner per CSS ausblenden und optional Akzeptieren klicken.
  * Sollte nach page.goto() und vor Screenshot/Axe aufgerufen werden.
+ * Retries help async CMP loaders (e.g. Usercentrics on pronovabkk.de).
  */
-export async function dismissCookieBanner(page: { addStyleTag: (opts: { content: string }) => Promise<unknown>; evaluate: <T>(fn: () => T) => Promise<T>; waitForTimeout?: (ms: number) => Promise<void> }): Promise<void> {
-  try {
-    await page.addStyleTag({ content: COOKIE_BANNER_HIDE_CSS });
-  } catch (_) {}
+export async function dismissCookieBanner(
+  page: {
+    addStyleTag: (opts: { content: string }) => Promise<unknown>;
+    evaluate: <T>(fn: () => T) => Promise<T>;
+    waitForTimeout?: (ms: number) => Promise<void>;
+  },
+  options?: { retries?: number; retryDelayMs?: number }
+): Promise<void> {
+  const retries = Math.max(0, options?.retries ?? 2);
+  const retryDelayMs = options?.retryDelayMs ?? 700;
 
-  const script = getCookieBannerDismissScript();
-  try {
-    await page.evaluate(new Function(script) as () => void);
-  } catch (_) {}
+  const sleep = async (ms: number) => {
+    if (typeof page.waitForTimeout === 'function') {
+      await page.waitForTimeout(ms);
+    } else {
+      await new Promise((r) => setTimeout(r, ms));
+    }
+  };
 
-  if (typeof page.waitForTimeout === 'function') {
-    await page.waitForTimeout(400);
-  } else {
-    await new Promise((r) => setTimeout(r, 400));
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      await page.addStyleTag({ content: COOKIE_BANNER_HIDE_CSS });
+    } catch (_) {}
+
+    const script = getCookieBannerDismissScript();
+    try {
+      await page.evaluate(new Function(script) as () => void);
+    } catch (_) {}
+
+    if (attempt < retries) {
+      await sleep(retryDelayMs);
+    }
   }
+
+  await sleep(400);
 }
