@@ -6,6 +6,7 @@
   "textOnDark": "#FFFFFF",
   "muted": "#716E6B",
   "surface": "#EAE8E8",
-  "fontHeading": "Helvetica Neue",
-  "fontBody": "Helvetica Neue"
+  "fontHeading": "Noto Sans JP",
+  "fontBody": "Noto Sans JP",
+  "fontMono": "IBM Plex Mono"
 }

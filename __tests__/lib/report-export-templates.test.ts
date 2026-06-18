@@ -9,6 +9,8 @@ import {
   getReportPptxMasterAbsolutePath,
   getReportPptxLogoWhiteAbsolutePath,
 } from '@/lib/paths/report-export-templates';
+import { PPTX_FONT_FACES } from '@/lib/paths/pptx-fonts';
+import { loadPptxBrandTokens } from '@/lib/project-report/pptx/load-brand-tokens';
 import { buildProjectReportPptxPlan } from '@/lib/project-report/pptx/build-pptx-plan';
 import { buildComprehensivePreviewBundle } from '@/lib/paths/pdf-print-preview-bundle';
 import { renderProjectReportPptx } from '@/lib/project-report/pptx/render-pptx';
@@ -44,6 +46,15 @@ describe('report-export-templates paths', () => {
     const logo = getReportPptxLogoWhiteAbsolutePath(CHECKION_ROOT);
     expect(fs.existsSync(master)).toBe(true);
     expect(fs.existsSync(logo)).toBe(true);
+  });
+});
+
+describe('pptx brand fonts', () => {
+  it('loads MSQDX font faces from brand-tokens.json', () => {
+    const tokens = loadPptxBrandTokens(CHECKION_ROOT);
+    expect(tokens.fontHeading).toBe(PPTX_FONT_FACES.primary);
+    expect(tokens.fontBody).toBe(PPTX_FONT_FACES.primary);
+    expect(tokens.fontMono).toBe(PPTX_FONT_FACES.mono);
   });
 });
 

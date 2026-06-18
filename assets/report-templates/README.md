@@ -8,7 +8,7 @@ CHECKION executive report export assets.
 | `PNG/MSQDX_Logotype_White.png` | Logo on dark backgrounds |
 | `PNG/MSQDX_Logotype_Black.png` | Logo on light backgrounds |
 | `SVG/` | Vector logotypes (optional) |
-| `brand-tokens.json` | Colors and fonts for PptxGenJS masters |
+| `brand-tokens.json` | Colors and fonts (`Noto Sans JP`, `IBM Plex Mono`) |
 
 See:
 

@@ -7,6 +7,7 @@ import {
     getReportPptxLogoBlackAbsolutePath,
     getReportPptxLogoWhiteAbsolutePath,
 } from '@/lib/paths/report-export-templates';
+import { PPTX_FONT_FACES } from '@/lib/paths/pptx-fonts';
 
 export interface PptxBrandTokens {
     primary: string;
@@ -18,6 +19,7 @@ export interface PptxBrandTokens {
     surface: string;
     fontHeading: string;
     fontBody: string;
+    fontMono: string;
 }
 
 const DEFAULT_TOKENS: PptxBrandTokens = {
@@ -28,8 +30,9 @@ const DEFAULT_TOKENS: PptxBrandTokens = {
     textOnDark: 'FFFFFF',
     muted: '716E6B',
     surface: 'EAE8E8',
-    fontHeading: 'Helvetica Neue',
-    fontBody: 'Helvetica Neue',
+    fontHeading: PPTX_FONT_FACES.primary,
+    fontBody: PPTX_FONT_FACES.primary,
+    fontMono: PPTX_FONT_FACES.mono,
 };
 
 function normalizeHex(value: string): string {
@@ -50,6 +53,7 @@ export function loadPptxBrandTokens(cwd = process.cwd()): PptxBrandTokens {
             surface: normalizeHex(raw.surface ?? DEFAULT_TOKENS.surface),
             fontHeading: raw.fontHeading ?? DEFAULT_TOKENS.fontHeading,
             fontBody: raw.fontBody ?? DEFAULT_TOKENS.fontBody,
+            fontMono: raw.fontMono ?? DEFAULT_TOKENS.fontMono,
         };
     } catch {
         return { ...DEFAULT_TOKENS };
