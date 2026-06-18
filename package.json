@@ -44,6 +44,7 @@
     "pa11y": "^8.0.0",
     "pdfjs-dist": "^4.10.38",
     "pg": "^8.18.0",
+    "pptx-automizer": "^0.8.1",
     "pptxgenjs": "^4.0.1",
     "puppeteer": "^24.37.2",
     "react": "19.2.4",

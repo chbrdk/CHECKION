@@ -67,6 +67,22 @@ export const PPTX_MSQDX_MASTER_LAYOUT = {
     CLOSING: 'Quote (black)',
 } as const;
 
+/**
+ * Example slide numbers in MSQDX_PPT-Master_27-05-26.pptx that showcase each layout.
+ * Used by pptx-automizer as clone sources (not included in output).
+ */
+export const PPTX_MSQDX_TEMPLATE_SLIDES = {
+    TITLE: 11,
+    SECTION: 20,
+    CONTENT: 26,
+    TWO_COLUMN: 34,
+    METRICS: 49,
+    CLOSING: 60,
+} as const;
+
+/** Alias used when loading the master template into pptx-automizer. */
+export const PPTX_MSQDX_TEMPLATE_ALIAS = 'msqdx';
+
 export const PPTX_PLACEHOLDER = {
     TITLE: 'TITLE',
     SUBTITLE: 'SUBTITLE',

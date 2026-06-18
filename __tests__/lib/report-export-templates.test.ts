@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import {
   PPTX_LAYOUT,
   PPTX_MSQDX_MASTER_LAYOUT,
+  PPTX_MSQDX_TEMPLATE_SLIDES,
   PPTX_PLACEHOLDER,
   REPORT_PPTX_MASTER_RELATIVE_PATH,
   getReportPptxMasterAbsolutePath,
@@ -39,6 +40,12 @@ describe('report-export-templates paths', () => {
       if (prev === undefined) delete process.env.CHECKION_REPORT_PPTX_MASTER_PATH;
       else process.env.CHECKION_REPORT_PPTX_MASTER_PATH = prev;
     }
+  });
+
+  it('maps semantic layouts to MSQDX master template slides', () => {
+    expect(PPTX_MSQDX_TEMPLATE_SLIDES.TITLE).toBe(11);
+    expect(PPTX_MSQDX_TEMPLATE_SLIDES.CONTENT).toBe(26);
+    expect(PPTX_MSQDX_MASTER_LAYOUT.METRICS).toBe('Text on 3 tiles (BK)');
   });
 
   it('points at shipped master and logo assets in repo', () => {

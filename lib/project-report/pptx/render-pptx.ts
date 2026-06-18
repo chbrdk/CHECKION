@@ -1,8 +1,10 @@
 /**
  * Render ProjectReportPptxPlan to PPTX buffer (server-side).
+ * Uses the MSQDX corporate master via pptx-automizer when available; falls back to PptxGenJS.
  */
+import fs from 'node:fs';
 import PptxGenJS from 'pptxgenjs';
-import { PPTX_LAYOUT } from '@/lib/paths/report-export-templates';
+import { getReportPptxMasterAbsolutePath } from '@/lib/paths/report-export-templates';
 import type {
     ProjectReportPptxPlan,
     ReportSlide,
@@ -11,6 +13,7 @@ import type {
 } from '@/lib/project-report/pptx/types';
 import { loadPptxRenderAssets } from '@/lib/project-report/pptx/load-brand-tokens';
 import { registerPptxMasters } from '@/lib/project-report/pptx/pptx-masters';
+import { PPTX_LAYOUT } from '@/lib/paths/report-export-templates';
 import {
     PPTX_SLIDE,
     pptxColumnWidth,
@@ -475,6 +478,20 @@ function renderSlide(pptx: PptxGenJS, slidePlan: ReportSlide, tokens: Tokens): v
 }
 
 export async function renderProjectReportPptx(
+    plan: ProjectReportPptxPlan,
+    cwd = process.cwd()
+): Promise<Buffer> {
+    const masterPath = getReportPptxMasterAbsolutePath(cwd);
+    if (fs.existsSync(masterPath)) {
+        const { renderProjectReportPptxWithMaster } = await import(
+            '@/lib/project-report/pptx/render-pptx-automizer'
+        );
+        return renderProjectReportPptxWithMaster(plan, masterPath);
+    }
+    return renderProjectReportPptxGenJs(plan, cwd);
+}
+
+async function renderProjectReportPptxGenJs(
     plan: ProjectReportPptxPlan,
     cwd = process.cwd()
 ): Promise<Buffer> {

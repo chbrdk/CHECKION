@@ -39,6 +39,8 @@ The master uses German default placeholder names. Map by **type**, not custom na
 | `ftr` | Fußzeilenplatzhalter | Footer (project + date) |
 | `sldNum` | Foliennummernplatzhalter | Slide number |
 
-## Renderer strategy (MVP)
+## Renderer strategy
 
-**PptxGenJS** cannot import existing `.pptx` masters. MVP uses `defineSlideMaster()` with `brand-tokens.json` + PNG logos. Phase 2 can switch to **pptx-automizer** using the layout indices above.
+**Primary:** `pptx-automizer` clones slides from `MSQDX_PPT-Master_27-05-26.pptx` by layout (`PPTX_MSQDX_TEMPLATE_SLIDES` in `lib/paths/report-export-templates.ts`). Placeholders are filled via `modify.setText` / `setBulletList`; charts use `slide.generate()` (PptxGenJS bundled in automizer).
+
+**Fallback:** If the master file is missing (e.g. local dev without assets), `render-pptx.ts` falls back to PptxGenJS `defineSlideMaster()` in `pptx-masters.ts`.
