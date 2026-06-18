@@ -24,6 +24,16 @@ function setText(slide: ISlide, shapeName: string, text: string): void {
     slide.modifyElement(shapeName, [modify.setText(text)]);
 }
 
+function clearText(slide: ISlide, shapeName: string): void {
+    setText(slide, shapeName, '');
+}
+
+function clearTexts(slide: ISlide, shapeNames: string[]): void {
+    for (const shapeName of shapeNames) {
+        clearText(slide, shapeName);
+    }
+}
+
 function setBullets(slide: ISlide, shapeName: string, bullets: string[]): void {
     if (bullets.length === 0) {
         setText(slide, shapeName, '');
@@ -62,10 +72,11 @@ function chartArea(hasSubtitle: boolean, hasBullets: boolean) {
 function applyChartSlide(slide: ISlide, slidePlan: Extract<ReportSlide, { kind: 'chart' }>): void {
     const shapes = MSQDX_TEMPLATE_SHAPES.CONTENT;
     setText(slide, shapes.title, slidePlan.title);
+    clearText(slide, shapes.body);
     if (slidePlan.subtitle) {
-        setText(slide, shapes.body, slidePlan.subtitle);
+        setText(slide, shapes.eyebrow, slidePlan.subtitle);
     } else {
-        setText(slide, shapes.body, '');
+        clearText(slide, shapes.eyebrow);
     }
     setText(slide, shapes.footer, slidePlan.footer);
 
@@ -141,6 +152,7 @@ function applySlidePlan(slide: ISlide, slidePlan: ReportSlide): void {
                 ? `${slidePlan.chapterNumber}  ${slidePlan.title}`
                 : slidePlan.title;
             setText(slide, shapes.title, title);
+            clearText(slide, shapes.body);
             setText(slide, shapes.footer, slidePlan.footer);
             break;
         }
@@ -148,24 +160,10 @@ function applySlidePlan(slide: ISlide, slidePlan: ReportSlide): void {
             const shapes = MSQDX_TEMPLATE_SHAPES.CONTENT;
             setText(slide, shapes.title, slidePlan.title);
             if (slidePlan.lead) {
-                setText(slide, shapes.body, slidePlan.lead);
-                slide.generate((pSlide) => {
-                    pSlide.addText(
-                        slidePlan.bullets.map((bullet) => ({
-                            text: bullet,
-                            options: { bullet: true, breakLine: true },
-                        })),
-                        {
-                            x: 0.65,
-                            y: 2.05,
-                            w: MSQDX_SLIDE_SIZE.width - 1.3,
-                            h: 4.2,
-                            fontSize: 15,
-                            valign: 'top',
-                        }
-                    );
-                }, 'report-bullets');
+                setText(slide, shapes.eyebrow, slidePlan.lead);
+                setBullets(slide, shapes.body, slidePlan.bullets);
             } else {
+                clearText(slide, shapes.eyebrow);
                 setBullets(slide, shapes.body, slidePlan.bullets);
             }
             setText(slide, shapes.footer, slidePlan.footer);
@@ -194,6 +192,7 @@ function applySlidePlan(slide: ISlide, slidePlan: ReportSlide): void {
         case 'table': {
             const shapes = MSQDX_TEMPLATE_SHAPES.CONTENT;
             setText(slide, shapes.title, slidePlan.title);
+            clearTexts(slide, [shapes.body, shapes.eyebrow]);
             setText(slide, shapes.footer, slidePlan.footer);
             const rows = [slidePlan.headers, ...slidePlan.rows];
             slide.generate((pSlide) => {
@@ -209,12 +208,12 @@ function applySlidePlan(slide: ISlide, slidePlan: ReportSlide): void {
                     }
                 );
             }, 'report-table');
-            setText(slide, shapes.body, '');
             break;
         }
         case 'two_column': {
             const shapes = MSQDX_TEMPLATE_SHAPES.TWO_COLUMN;
             setText(slide, shapes.title, slidePlan.title);
+            clearText(slide, shapes.eyebrow);
             applyContentBlock(slide, shapes.left, slidePlan.left);
             applyContentBlock(slide, shapes.right, slidePlan.right);
             setText(slide, shapes.footer, slidePlan.footer);

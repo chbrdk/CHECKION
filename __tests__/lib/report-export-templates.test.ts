@@ -15,6 +15,7 @@ import { loadPptxBrandTokens } from '@/lib/project-report/pptx/load-brand-tokens
 import { buildProjectReportPptxPlan } from '@/lib/project-report/pptx/build-pptx-plan';
 import { buildComprehensivePreviewBundle } from '@/lib/paths/pdf-print-preview-bundle';
 import { renderProjectReportPptx } from '@/lib/project-report/pptx/render-pptx';
+import { assertNoTemplateLoremInActiveSlides } from '@/lib/project-report/pptx/pptx-output-assertions';
 import { getPptxMaxSlides } from '@/lib/project-report/pptx/types';
 
 const CHECKION_ROOT = path.resolve(__dirname, '../..');
@@ -86,6 +87,13 @@ describe('renderProjectReportPptx', () => {
     expect(Buffer.isBuffer(buffer)).toBe(true);
     expect(buffer.length).toBeGreaterThan(10_000);
     expect(buffer.subarray(0, 2).toString()).toBe('PK');
+  });
+
+  it('does not leak MSQDX template Lorem ipsum on active slides', async () => {
+    const plan = buildProjectReportPptxPlan(buildComprehensivePreviewBundle());
+    const buffer = await renderProjectReportPptx(plan, CHECKION_ROOT);
+
+    expect(() => assertNoTemplateLoremInActiveSlides(buffer)).not.toThrow();
   });
 
   it('renders without logo assets when paths are missing', async () => {

@@ -19,17 +19,21 @@ export const MSQDX_TEMPLATE_SHAPES = {
     },
     SECTION: {
         title: 'Titel 1',
+        body: 'Textplatzhalter 2',
         footer: 'Fußzeilenplatzhalter 4',
     },
     CONTENT: {
         title: 'Titel 2',
-        body: 'Textplatzhalter 3',
+        /** Main body area on the sample slide (holds Lorem ipsum in master). */
+        body: 'Inhaltsplatzhalter 1',
+        eyebrow: 'Textplatzhalter 3',
         footer: 'Fußzeilenplatzhalter 5',
     },
     TWO_COLUMN: {
         title: 'Titel 4',
-        left: 'Textplatzhalter 2',
+        left: 'Inhaltsplatzhalter 1',
         right: 'Inhaltsplatzhalter 5',
+        eyebrow: 'Textplatzhalter 2',
         footer: 'Fußzeilenplatzhalter 6',
     },
     METRICS: {
