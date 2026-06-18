@@ -4,6 +4,7 @@
 
 import type { Device, DomainScanStatus, ScanDevicePhase } from '@/lib/types';
 import type { ScanMetaPhase } from '@/lib/scan-progress';
+import { DOMAIN_SCAN_DEFAULT_MAX_PAGES } from '@/lib/domain-scan-max-pages';
 
 /** Extend as new surfaces migrate (domain crawl, journey, geo, …). */
 export type StatusJobKind = 'single_page_scan' | 'domain_scan';
@@ -64,7 +65,7 @@ export function initialDomainScanUi(): DomainScanUiState {
         currentUrl: null,
         projectId: null,
         startUrl: null,
-        maxPages: 1000,
+        maxPages: DOMAIN_SCAN_DEFAULT_MAX_PAGES,
         classifyPageTopics: false,
         aiFillProjectMetadata: true,
         errorMessage: null,

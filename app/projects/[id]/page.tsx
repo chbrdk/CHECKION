@@ -53,6 +53,8 @@ import { normalizeDomain } from '@/lib/domain-normalize';
 import { toScanStartUrl } from '@/lib/url-normalize';
 import { parseTagsFromInput } from '@/lib/tag-utils';
 import { INDUSTRY_POOL, isIndustryPoolId } from '@/lib/industry-pool';
+import { DomainScanMaxPagesSelect } from '@/components/DomainScanMaxPagesSelect';
+import { useDomainScanMaxPages } from '@/hooks/useDomainScanMaxPages';
 
 interface ProjectData {
     id: string;
@@ -136,6 +138,7 @@ export default function ProjectDetailPage() {
     const [classificationTagsStr, setClassificationTagsStr] = useState('');
     const [classificationSaving, setClassificationSaving] = useState(false);
     const fetchedForIdRef = useFetchOnceForId();
+    const { maxPages: deepScanMaxPages, setMaxPages: setDeepScanMaxPages } = useDomainScanMaxPages();
 
     const loadProject = useCallback(async () => {
         if (!id) return;
@@ -413,7 +416,7 @@ export default function ProjectDetailPage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
-                body: JSON.stringify({ url: project.domain, projectId: id }),
+                body: JSON.stringify({ url: project.domain, projectId: id, maxPages: deepScanMaxPages }),
             });
             const data = await r.json();
             if (data?.success && data?.data?.id) {
@@ -423,7 +426,7 @@ export default function ProjectDetailPage() {
                     domainScan.attach({
                         scanId,
                         startUrl,
-                        maxPages: 1000,
+                        maxPages: deepScanMaxPages,
                         projectId: id,
                         classifyPageTopics: false,
                         aiFillProjectMetadata: true,
@@ -434,6 +437,7 @@ export default function ProjectDetailPage() {
                         domainOrUrl: project.domain,
                         scanId,
                         projectId: id,
+                        maxPages: deepScanMaxPages,
                     })
                 );
                 return;
@@ -443,18 +447,18 @@ export default function ProjectDetailPage() {
         } finally {
             setRestartDeepScanLoading(false);
         }
-    }, [id, project?.domain, router, domainScan.attach]);
+    }, [id, project?.domain, router, domainScan.attach, deepScanMaxPages]);
 
     const handleStartCompetitorDeepScan = useCallback(
         async (domain: string) => {
             if (!id || !domain.trim()) return;
             setCompetitorScanLoadingDomain(domain);
             try {
-                const r = await fetch(apiProjectDomainScanCompetitor(id), {
+                const r = await fetch(apiProjectDomainScanCompetitor(id, { maxPages: deepScanMaxPages }), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'same-origin',
-                    body: JSON.stringify({ domain }),
+                    body: JSON.stringify({ domain, maxPages: deepScanMaxPages }),
                 });
                 const data = await r.json().catch(() => ({}));
                 if (r.ok && data?.success && data?.data?.scanId) {
@@ -464,7 +468,7 @@ export default function ProjectDetailPage() {
                         domainScan.attach({
                             scanId: d.scanId,
                             startUrl,
-                            maxPages: 1000,
+                            maxPages: deepScanMaxPages,
                             projectId: id,
                             classifyPageTopics: false,
                             aiFillProjectMetadata: true,
@@ -478,7 +482,7 @@ export default function ProjectDetailPage() {
                 setCompetitorScanLoadingDomain(null);
             }
         },
-        [id, loadDomainSummaryAll, domainScan.attach]
+        [id, loadDomainSummaryAll, domainScan.attach, deepScanMaxPages]
     );
 
     const dismissCompetitorAlerts = useCallback(async () => {
@@ -500,7 +504,7 @@ export default function ProjectDetailPage() {
         if (!id) return;
         setScanAllDeepScanLoading(true);
         try {
-            const r = await fetch(apiProjectDomainScanAll(id), {
+            const r = await fetch(apiProjectDomainScanAll(id, { maxPages: deepScanMaxPages }), {
                 method: 'POST',
                 credentials: 'same-origin',
             });
@@ -536,7 +540,7 @@ export default function ProjectDetailPage() {
                         domainScan.attach({
                             scanId: own.scanId,
                             startUrl: su,
-                            maxPages: 1000,
+                            maxPages: deepScanMaxPages,
                             projectId: id,
                             classifyPageTopics: false,
                             aiFillProjectMetadata: true,
@@ -553,7 +557,7 @@ export default function ProjectDetailPage() {
                             domainScan.attach({
                                 scanId: info.scanId,
                                 startUrl: su,
-                                maxPages: 1000,
+                                maxPages: deepScanMaxPages,
                                 projectId: id,
                                 classifyPageTopics: false,
                                 aiFillProjectMetadata: true,
@@ -567,7 +571,7 @@ export default function ProjectDetailPage() {
         } finally {
             setScanAllDeepScanLoading(false);
         }
-    }, [id, loadDomainSummaryAll, project?.domain, t, domainScan.attach]);
+    }, [id, loadDomainSummaryAll, project?.domain, t, domainScan.attach, deepScanMaxPages]);
 
     const handleDeepScanControl = useCallback(
         async (scanId: string, action: 'pause' | 'resume' | 'cancel') => {
@@ -753,6 +757,15 @@ export default function ProjectDetailPage() {
                             {project.domain}
                         </MsqdxTypography>
                     )}
+                    {project.domain?.trim() ? (
+                        <Box sx={{ mb: 2, maxWidth: 220 }}>
+                            <DomainScanMaxPagesSelect
+                                value={deepScanMaxPages}
+                                onChange={setDeepScanMaxPages}
+                                disabled={restartDeepScanLoading}
+                            />
+                        </Box>
+                    ) : null}
                     {project.valueProposition && (
                         <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                             {project.valueProposition}
@@ -933,6 +946,19 @@ export default function ProjectDetailPage() {
                         </Box>
                     }
                 >
+                    {(project?.domain || competitors.length > 0) && !listsLoading ? (
+                        <Box sx={{ mb: 1.5, maxWidth: 220 }}>
+                            <DomainScanMaxPagesSelect
+                                value={deepScanMaxPages}
+                                onChange={setDeepScanMaxPages}
+                                disabled={
+                                    restartDeepScanLoading ||
+                                    scanAllDeepScanLoading ||
+                                    competitorScanLoadingDomain != null
+                                }
+                            />
+                        </Box>
+                    ) : null}
                     {listsLoading ? (
                         <MsqdxTypography variant="body2" sx={{ py: 1 }}>{t('common.loading')}</MsqdxTypography>
                     ) : activeDeepScans.length > 0 ? (

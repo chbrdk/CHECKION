@@ -507,7 +507,12 @@ export const apiProjectCompetitorChanges = (id: string) =>
 /** POST /api/projects/[id]/domain-scan-all — optional query flags match route search params. */
 export function apiProjectDomainScanAll(
   projectId: string,
-  query?: { classifyPageTopics?: boolean; skipUnchangedPages?: boolean; aiFillProjectMetadata?: boolean }
+  query?: {
+    classifyPageTopics?: boolean;
+    skipUnchangedPages?: boolean;
+    aiFillProjectMetadata?: boolean;
+    maxPages?: number;
+  }
 ): string {
   const base = `${API_PROJECTS}/${encodeURIComponent(projectId)}/domain-scan-all`;
   if (!query) return base;
@@ -515,13 +520,19 @@ export function apiProjectDomainScanAll(
   if (query.classifyPageTopics) sp.set('classifyPageTopics', 'true');
   if (query.skipUnchangedPages) sp.set('skipUnchangedPages', 'true');
   if (query.aiFillProjectMetadata === false) sp.set('aiFillProjectMetadata', 'false');
+  if (query.maxPages != null) sp.set('maxPages', String(query.maxPages));
   const s = sp.toString();
   return s ? `${base}?${s}` : base;
 }
 /** POST /api/projects/[id]/domain-scan-competitor – body `{ domain }` (hostname or URL). */
 export function apiProjectDomainScanCompetitor(
     projectId: string,
-    query?: { classifyPageTopics?: boolean; skipUnchangedPages?: boolean; aiFillProjectMetadata?: boolean },
+    query?: {
+        classifyPageTopics?: boolean;
+        skipUnchangedPages?: boolean;
+        aiFillProjectMetadata?: boolean;
+        maxPages?: number;
+    },
 ): string {
     const base = `${API_PROJECTS}/${encodeURIComponent(projectId)}/domain-scan-competitor`;
     if (!query) return base;
@@ -530,6 +541,7 @@ export function apiProjectDomainScanCompetitor(
     if (query.skipUnchangedPages === true) sp.set('skipUnchangedPages', 'true');
     if (query.skipUnchangedPages === false) sp.set('skipUnchangedPages', 'false');
     if (query.aiFillProjectMetadata === false) sp.set('aiFillProjectMetadata', 'false');
+    if (query.maxPages != null) sp.set('maxPages', String(query.maxPages));
     const s = sp.toString();
     return s ? `${base}?${s}` : base;
 }
@@ -602,6 +614,8 @@ export const PDF_LOGO_PATH = '/msqdx-logo-black.svg';
 
 /** Cookie and localStorage key for UI language (de/en). Used by lib/i18n. */
 export const LOCALE_STORAGE_KEY = 'checkion_locale';
+/** localStorage key for preferred deep-scan max page count (see lib/domain-scan-max-pages.ts). */
+export const DOMAIN_SCAN_MAX_PAGES_STORAGE_KEY = 'checkion_domain_scan_max_pages';
 
 /** Number of scans per page on the dashboard (single + domain lists). */
 export const DASHBOARD_SCANS_PAGE_SIZE = 10;

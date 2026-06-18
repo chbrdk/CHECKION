@@ -12,6 +12,7 @@ import {
     hasPriorOwnDomainCompleteScan,
     resolveSkipUnchangedPagesFromQuery,
 } from '@/lib/competitor-scan-skip-default';
+import { parseDomainScanMaxPagesParam } from '@/lib/domain-scan-max-pages';
 
 const MAX_COMPETITORS = 20;
 
@@ -46,6 +47,7 @@ export async function POST(
   const skipOwnUnchanged = resolveSkipUnchangedPagesFromQuery(req.nextUrl.searchParams, ownHasPrior);
   const classifyPageTopics = req.nextUrl.searchParams.get('classifyPageTopics') === 'true';
   const aiFillProjectMetadataDisabled = req.nextUrl.searchParams.get('aiFillProjectMetadata') === 'false';
+  const maxPages = parseDomainScanMaxPagesParam(req.nextUrl.searchParams.get('maxPages'));
 
   const own = project.domain?.trim() ? await (async () => {
     const raw = project.domain!.trim();
@@ -53,6 +55,7 @@ export async function POST(
     const { id } = await startDomainScan(projectUserId, url, {
       projectId,
       useSitemap: true,
+      ...(maxPages != null ? { maxPages } : {}),
       ...(skipOwnUnchanged ? { skipUnchangedPages: true } : {}),
       ...(classifyPageTopics ? { classifyPageTopics: true } : {}),
       ...(aiFillProjectMetadataDisabled ? { aiFillProjectMetadata: false } : {}),
@@ -71,6 +74,7 @@ export async function POST(
     const compHasPrior = await hasPriorCompetitorCompleteScan(projectUserId, domain);
     const skipComp = resolveSkipUnchangedPagesFromQuery(req.nextUrl.searchParams, compHasPrior);
     const { scanId } = await startProjectCompetitorDomainScan(projectUserId, projectId, domain, {
+      ...(maxPages != null ? { maxPages } : {}),
       ...(skipComp ? { skipUnchangedPages: true } : {}),
       ...(classifyPageTopics ? { classifyPageTopics: true } : {}),
       ...(aiFillProjectMetadataDisabled ? { aiFillProjectMetadata: false } : {}),

@@ -48,6 +48,7 @@ export const scanBodySchema = z.object({
 /** POST /api/projects/[id]/domain-scan-competitor */
 export const projectCompetitorDomainScanBodySchema = z.object({
   domain: z.string().min(1, 'Domain is required').max(512),
+  maxPages: z.number().int().min(1).optional(),
 });
 
 /** POST /api/scan/domain */

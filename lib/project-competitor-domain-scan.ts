@@ -9,7 +9,12 @@ export async function startProjectCompetitorDomainScan(
   userId: string,
   projectId: string,
   normalizedDomain: string,
-  options?: { skipUnchangedPages?: boolean; classifyPageTopics?: boolean; aiFillProjectMetadata?: boolean }
+  options?: {
+    skipUnchangedPages?: boolean;
+    classifyPageTopics?: boolean;
+    aiFillProjectMetadata?: boolean;
+    maxPages?: number;
+  }
 ): Promise<{ scanId: string }> {
   const d = normalizedDomain.trim();
   const url = d.startsWith('http') ? d : `https://${d}`;
@@ -17,6 +22,7 @@ export async function startProjectCompetitorDomainScan(
     projectId: null,
     useSitemap: true,
     domainOverride: d,
+    ...(options?.maxPages != null ? { maxPages: options.maxPages } : {}),
     ...(options?.skipUnchangedPages ? { skipUnchangedPages: true } : {}),
     ...(options?.classifyPageTopics ? { classifyPageTopics: true } : {}),
     ...(options?.aiFillProjectMetadata === false ? { aiFillProjectMetadata: false } : {}),

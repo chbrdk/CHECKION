@@ -48,6 +48,8 @@ import { fetchOnceMoreOn5xx } from '@/lib/fetch-retry-5xx';
 import { extractHostname } from '@/lib/geo-eeat/suggest-parse';
 import { resolveLaunchProjectId } from '@/lib/launch-project';
 import { fetchWithSessionCookies } from '@/lib/client/fetch-with-session';
+import { DomainScanMaxPagesSelect } from '@/components/DomainScanMaxPagesSelect';
+import { useDomainScanMaxPages } from '@/hooks/useDomainScanMaxPages';
 
 const GEO_EEAT_QUICK_QUERY_MAX = 500;
 
@@ -101,6 +103,7 @@ export default function ScanPage() {
     const [geoEeatSuggestMessage, setGeoEeatSuggestMessage] = useState<string | null>(null);
     const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+    const { maxPages: deepScanMaxPages, setMaxPages: setDeepScanMaxPages } = useDomainScanMaxPages();
 
     useEffect(() => {
         if (sessionStatus === 'loading') return;
@@ -368,7 +371,11 @@ export default function ScanPage() {
                 const res = await fetchWithSessionCookies(apiScanDomainCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: startUrl!, ...(selectedProjectId && { projectId: selectedProjectId }) }),
+                    body: JSON.stringify({
+                        url: startUrl!,
+                        maxPages: deepScanMaxPages,
+                        ...(selectedProjectId && { projectId: selectedProjectId }),
+                    }),
                 });
 
                 const data = await res.json();
@@ -383,7 +390,7 @@ export default function ScanPage() {
                     domainScan.attach({
                         scanId,
                         startUrl: startUrl!,
-                        maxPages: 1000,
+                        maxPages: deepScanMaxPages,
                         projectId: selectedProjectId ?? null,
                         classifyPageTopics: false,
                         aiFillProjectMetadata: true,
@@ -392,6 +399,7 @@ export default function ScanPage() {
                 router.push(
                     pathScanDomain({
                         url: startUrl!,
+                        maxPages: deepScanMaxPages,
                         ...(scanId ? { scanId } : {}),
                         ...(selectedProjectId ? { projectId: selectedProjectId } : {}),
                     })
@@ -722,6 +730,17 @@ export default function ScanPage() {
                         // row -- Vertical might be better in this layout if we have multiple
                         />
                     </Box>
+
+                    {/* Deep scan: max pages */}
+                    {scanMode === 'deep' && (
+                        <Box sx={{ minWidth: 160 }}>
+                            <DomainScanMaxPagesSelect
+                                value={deepScanMaxPages}
+                                onChange={setDeepScanMaxPages}
+                                disabled={scanning}
+                            />
+                        </Box>
+                    )}
 
                     {/* Project (optional) */}
                     <Box sx={{ minWidth: 200 }}>

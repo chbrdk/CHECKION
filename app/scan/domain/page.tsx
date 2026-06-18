@@ -6,18 +6,22 @@ import {
     MsqdxTypography,
     MsqdxButton,
     MsqdxFormField,
-    MsqdxSelect,
     MsqdxCheckboxField,
 } from '@msqdx/react';
-import type { SelectChangeEvent } from '@mui/material';
 import { Box, LinearProgress } from '@mui/material';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MSQDX_SPACING } from '@msqdx/tokens';
 import type { DomainScanStatus } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import { DomainScanMaxPagesSelect } from '@/components/DomainScanMaxPagesSelect';
 import { apiScanDomainCreate, pathDomain, pathScanDomain } from '@/lib/constants';
 import { useStatusUi } from '@/components/status/StatusUiContext';
+import { useDomainScanMaxPages } from '@/hooks/useDomainScanMaxPages';
+import {
+    DOMAIN_SCAN_DEFAULT_MAX_PAGES,
+    parseDomainScanMaxPagesParam,
+} from '@/lib/domain-scan-max-pages';
 
 function ScanContent() {
     const searchParams = useSearchParams();
@@ -28,12 +32,12 @@ function ScanContent() {
     const [scanId, setScanId] = useState<string | null>(null);
     const [logs, setLogs] = useState<string[]>([]);
     const logsEndRef = useRef<HTMLDivElement>(null);
-    const [maxPages, setMaxPages] = useState(1000);
     const navigatedCompleteRef = useRef(false);
     const prevUrlRef = useRef<string | null>(null);
 
     const startUrl = searchParams.get('url');
     const maxPagesParam = searchParams.get('maxPages');
+    const { maxPages, setMaxPages } = useDomainScanMaxPages(maxPagesParam);
     const projectIdParam = searchParams.get('projectId');
     const scanIdParam = searchParams.get('scanId');
     const classifyPageTopicsParam = searchParams.get('classifyPageTopics') === 'true';
@@ -63,7 +67,7 @@ function ScanContent() {
         return {
             scanId: scanIdParam,
             startUrl,
-            maxPages: maxPagesParam ? Math.min(10000, Math.max(1, Number(maxPagesParam))) : 1000,
+            maxPages: parseDomainScanMaxPagesParam(maxPagesParam) ?? DOMAIN_SCAN_DEFAULT_MAX_PAGES,
             projectId: projectIdParam ? projectIdParam : null,
             classifyPageTopics: classifyPageTopicsParam,
             aiFillProjectMetadata: projectIdParam ? aiFillProjectMetadataParam : true,
@@ -88,7 +92,7 @@ function ScanContent() {
         if (!startUrl) return;
         if (scanIdParam) return;
         if (!scanId) {
-            const limit = maxPagesParam ? Math.min(10000, Math.max(1, Number(maxPagesParam))) : 1000;
+            const limit = parseDomainScanMaxPagesParam(maxPagesParam) ?? maxPages;
             void startScan(
                 startUrl,
                 limit,
@@ -153,7 +157,7 @@ function ScanContent() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     url,
-                    maxPages: pageLimit ?? 1000,
+                    maxPages: pageLimit ?? DOMAIN_SCAN_DEFAULT_MAX_PAGES,
                     ...(projectId ? { projectId } : {}),
                     ...(runClassifyPageTopics ? { classifyPageTopics: true } : {}),
                     ...(projectId && runAiFillProjectMetadata === false
@@ -170,7 +174,7 @@ function ScanContent() {
                     domainScan.attach({
                         scanId: newId,
                         startUrl: url,
-                        maxPages: pageLimit ?? 1000,
+                        maxPages: pageLimit ?? DOMAIN_SCAN_DEFAULT_MAX_PAGES,
                         projectId: projectId ?? null,
                         classifyPageTopics: !!runClassifyPageTopics,
                         aiFillProjectMetadata: projectId ? runAiFillProjectMetadata !== false : true,
@@ -179,7 +183,7 @@ function ScanContent() {
                     router.replace(
                         pathScanDomain({
                             url,
-                            maxPages: pageLimit ?? 1000,
+                            maxPages: pageLimit ?? DOMAIN_SCAN_DEFAULT_MAX_PAGES,
                             ...(projectId ? { projectId } : {}),
                             ...(runClassifyPageTopics ? { classifyPageTopics: true } : {}),
                             ...(projectId && runAiFillProjectMetadata === false
@@ -260,22 +264,7 @@ function ScanContent() {
                         />
                     </Box>
                     <Box sx={{ minWidth: 160 }}>
-                        <MsqdxSelect
-                            label={t('domain.maxPagesLabel')}
-                            value={String(maxPages)}
-                            onChange={(e: SelectChangeEvent<unknown>) =>
-                                setMaxPages(Number((e.target as HTMLSelectElement).value))
-                            }
-                            options={[
-                                { value: '50', label: '50' },
-                                { value: '100', label: '100' },
-                                { value: '250', label: '250' },
-                                { value: '500', label: '500' },
-                                { value: '1000', label: '1000' },
-                                { value: '10000', label: t('domain.maxPagesAll') },
-                            ]}
-                            fullWidth
-                        />
+                        <DomainScanMaxPagesSelect value={maxPages} onChange={setMaxPages} />
                     </Box>
                     <Box sx={{ flex: '1 1 100%', minWidth: 200 }}>
                         <MsqdxCheckboxField

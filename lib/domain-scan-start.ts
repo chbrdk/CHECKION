@@ -10,8 +10,9 @@ import {
   buildStoredDomainPayloadFromAggregated,
 } from '@/lib/domain-summary';
 import { refineAggregatedPageClassificationWithLlm } from '@/lib/llm/domain-theme-rollup-refine';
-import { runDomainScan, resolveDomainScanMaxPages } from '@/lib/spider';
+import { runDomainScan } from '@/lib/spider';
 import type { DomainScanControlState } from '@/lib/spider';
+import { resolveDomainScanMaxPages } from '@/lib/domain-scan-max-pages';
 import { reportUsage } from '@/lib/usage-report';
 import type { DomainScanResult } from '@/lib/types';
 import { rebuildDomainIssuesFromPages } from '@/lib/db/domain-issues';

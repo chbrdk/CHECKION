@@ -6,17 +6,15 @@ import { normalizeScanUrl } from '@/lib/url-normalize';
 import { getLatestScanForUrlFingerprint } from '@/lib/db/scans';
 import { checkPageUnchangedByHeaders } from '@/lib/page-unchanged-check';
 import { cloneScanResultForReuse } from '@/lib/domain-scan-reuse';
+import {
+    DOMAIN_SCAN_DEFAULT_MAX_PAGES,
+    DOMAIN_SCAN_MAX_PAGES_CAP,
+    resolveDomainScanMaxPages,
+} from '@/lib/domain-scan-max-pages';
 
-/** Default max pages when `maxPages` is omitted (aligned with UI default). */
-export const DOMAIN_SCAN_DEFAULT_MAX_PAGES = 1000;
+export { DOMAIN_SCAN_DEFAULT_MAX_PAGES, DOMAIN_SCAN_MAX_PAGES_CAP, resolveDomainScanMaxPages };
+
 const MAX_DEPTH = 3; // Home + 3 levels; max pages will likely hit first
-/** Upper cap for maxPages (e.g. "Alle" in UI). */
-export const DOMAIN_SCAN_MAX_PAGES_CAP = 10000;
-
-/** Resolved page cap for a domain scan (same formula as {@link runDomainScan}). */
-export function resolveDomainScanMaxPages(maxPages?: number): number {
-    return Math.min(DOMAIN_SCAN_MAX_PAGES_CAP, Math.max(1, maxPages ?? DOMAIN_SCAN_DEFAULT_MAX_PAGES));
-}
 
 /** How many pages to scan in parallel during domain scan (env: DOMAIN_SCAN_CONCURRENCY). */
 const DOMAIN_SCAN_CONCURRENCY = Math.min(
