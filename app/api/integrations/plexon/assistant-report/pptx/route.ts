@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { PLEXON_SERVICE_SECRET_HEADER } from '@/lib/plexon-contract';
+import { buildPlexonAssistantPptxDebugPayload } from '@/lib/integrations/plexon/debug-plexon-assistant-pptx-plan';
 import { renderPlexonAssistantReportPptx } from '@/lib/integrations/plexon/render-assistant-report-pptx';
+import { isPlexonAssistantPptxDebugPlanRequest } from '@/lib/paths/plexon-assistant-export';
 
 const bodySchema = z.object({
     title: z.string().trim().min(1).max(256),
@@ -42,11 +44,21 @@ export async function POST(request: Request) {
     }
 
     try {
-        const pptx = await renderPlexonAssistantReportPptx({
+        const payload = {
             title: parsed.data.title,
             locale: parsed.data.locale ?? 'de',
             uiLayout: parsed.data.uiLayout,
-        });
+        };
+
+        if (isPlexonAssistantPptxDebugPlanRequest(request.url)) {
+            const debug = buildPlexonAssistantPptxDebugPayload(payload);
+            return NextResponse.json(debug, {
+                status: 200,
+                headers: { 'Cache-Control': 'private, max-age=30' },
+            });
+        }
+
+        const pptx = await renderPlexonAssistantReportPptx(payload);
         const slug = parsed.data.title.replace(/[^a-z0-9]+/gi, '-').slice(0, 40);
         return new NextResponse(new Uint8Array(pptx), {
             status: 200,

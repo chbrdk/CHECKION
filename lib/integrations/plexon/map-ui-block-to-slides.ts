@@ -6,10 +6,17 @@ import type {
     ReportSlide,
     ReportSlideChartSeries,
     ReportSlideContent,
-    ReportSlideMetricTone,
 } from '@/lib/project-report/pptx/types';
 import { PPTX_MAX_TABLE_ROWS } from '@/lib/project-report/pptx/types';
 import type { PlexonAssistantPptxLabels } from '@/lib/integrations/plexon/plexon-assistant-pptx-labels';
+import {
+    mapChartBlockToSlides,
+    mapCornerTabSectionToSlides,
+    mapDataTableToSlides,
+    mapMetricGridToSlides,
+    mapPersonaCardToSlidesExtended,
+    mapTargetGroupCardToSlides,
+} from '@/lib/integrations/plexon/plexon-ui-block-pptx-mappers';
 
 type StepStatus = 'pending' | 'running' | 'done' | 'error';
 
@@ -47,13 +54,6 @@ function markdownToBullets(markdown: string): { title?: string; bullets: string[
     }
     const body = bodyLines.join('\n').trim();
     return { title, bullets: splitParagraphToBullets(body) };
-}
-
-function mapTone(tone: unknown): ReportSlideMetricTone {
-    if (tone === 'success' || tone === 'good') return 'good';
-    if (tone === 'warning' || tone === 'warn') return 'warn';
-    if (tone === 'error' || tone === 'bad') return 'bad';
-    return 'neutral';
 }
 
 function stepStatusSymbol(status: StepStatus): string {
@@ -146,50 +146,37 @@ export function mapUiBlockToSlides(
         case 'alert': {
             const message = String(p.message ?? '').trim();
             const alertTitle = title ?? ' ';
+            const bullets = splitParagraphToBullets(message);
             if (block.id.includes('report-fazit')) {
+                if (!message && !title) return [];
                 return [{
                     kind: 'closing',
                     layout: 'CLOSING',
                     title: alertTitle,
-                    bullets: splitParagraphToBullets(message),
+                    bullets: bullets.length ? bullets : [message],
                     footer,
                 }];
             }
+            if (!message && !title) return [];
             return [{
                 kind: 'bullets',
                 layout: 'CONTENT',
                 title: alertTitle,
-                lead: message || undefined,
-                bullets: [],
+                bullets: bullets.length ? bullets : [message],
                 footer,
             }];
         }
         case 'metric_grid': {
             const items =
-                (p.items as Array<{ label: string; value: string | number; unit?: string; tone?: string }>) ?? [];
-            return [{
-                kind: 'metrics',
-                layout: 'METRICS',
-                title: title ?? ' ',
-                items: items.map((item) => ({
-                    label: item.label,
-                    value: `${item.value}${item.unit ? ` ${item.unit}` : ''}`,
-                    tone: mapTone(item.tone),
-                })),
-                footer,
-            }];
+                (p.items as Array<{ label: string; value: string | number; unit?: string; tone?: string; hint?: string }>) ?? [];
+            if (items.length === 0) return [];
+            return mapMetricGridToSlides(items, title ?? 'KPIs', footer, labels);
         }
         case 'data_table': {
             const cols = (p.columns as string[]) ?? [];
-            const rows = ((p.rows as Array<Array<string | number | null>>) ?? []).slice(0, PPTX_MAX_TABLE_ROWS);
-            return [{
-                kind: 'table',
-                layout: 'CONTENT',
-                title: title ?? ' ',
-                headers: cols,
-                rows: rows.map((row) => row.map((cell) => String(cell ?? '—'))),
-                footer,
-            }];
+            const rows = (p.rows as Array<Array<string | number | null>>) ?? [];
+            if (cols.length === 0 && rows.length === 0) return [];
+            return mapDataTableToSlides(cols, rows, title ?? ' ', footer, labels);
         }
         case 'key_value_list': {
             const items = (p.items as Array<{ label: string; value: string | number }>) ?? [];
@@ -205,6 +192,7 @@ export function mapUiBlockToSlides(
         }
         case 'finding_list': {
             const items = (p.items as Array<{ title: string; description: string; severity?: string }>) ?? [];
+            if (items.length === 0) return [];
             const bullets = items.flatMap((item) => {
                 const prefix = item.severity ? `[${item.severity}] ` : '';
                 const head = `${prefix}${item.title}`;
@@ -221,6 +209,7 @@ export function mapUiBlockToSlides(
         case 'recommendation_list': {
             const items =
                 (p.items as Array<{ title: string; description?: string; priority?: number; category?: string }>) ?? [];
+            if (items.length === 0) return [];
             const bullets = items.map((item) => {
                 const parts = [
                     item.priority != null ? `[P${item.priority}]` : null,
@@ -249,6 +238,7 @@ export function mapUiBlockToSlides(
         }
         case 'link_list': {
             const links = (p.links as Array<{ label: string; href: string }>) ?? [];
+            if (links.length === 0) return [];
             return [{
                 kind: 'bullets',
                 layout: 'CONTENT',
@@ -259,21 +249,15 @@ export function mapUiBlockToSlides(
         }
         case 'persona_card': {
             const personas =
-                (p.personas as Array<{ name: string; segment: string; headline: string; confidence?: number }>) ?? [];
-            const bullets = personas.flatMap((persona) => {
-                const meta = [
-                    persona.segment,
-                    persona.confidence != null ? `${Math.round(persona.confidence * 100)}%` : null,
-                ].filter(Boolean).join(' · ');
-                return [`${persona.name} — ${meta}`, persona.headline];
-            });
-            return [{
-                kind: 'bullets',
-                layout: 'CONTENT',
-                title: title ?? 'Personas',
-                bullets,
-                footer,
-            }];
+                (p.personas as Array<{
+                    name: string;
+                    segment: string;
+                    headline: string;
+                    confidence?: number;
+                    [key: string]: unknown;
+                }>) ?? [];
+            if (personas.length === 0) return [];
+            return mapPersonaCardToSlidesExtended(personas, title ?? labels.personas, footer, labels);
         }
         case 'target_group_card': {
             const groups =
@@ -284,21 +268,8 @@ export function mapUiBlockToSlides(
                     personaCount?: number;
                     knowledgeEntryCount?: number;
                 }>) ?? [];
-            const bullets = groups.flatMap((group) => {
-                const lines = [`${group.name} (${group.segment})`];
-                if (group.description) lines.push(group.description);
-                lines.push(
-                    `Personas: ${group.personaCount ?? 0} · Wissenseinträge: ${group.knowledgeEntryCount ?? 0}`
-                );
-                return lines;
-            });
-            return [{
-                kind: 'bullets',
-                layout: 'CONTENT',
-                title: title ?? 'Zielgruppen',
-                bullets,
-                footer,
-            }];
+            if (groups.length === 0) return [];
+            return mapTargetGroupCardToSlides(groups, title ?? 'Zielgruppen', footer, labels);
         }
         case 'summary_card': {
             const links = (p.links as Array<{ label: string; href: string }>) ?? [];
@@ -319,6 +290,7 @@ export function mapUiBlockToSlides(
         case 'step_list': {
             const steps =
                 (p.steps as Array<{ label: string; status: StepStatus; detail?: string; progress?: number }>) ?? [];
+            if (steps.length === 0) return [];
             const bullets = steps.map((step) => {
                 const detail = [
                     step.detail,
@@ -337,41 +309,29 @@ export function mapUiBlockToSlides(
             }];
         }
         case 'corner_tab_section':
+            return mapCornerTabSectionToSlides(p, title, footer);
+        case 'collapsible': {
+            const bullets = splitParagraphToBullets(String(p.markdown ?? ''));
+            const collapsibleTitle = String(p.title ?? '').trim();
+            if (bullets.length === 0 && !collapsibleTitle) return [];
             return [{
                 kind: 'bullets',
                 layout: 'CONTENT',
-                title: title ?? String(p.tabLabel ?? 'Abschnitt'),
-                lead: String(p.tabLabel ?? '').trim() || undefined,
-                bullets: splitParagraphToBullets(String(p.markdown ?? '')),
+                title: collapsibleTitle || 'Abschnitt',
+                bullets,
                 footer,
             }];
-        case 'collapsible':
-            return [{
-                kind: 'bullets',
-                layout: 'CONTENT',
-                title: String(p.title ?? 'Abschnitt'),
-                bullets: splitParagraphToBullets(String(p.markdown ?? '')),
-                footer,
-            }];
+        }
         case 'chart': {
             const series = chartSeriesFromBlock(p);
-            const hasChartData = series.length > 0 && series.some((s) => s.values.some((v) => Number.isFinite(v)));
-            if (!hasChartData) {
-                return [chartTableFallback(block, footer, labels)];
-            }
-            const chartType = p.chartType === 'line' ? 'line' : 'bar';
-            const meta = [p.xAxisLabel, p.yAxisLabel].filter(Boolean).map(String);
-            return [{
-                kind: 'chart',
-                layout: 'CONTENT',
-                title: title ?? labels.chartFallback,
-                subtitle: meta.length ? meta.join(' · ') : undefined,
-                chartType,
-                series,
-                valAxisTitle: typeof p.yAxisLabel === 'string' ? p.yAxisLabel : undefined,
-                catAxisTitle: typeof p.xAxisLabel === 'string' ? p.xAxisLabel : undefined,
+            return mapChartBlockToSlides(
+                p,
+                title ?? labels.chartFallback,
                 footer,
-            }];
+                labels,
+                series,
+                () => chartTableFallback(block, footer, labels)
+            );
         }
         default:
             return [{
