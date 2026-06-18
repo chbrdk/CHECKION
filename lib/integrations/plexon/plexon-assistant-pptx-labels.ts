@@ -7,6 +7,16 @@ export type PlexonAssistantPptxLabels = {
     variant: string;
     unknownBlock: string;
     chartFallback: string;
+    moreMetrics: string;
+    metricColumn: string;
+    valueColumn: string;
+    hintColumn: string;
+    personaConfidence: string;
+    personaPillarFit: string;
+    personas: string;
+    knowledgeEntries: string;
+    continued: string;
+    chartPeak: string;
 };
 
 export function getPlexonAssistantPptxLabels(locale: 'de' | 'en'): PlexonAssistantPptxLabels {
@@ -20,6 +30,16 @@ export function getPlexonAssistantPptxLabels(locale: 'de' | 'en'): PlexonAssista
             variant: 'Assistant Report',
             unknownBlock: 'Block type not mapped — see web report.',
             chartFallback: 'Chart data',
+            moreMetrics: 'Additional KPIs',
+            metricColumn: 'Metric',
+            valueColumn: 'Value',
+            hintColumn: 'Note',
+            personaConfidence: 'Confidence',
+            personaPillarFit: 'Fit by pillar',
+            personas: 'Personas',
+            knowledgeEntries: 'Knowledge entries',
+            continued: 'cont.',
+            chartPeak: 'Peak',
         };
     }
     return {
@@ -31,5 +51,15 @@ export function getPlexonAssistantPptxLabels(locale: 'de' | 'en'): PlexonAssista
         variant: 'Assistant Report',
         unknownBlock: 'Block-Typ nicht abbildbar — siehe Web-Report.',
         chartFallback: 'Diagrammdaten',
+        moreMetrics: 'Weitere KPIs',
+        metricColumn: 'Kennzahl',
+        valueColumn: 'Wert',
+        hintColumn: 'Hinweis',
+        personaConfidence: 'Confidence',
+        personaPillarFit: 'Passung nach Säule',
+        personas: 'Personas',
+        knowledgeEntries: 'Wissenseinträge',
+        continued: 'Forts.',
+        chartPeak: 'Spitzenwert',
     };
 }

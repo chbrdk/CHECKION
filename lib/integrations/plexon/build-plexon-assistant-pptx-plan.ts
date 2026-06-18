@@ -4,6 +4,10 @@
 import type { PlexonAssistantReportPayload } from '@/lib/integrations/plexon/assistant-report-types';
 import { getPlexonAssistantPptxLabels } from '@/lib/integrations/plexon/plexon-assistant-pptx-labels';
 import { isPinnedAssistantBlock, mapUiBlockToSlides } from '@/lib/integrations/plexon/map-ui-block-to-slides';
+import {
+    compactPlexonReportBlocks,
+    pruneEmptyPptxSlides,
+} from '@/lib/integrations/plexon/prune-plexon-assistant-pptx-plan';
 import { normalizePptxPlan } from '@/lib/project-report/pptx/normalize-pptx-plan';
 import type { ProjectReportPptxPlan, ReportSlide } from '@/lib/project-report/pptx/types';
 
@@ -38,7 +42,7 @@ export function buildPlexonAssistantPptxPlan(payload: PlexonAssistantReportPaylo
         footer,
     });
 
-    const blocks = payload.uiLayout.blocks ?? [];
+    const blocks = compactPlexonReportBlocks(payload.uiLayout.blocks ?? [], payload.title);
     let pinnedSectionInserted = false;
 
     for (const block of blocks) {
@@ -54,10 +58,12 @@ export function buildPlexonAssistantPptxPlan(payload: PlexonAssistantReportPaylo
         slides.push(...mapUiBlockToSlides(block, footer, labels));
     }
 
-    const normalized = normalizePptxPlan(slides, {
-        locale,
-        maxSlides: PLEXON_ASSISTANT_PPTX_MAX_SLIDES,
-    });
+    const normalized = pruneEmptyPptxSlides(
+        normalizePptxPlan(slides, {
+            locale,
+            maxSlides: PLEXON_ASSISTANT_PPTX_MAX_SLIDES,
+        })
+    );
 
     return {
         locale,
