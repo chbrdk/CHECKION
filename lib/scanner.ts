@@ -14,7 +14,11 @@ import {
 import { createScanPhaseTimer } from '@/lib/scan-phase-timing';
 import fs from 'fs';
 import path from 'path';
-import { dismissCookieBanner, registerCookieBannerHideOnNewDocument } from './cookie-banner-dismiss';
+import {
+    createScanPage,
+    dismissVisualInterruptions,
+    wireVisualDismissForBrowser,
+} from './scan-visual-dismiss';
 import { AXE_RULE_WCAG_LEVEL } from './axe-wcag-levels';
 import { getRemediationUrl } from './remediation-urls';
 import { buildPageIndex } from './page-index';
@@ -160,11 +164,13 @@ async function launchPuppeteerWithRetry(): Promise<Awaited<ReturnType<typeof pup
     let last: unknown;
     for (let attempt = 0; attempt < PUPPETEER_LAUNCH_RETRIES; attempt++) {
         try {
-            return await puppeteer.launch({
+            const browser = await puppeteer.launch({
                 args: ['--no-sandbox', '--disable-setuid-sandbox'],
                 headless: true,
                 protocolTimeout: PUPPETEER_PROTOCOL_TIMEOUT_MS,
             });
+            wireVisualDismissForBrowser(browser);
+            return browser;
         } catch (e) {
             last = e;
             if (attempt < PUPPETEER_LAUNCH_RETRIES - 1) {
@@ -210,13 +216,11 @@ export async function runScan(
     const ownBrowser = !sharedBrowser;
     const browser = sharedBrowser ?? (await launchPuppeteerWithRetry());
 
-    // Create page and set viewport
-    const page = await browser.newPage();
+    // Create page (visual dismiss registered before any navigation)
+    const page = await createScanPage(browser);
     const viewport = VIEWPORTS[device];
     await page.setViewport(viewport);
     report('browser_ready');
-
-    await registerCookieBannerHideOnNewDocument(page);
 
     // Inject CLS, LCP, INP observers immediately
     await page.evaluateOnNewDocument(function () {
@@ -366,7 +370,7 @@ export async function runScan(
         // Navigate first so we can dismiss cookie banners before pa11y runs
         report('navigate');
         await page.goto(url, { waitUntil: 'networkidle2', timeout: SCAN_NAVIGATION_TIMEOUT_MS });
-        await dismissCookieBanner(page);
+        await dismissVisualInterruptions(page);
         phaseTiming.mark('navigation');
 
         report('wcag_checks');
@@ -404,8 +408,8 @@ export async function runScan(
         // Allow time for shifts to settle
         await new Promise((r) => setTimeout(r, 1000));
 
-        // Re-apply cookie banner hide before screenshot (in case of late-loading banners)
-        await dismissCookieBanner(page);
+        // Re-apply visual dismiss before screenshot (late CMPs, chat, newsletter modals)
+        await dismissVisualInterruptions(page);
         phaseTiming.mark('pa11y_scroll');
 
         // --- Extract Performance Metrics (incl. LCP/INP from observers) ---

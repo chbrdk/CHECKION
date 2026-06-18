@@ -1,0 +1,48 @@
+{
+  "url": "https://www.pronovabkk.de/",
+  "before": {
+    "usercentricsVisible": true,
+    "blockers": [],
+    "chats": [
+      {
+        "sel": "#intercom-container",
+        "present": false
+      },
+      {
+        "sel": "#drift-widget",
+        "present": false
+      },
+      {
+        "sel": "#hubspot-messages-iframe-container",
+        "present": false
+      },
+      {
+        "sel": ".crisp-client",
+        "present": false
+      }
+    ]
+  },
+  "after": {
+    "usercentricsVisible": false,
+    "blockers": [],
+    "chats": [
+      {
+        "sel": "#intercom-container",
+        "present": false
+      },
+      {
+        "sel": "#drift-widget",
+        "present": false
+      },
+      {
+        "sel": "#hubspot-messages-iframe-container",
+        "present": false
+      },
+      {
+        "sel": ".crisp-client",
+        "present": false
+      }
+    ]
+  },
+  "screenshots": "/Users/christoph.bordeck/Desktop/GITHUB/CHECKION/tmp/visual-dismiss-smoke"
+}

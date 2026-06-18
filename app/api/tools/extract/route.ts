@@ -3,6 +3,11 @@ import puppeteer from 'puppeteer';
 import { apiError, API_STATUS } from '@/lib/api-error-handler';
 import { getRequestUser } from '@/lib/auth-api-token';
 import { reportUsage } from '@/lib/usage-report';
+import {
+    createScanPage,
+    dismissVisualInterruptions,
+    wireVisualDismissForBrowser,
+} from '@/lib/scan-visual-dismiss';
 
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
@@ -19,7 +24,8 @@ export async function GET(req: NextRequest) {
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
             headless: true
         });
-        const page = await browser.newPage();
+        wireVisualDismissForBrowser(browser);
+        const page = await createScanPage(browser);
         await page.setViewport({ width: 1920, height: 1080 });
 
         // Block resources for speed
@@ -33,6 +39,7 @@ export async function GET(req: NextRequest) {
         });
 
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+        await dismissVisualInterruptions(page);
 
         // Wait for selector if specific one requested
         if (selector !== 'body') {

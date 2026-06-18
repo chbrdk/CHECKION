@@ -5,18 +5,24 @@ Damit Scans (Screenshot, axe/htmlcs) nicht durch Cookie-/Consent-Banner verfäls
 ## Wo es wirkt
 
 - **`lib/cookie-banner-dismiss.ts`**: CSS-Selektoren, Button-Texte (mehrsprachig), Skript für Browser-Kontext, Puppeteer-Helfer `dismissCookieBanner(page)`.
-- **`lib/scanner.ts`**:
-  1. Nach eigener Navigation (`page.goto`) wird `dismissCookieBanner(page)` aufgerufen, **bevor** pa11y (axe/htmlcs) läuft.
-  2. Vor dem Screenshot wird es erneut aufgerufen (für verzögert geladene Banner).
+- **`lib/scan-visual-dismiss.ts`**: Kombinierter Orchestrator — **immer aktiv**, kein Opt-out.
+- **`lib/scanner.ts`** (alle Single-/Domain-/Deep-Scans über `runScan`):
+  1. `wireVisualDismissForBrowser` beim Browser-Start
+  2. `createScanPage` vor Navigation (Early-CSS + MutationObserver)
+  3. Nach `page.goto`: `dismissVisualInterruptions`
+  4. Vor Screenshot: erneut `dismissVisualInterruptions`
+- **`app/api/tools/extract/route.ts`**: gleicher Dismiss-Pfad nach `goto`.
+
+Siehe auch: `knowledge/scan-overlay-dismiss.md` (Chat, Newsletter, Promo-Modals).
 
 ## Ablauf
 
-1. **Früh ausblenden (`registerCookieBannerHideOnNewDocument`)**: Hide-CSS wird per `evaluateOnNewDocument` injiziert, **bevor** die Seite lädt — wichtig für asynchrone CMPs wie Usercentrics.
+1. **Früh ausblenden (`registerVisualDismissOnNewDocument`)**: Kombiniertes Hide-CSS per `evaluateOnNewDocument`, **bevor** die Seite lädt — wichtig für asynchrone CMPs wie Usercentrics. **MutationObserver** blendet spät injizierte Hosts sofort aus.
 2. **CSS ausblenden**: Ein `<style>` mit vielen Selektoren wird injiziert (`display: none !important` etc.) für bekannte Container (OneTrust, Cookiebot, **Usercentrics**, Funding Choices, …) und generische Muster.
 3. **Shadow-DOM-Klick**: Für offene Shadow Roots (Usercentrics `#usercentrics-root`, Google `.fc-consent-root`) wird `shadowRoot.querySelector(...)` genutzt — normales CSS/Klicken reicht dort nicht.
 4. **Klick per Selektor**: Feste Selektoren für typische „Akzeptieren“-Buttons.
 5. **Klick per Text**: Mehrsprachige Button-Texte.
-6. **Retries**: `dismissCookieBanner` wiederholt Ausblenden/Klick (Standard 2×, 700 ms Abstand) für verzögert geladene Banner; vor Screenshot erneut.
+6. **Retries**: `dismissVisualInterruptions` wiederholt Ausblenden/Klick (Standard **3×**, **800 ms** Abstand) für verzögert geladene Banner; vor Screenshot erneut.
 
 ## Abgedeckte Anbieter / Integrationen (CSS + ggf. Klick)
 
@@ -48,4 +54,4 @@ DE, EN, FR, ES, IT, NL, PL, PT, SV, DA, NO, FI, CS, SK, HU, RO, BG, EL, RU, TR, 
 
 ## Hinweis
 
-Das Ausblenden/Klicken dient nur der technischen Scan-Qualität (weniger False Positives, sauberer Screenshot). Es wird kein echtes Consent gegeben; für manuelle oder rechtlich relevante Prüfungen die Seite ggf. ohne Dismiss laufen lassen (optionaler Schalter in Zukunft denkbar).
+Das Ausblenden/Klicken dient der technischen Scan-Qualität (weniger False Positives, sauberer Screenshot). Es wird kein echtes Consent gegeben; der Dismiss läuft bei **allen** Scans automatisch.

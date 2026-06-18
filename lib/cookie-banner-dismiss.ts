@@ -639,8 +639,8 @@ export async function dismissCookieBanner(
   },
   options?: { retries?: number; retryDelayMs?: number }
 ): Promise<void> {
-  const retries = Math.max(0, options?.retries ?? 2);
-  const retryDelayMs = options?.retryDelayMs ?? 700;
+  const retries = Math.max(0, options?.retries ?? 3);
+  const retryDelayMs = options?.retryDelayMs ?? 800;
 
   const sleep = async (ms: number) => {
     if (typeof page.waitForTimeout === 'function') {
