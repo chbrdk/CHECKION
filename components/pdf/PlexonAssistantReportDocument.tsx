@@ -17,6 +17,8 @@ import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPr
 import { PdfRecommendationRow } from '@/components/pdf/shared/PdfMetricInterpretation';
 import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
 import { PdfProjectReportCoverContent } from '@/components/pdf/shared/PdfCoverContent';
+import { buildEventQuickCheckReportPages } from '@/components/pdf/EventQuickCheckReportPdfDocument';
+import { parseEventQuickCheckReportModel } from '@/lib/integrations/plexon/event-quick-check-report-types';
 
 type StepStatus = 'pending' | 'running' | 'done' | 'error';
 
@@ -295,7 +297,18 @@ function renderBlock(block: PlexonUiBlock, index: number): React.ReactNode {
   }
 }
 
+
 export function buildPlexonAssistantReportPages(payload: PlexonAssistantReportPayload): React.ReactElement[] {
+  const blocks = payload.uiLayout.blocks ?? [];
+  const first = blocks[0];
+  if (first?.type === 'event_quick_check_report') {
+    const report = parseEventQuickCheckReportModel(first.props.report);
+    if (report) {
+      return buildEventQuickCheckReportPages(report);
+    }
+  }
+
+
   let pages: React.ReactElement[] = [];
 
   pages.push(
@@ -309,7 +322,6 @@ export function buildPlexonAssistantReportPages(payload: PlexonAssistantReportPa
     </PdfCoverPage>
   );
 
-  const blocks = payload.uiLayout.blocks ?? [];
   const chunkSize = 3;
   for (let i = 0; i < blocks.length; i += chunkSize) {
     const slice = blocks.slice(i, i + chunkSize);

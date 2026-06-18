@@ -19,3 +19,6 @@ export type PlexonAssistantReportPayload = {
   locale?: 'de' | 'en';
   uiLayout: PlexonUiLayout;
 };
+
+/** UiBlock type for Event Quick Check static report (must match PLEXON). */
+export const EVENT_QUICK_CHECK_REPORT_BLOCK_TYPE = 'event_quick_check_report' as const;

@@ -9,6 +9,8 @@ import {
     pruneEmptyPptxSlides,
 } from '@/lib/integrations/plexon/prune-plexon-assistant-pptx-plan';
 import { normalizePptxPlan } from '@/lib/project-report/pptx/normalize-pptx-plan';
+import { parseEventQuickCheckReportModel } from '@/lib/integrations/plexon/event-quick-check-report-types';
+import { mapEventQuickCheckReportToSlides } from '@/lib/integrations/plexon/map-event-quick-check-to-slides';
 import type { ProjectReportPptxPlan, ReportSlide } from '@/lib/project-report/pptx/types';
 
 export const PLEXON_ASSISTANT_PPTX_MAX_SLIDES = 24;
@@ -41,6 +43,29 @@ export function buildPlexonAssistantPptxPlan(payload: PlexonAssistantReportPaylo
         variant: labels.variant,
         footer,
     });
+
+
+    const rawBlocks = payload.uiLayout.blocks ?? [];
+    const first = rawBlocks[0];
+    if (first?.type === 'event_quick_check_report') {
+        const report = parseEventQuickCheckReportModel(first.props.report);
+        if (report) {
+            const footerEqc = buildFooter(payload.title, locale, labels);
+            slides.push(...mapEventQuickCheckReportToSlides(report, footerEqc, labels));
+            const normalizedEqc = pruneEmptyPptxSlides(
+                normalizePptxPlan(slides, {
+                    locale,
+                    maxSlides: PLEXON_ASSISTANT_PPTX_MAX_SLIDES,
+                })
+            );
+            return {
+                locale,
+                variant: 'plexon-assistant',
+                projectName: payload.title,
+                slides: normalizedEqc,
+            };
+        }
+    }
 
     const blocks = compactPlexonReportBlocks(payload.uiLayout.blocks ?? [], payload.title);
     let pinnedSectionInserted = false;
