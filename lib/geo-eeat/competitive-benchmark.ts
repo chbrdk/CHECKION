@@ -27,33 +27,19 @@ import {
     addOpenAIChatUsage,
     type LlmUsageTotals,
 } from '@/lib/llm/usage-totals';
+import {
+    buildCompetitiveSystemPrompt,
+    clipCompetitiveRawAnswer,
+    COMPETITIVE_RESPONSE_JSON_SCHEMA,
+    parseCompetitiveResponse,
+} from '@/lib/geo-eeat/competitive-response';
 
-/** JSON schema for Structured Outputs: citations list for position metrics. */
-const CITATIONS_RESPONSE_FORMAT = {
+const COMPETITIVE_RESPONSE_FORMAT = {
     type: 'json_schema' as const,
     json_schema: {
-        name: 'competitive_citations',
+        name: 'competitive_response',
         strict: true,
-        schema: {
-            type: 'object',
-            properties: {
-                citations: {
-                    type: 'array',
-                    items: {
-                        type: 'object',
-                        properties: {
-                            domain: { type: 'string', description: 'Normalized domain or company name (lowercase, no protocol)' },
-                            position: { type: 'integer', description: '1-based order of mention' },
-                        },
-                        required: ['domain', 'position'],
-                        additionalProperties: false,
-                    },
-                    description: 'Companies/domains recommended in answer order',
-                },
-            },
-            required: ['citations'],
-            additionalProperties: false,
-        },
+        schema: COMPETITIVE_RESPONSE_JSON_SCHEMA,
     },
 };
 
@@ -64,23 +50,6 @@ function extractHostname(input: string): string {
         return u.hostname.replace(/^www\./, '');
     } catch {
         return s.replace(/^www\./, '').split(/[/?#]/)[0] ?? s;
-    }
-}
-
-function parseStructuredCitations(content: string): CompetitiveCitation[] {
-    const raw = content?.trim();
-    if (!raw) return [];
-    try {
-        const parsed = JSON.parse(raw) as { citations?: Array<{ domain?: string; position?: number }> };
-        if (!Array.isArray(parsed.citations)) return [];
-        return parsed.citations
-            .filter((c) => c.domain != null && String(c.domain).trim() !== '')
-            .map((c, i) => ({
-                domain: extractHostname(String(c.domain)),
-                position: typeof c.position === 'number' && c.position >= 1 ? Math.floor(c.position) : i + 1,
-            }));
-    } catch {
-        return [];
     }
 }
 
@@ -136,11 +105,7 @@ export async function runCompetitiveBenchmark(
     const targetDomain = extractHostname(targetUrl);
     const allDomains = [targetDomain, ...competitors.map(extractHostname)].filter(Boolean);
     const runs: CompetitiveCitationRun[] = [];
-
-    const systemPrompt =
-        'You are a helpful search assistant. For the user\'s query, respond with a JSON object containing a single key "citations": an array of companies or domains you would recommend, in order of relevance. Each item must have "domain" (lowercase, no protocol, e.g. example.com or company name) and "position" (1-based index). When a company matches one of these known domains, use that domain: ' +
-        (allDomains.length > 0 ? allDomains.join(', ') : 'none') +
-        '. If no relevant companies or domains, return {"citations":[]}.';
+    const systemPrompt = buildCompetitiveSystemPrompt(allDomains);
 
     const runPromises = queries.map(async (query, q) => {
         try {
@@ -150,17 +115,18 @@ export async function runCompetitiveBenchmark(
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: query },
                 ],
-                response_format: CITATIONS_RESPONSE_FORMAT,
+                response_format: COMPETITIVE_RESPONSE_FORMAT,
             });
             if (usageTotals) addOpenAIChatUsage(usageTotals, res.usage);
             const rawContent = res.choices[0]?.message?.content ?? '';
-            const citations = parseStructuredCitations(rawContent);
+            const parsed = parseCompetitiveResponse(rawContent);
             return {
                 queryId: `q-${q}`,
                 query,
                 provider: 'openai' as const,
-                citations,
-                rawAnswerExcerpt: rawContent.slice(0, 500),
+                citations: parsed.citations,
+                answerText: parsed.answerText || undefined,
+                rawAnswerExcerpt: clipCompetitiveRawAnswer(rawContent),
             };
         } catch (e) {
             console.error('[CHECKION] Competitive benchmark query error:', e);
@@ -226,11 +192,9 @@ export async function runCompetitiveBenchmarkClaude(
     const targetDomain = extractHostname(targetUrl);
     const allDomains = [targetDomain, ...competitors.map(extractHostname)].filter(Boolean);
     const runs: CompetitiveCitationRun[] = [];
-
     const systemPrompt =
-        'You are a helpful search assistant. For the user\'s query, respond with a JSON object containing a single key "citations": an array of companies or domains you would recommend, in order of relevance. Each item must have "domain" (lowercase, no protocol, e.g. example.com or company name) and "position" (1-based index). When a company matches one of these known domains, use that domain: ' +
-        (allDomains.length > 0 ? allDomains.join(', ') : 'none') +
-        '. If no relevant companies or domains, return {"citations":[]}. Reply with only the JSON, no markdown or explanation.';
+        buildCompetitiveSystemPrompt(allDomains) +
+        ' Reply with only the JSON, no markdown or explanation.';
 
     const runPromises = queries.map(async (query, q) => {
         try {
@@ -244,13 +208,14 @@ export async function runCompetitiveBenchmarkClaude(
             const rawContent = extractJsonFromClaudeContent(
                 (res.content as Array<{ type: string; text?: string }>) ?? []
             );
-            const citations = parseStructuredCitations(rawContent);
+            const parsed = parseCompetitiveResponse(rawContent);
             return {
                 queryId: `q-${q}`,
                 query,
                 provider: 'anthropic' as const,
-                citations,
-                rawAnswerExcerpt: rawContent.slice(0, 500),
+                citations: parsed.citations,
+                answerText: parsed.answerText || undefined,
+                rawAnswerExcerpt: clipCompetitiveRawAnswer(rawContent),
             };
         } catch (e) {
             console.error('[CHECKION] Competitive benchmark Claude query error:', e);
@@ -316,11 +281,9 @@ export async function runCompetitiveBenchmarkGemini(
     const targetDomain = extractHostname(targetUrl);
     const allDomains = [targetDomain, ...competitors.map(extractHostname)].filter(Boolean);
     const runs: CompetitiveCitationRun[] = [];
-
     const systemPrompt =
-        'You are a helpful search assistant. For the user\'s query, respond with a JSON object containing a single key "citations": an array of companies or domains you would recommend, in order of relevance. Each item must have "domain" (lowercase, no protocol, e.g. example.com or company name) and "position" (1-based index). When a company matches one of these known domains, use that domain: ' +
-        (allDomains.length > 0 ? allDomains.join(', ') : 'none') +
-        '. If no relevant companies or domains, return {"citations":[]}. Reply with only the JSON, no markdown or explanation.';
+        buildCompetitiveSystemPrompt(allDomains) +
+        ' Reply with only the JSON, no markdown or explanation.';
 
     const runPromises = queries.map(async (query, q) => {
         try {
@@ -340,13 +303,14 @@ export async function runCompetitiveBenchmarkGemini(
                 addGeminiUsage(usageTotals, meta);
             }
             const rawContent = (response?.text ?? '').trim();
-            const citations = parseStructuredCitations(rawContent);
+            const parsed = parseCompetitiveResponse(rawContent);
             return {
                 queryId: `q-${q}`,
                 query,
                 provider: 'google' as const,
-                citations,
-                rawAnswerExcerpt: rawContent.slice(0, 500),
+                citations: parsed.citations,
+                answerText: parsed.answerText || undefined,
+                rawAnswerExcerpt: clipCompetitiveRawAnswer(rawContent),
             };
         } catch (e) {
             console.error('[CHECKION] Competitive benchmark Gemini query error:', e);
