@@ -1,4 +1,4 @@
-/** Deutsche UI-Texte für Event Quick Check Report (CHECKION PDF/PPTX). */
+/** Deutsche UI-Texte für Quick Check Report (CHECKION PDF/PPTX). */
 export const EQC_REPORT_COPY = {
   sectionKpi: 'Kernkennzahlen',
   sectionWorkflow: 'Ablauf',
@@ -29,7 +29,7 @@ export const EQC_REPORT_COPY = {
   recommendationPrefix: 'Empfehlung',
   goalPrefix: 'Ziel',
   painPrefix: 'Schmerzpunkt',
-  pdfCoverEyebrow: 'Event Quick Check',
+  pdfCoverEyebrow: 'Quick Check',
   pdfExecutiveLead: 'Kernkennzahlen und Ablauf-Übersicht.',
   pdfDomainSection: 'Domain & Top-Probleme',
   pdfGoalsAndPain: 'Ziele & Schmerzpunkte',
