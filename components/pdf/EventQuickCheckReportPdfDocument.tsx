@@ -40,7 +40,9 @@ function formatKpiValue(value: string | number, unit?: string): string {
   return `${value}${unit ? ` ${unit}` : ''}`;
 }
 
-function flattenCitationRows(report: EventQuickCheckReportModel): Array<[string, string, string, string]> {
+function flattenCitationRows(
+  report: EventQuickCheckReportModel
+): Array<Array<string | number | null>> {
   const byModel = report.geo.citationHighlightsByModel;
   if (byModel?.length) {
     return byModel.flatMap((slice) =>
@@ -279,6 +281,37 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
       )}
     </View>
   );
+
+  if (report.market) {
+    pages = pushContent(
+      pages,
+      'market',
+      <View>
+        <PdfSectionHeader title={EQC_REPORT_COPY.sectionMarket} />
+        <PdfSectionIntro text={EQC_REPORT_COPY.pdfMarketSection} />
+        {report.market.status !== 'complete' ? (
+          <View style={[pdfStyles.cardBox, { backgroundColor: 'rgba(243, 244, 246, 1)' }]}>
+            <Text style={pdfStyles.bodyText}>
+              {report.market.errorMessage ?? EQC_REPORT_COPY.marketIncomplete}
+            </Text>
+          </View>
+        ) : null}
+        {report.market.executiveSummary ? (
+          <Text style={pdfStyles.leadText}>{report.market.executiveSummary}</Text>
+        ) : null}
+        {report.market.keyFindings?.length
+          ? report.market.keyFindings.map((finding, i) => (
+              <Text key={`mf-${i}`} style={pdfStyles.bodyText}>
+                {i + 1}. {finding}
+              </Text>
+            ))
+          : null}
+        {report.market.implications ? (
+          <Text style={pdfStyles.bodyText}>{report.market.implications}</Text>
+        ) : null}
+      </View>
+    );
+  }
 
   const citationRows = flattenCitationRows(report);
   pages = pushContent(

@@ -47,6 +47,11 @@ export const EQC_REPORT_COPY = {
   pdfExecutiveLead: 'Kernkennzahlen und Ablauf-Übersicht.',
   pdfDomainSection: 'Domain & Top-Probleme',
   pdfGoalsAndPain: 'Ziele & Schmerzpunkte',
+  sectionMarket: 'Markt & Trends',
+  sectionMarketFindings: 'Markt-Erkenntnisse',
+  marketIncomplete: 'Markt-Research unvollständig',
+  marketPartial: 'Markt-Research läuft noch im Hintergrund',
+  pdfMarketSection: 'Markt-Überblick aus ECHON-Signalen und Waves.',
 } as const;
 
 export const EQC_SEVERITY_LABELS_DE: Record<string, string> = {

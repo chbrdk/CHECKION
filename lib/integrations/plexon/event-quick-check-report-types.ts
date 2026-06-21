@@ -58,6 +58,17 @@ export type EventQuickCheckReportModel = {
     painPoints: string[];
     interests: string[];
   };
+  market?: {
+    status: 'complete' | 'failed' | 'skipped' | 'partial';
+    errorMessage?: string;
+    query?: string;
+    threadId?: string;
+    runId?: string;
+    executiveSummary?: string;
+    keyFindings?: string[];
+    implications?: string;
+    echonHref?: string;
+  };
   geo: {
     status: string;
     errorMessage?: string;
