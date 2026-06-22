@@ -1,6 +1,19 @@
 /** Event Quick Check report model (mirrors PLEXON event-quick-check-report-types). */
 export const EVENT_QUICK_CHECK_REPORT_BLOCK_TYPE = 'event_quick_check_report' as const;
 
+export type EventQuickCheckReportGeoEeatDimension = {
+  key: string;
+  label: string;
+  score: number;
+  reasoning?: string;
+};
+
+export type EventQuickCheckReportCitationModelSlice = {
+  modelId: string;
+  modelLabel: string;
+  citations: Array<{ query: string; domain: string; position: number }>;
+};
+
 export type EventQuickCheckReportModel = {
   templateId: string;
   meta: {
@@ -45,13 +58,28 @@ export type EventQuickCheckReportModel = {
     painPoints: string[];
     interests: string[];
   };
+  market?: {
+    status: 'complete' | 'failed' | 'skipped' | 'partial';
+    errorMessage?: string;
+    query?: string;
+    threadId?: string;
+    runId?: string;
+    executiveSummary?: string;
+    keyFindings?: string[];
+    implications?: string;
+    echonHref?: string;
+  };
   geo: {
     status: string;
     errorMessage?: string;
     questions: string[];
     overallScore?: number | null;
+    geoFitnessScore?: number | null;
     competitors: Array<{ name: string; score?: number | null; shareOfVoice?: number | null }>;
-    recommendations: Array<{ title: string; description: string; priority?: number }>;
+    eeatDimensions?: EventQuickCheckReportGeoEeatDimension[];
+    recommendations?: Array<{ title: string; description: string; priority?: number }>;
+    citationHighlights?: Array<{ query: string; domain: string; position: number }>;
+    citationHighlightsByModel?: EventQuickCheckReportCitationModelSlice[];
   };
   insights?: {
     findings: Array<{ title: string; description: string; severity?: string }>;

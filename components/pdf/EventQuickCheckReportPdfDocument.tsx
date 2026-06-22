@@ -1,6 +1,5 @@
 import React from 'react';
 import { Text, View } from '@react-pdf/renderer';
-import type { Style } from '@react-pdf/types';
 import type { EventQuickCheckReportModel } from '@/lib/integrations/plexon/event-quick-check-report-types';
 import { EQC_REPORT_COPY, eqcSeverityLabel } from '@/lib/integrations/plexon/event-quick-check-report-copy';
 import { pdfCoverEyebrow } from '@/lib/paths/pdf-cover-copy';
@@ -16,8 +15,8 @@ import {
 } from '@/components/pdf/shared/PdfLayout';
 import { PdfSectionHeader, PdfSectionIntro } from '@/components/pdf/shared/PdfPrimitives';
 import { PdfRecommendationRow } from '@/components/pdf/shared/PdfMetricInterpretation';
-import { pdfStyles } from '@/components/pdf/shared/pdf-styles';
-import { PdfProjectReportCoverContent } from '@/components/pdf/shared/PdfCoverContent';
+import { pdfStyles, pdfColors } from '@/components/pdf/shared/pdf-styles';
+import { PdfScanReportCoverContent } from '@/components/pdf/shared/PdfCoverContent';
 import { Document } from '@react-pdf/renderer';
 
 function pushContent(pages: React.ReactElement[], key: string, children: React.ReactNode): React.ReactElement[] {
@@ -31,13 +30,40 @@ function toPdfDataTable(columns: string[], rows: Array<Array<string | number | n
     <PdfDataTable
       columns={columns.map((label, i) => ({ key: `col-${i}`, label, width }))}
       rows={rows.map((row) =>
-        Object.fromEntries(columns.map((_, ci) => [`col-${ci}`, String(row[ci] ?? '—')]))
+        Object.fromEntries(columns.map((_, ci) => [`col-${ci}`, String(row[ci] ?? '–')]))
       )}
     />
   );
 }
 
+function formatKpiValue(value: string | number, unit?: string): string {
+  return `${value}${unit ? ` ${unit}` : ''}`;
+}
+
+function flattenCitationRows(
+  report: EventQuickCheckReportModel
+): Array<Array<string | number | null>> {
+  const byModel = report.geo.citationHighlightsByModel;
+  if (byModel?.length) {
+    return byModel.flatMap((slice) =>
+      slice.citations.slice(0, 8).map((c) => [
+        slice.modelLabel,
+        c.query.length > 60 ? `${c.query.slice(0, 57)}…` : c.query,
+        c.domain,
+        String(c.position),
+      ])
+    );
+  }
+  return (report.geo.citationHighlights ?? []).slice(0, 12).map((c) => [
+    '—',
+    c.query.length > 60 ? `${c.query.slice(0, 57)}…` : c.query,
+    c.domain,
+    String(c.position),
+  ]);
+}
+
 function TraitBarsPdf({ traits }: { traits: NonNullable<EventQuickCheckReportModel['persona']>['traits'] }) {
+  if (!traits.length) return null;
   return (
     <View>
       {traits.map((t) => {
@@ -48,8 +74,15 @@ function TraitBarsPdf({ traits }: { traits: NonNullable<EventQuickCheckReportMod
               <Text style={pdfStyles.metaText}>{t.displayName}</Text>
               <Text style={pdfStyles.metaText}>{pct}%</Text>
             </View>
-            <View style={{ height: 6, backgroundColor: '#e5e7eb', borderRadius: 2 }}>
-              <View style={{ height: 6, width: `${Math.min(100, pct)}%`, backgroundColor: '#e91e63', borderRadius: 2 }} />
+            <View style={{ height: 6, backgroundColor: pdfColors.gray200, borderRadius: 2 }}>
+              <View
+                style={{
+                  height: 6,
+                  width: `${Math.min(100, pct)}%`,
+                  backgroundColor: '#e91e63',
+                  borderRadius: 2,
+                }}
+              />
             </View>
           </View>
         );
@@ -58,17 +91,100 @@ function TraitBarsPdf({ traits }: { traits: NonNullable<EventQuickCheckReportMod
   );
 }
 
+function EeatBarsPdf({ dimensions }: { dimensions: EventQuickCheckReportModel['geo']['eeatDimensions'] }) {
+  if (!dimensions?.length) return null;
+  return (
+    <View>
+      {dimensions.map((d) => {
+        const pct = Math.round(d.score <= 1 ? d.score * 100 : d.score);
+        return (
+          <View key={d.key} style={{ marginBottom: 6 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text style={pdfStyles.metaText}>{d.label}</Text>
+              <Text style={pdfStyles.metaText}>{pct}%</Text>
+            </View>
+            <View style={{ height: 6, backgroundColor: pdfColors.gray200, borderRadius: 2 }}>
+              <View
+                style={{
+                  height: 6,
+                  width: `${Math.min(100, pct)}%`,
+                  backgroundColor: pdfColors.brand,
+                  borderRadius: 2,
+                }}
+              />
+            </View>
+            {d.reasoning ? <Text style={pdfStyles.metaText}>{d.reasoning}</Text> : null}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function TintedListItem({ text, tint }: { text: string; tint: 'goal' | 'pain' }) {
+  return (
+    <View
+      style={{
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        borderRadius: 4,
+        marginBottom: 4,
+        backgroundColor: tint === 'goal' ? 'rgba(5, 150, 105, 0.08)' : 'rgba(217, 119, 6, 0.08)',
+      }}
+    >
+      <Text style={pdfStyles.bodyText}>{text}</Text>
+    </View>
+  );
+}
+
+function GeoStatusBanner({ report }: { report: EventQuickCheckReportModel }) {
+  const { geo } = report;
+  if (geo.status === 'complete') {
+    return (
+      <View style={[pdfStyles.cardBox, { backgroundColor: 'rgba(5, 150, 105, 0.08)' }]}>
+        <Text style={pdfStyles.subsectionTitle}>{EQC_REPORT_COPY.geoComplete}</Text>
+      </View>
+    );
+  }
+  if (geo.status === 'failed' || geo.status === 'partial') {
+    return (
+      <View style={[pdfStyles.cardBox, { backgroundColor: 'rgba(220, 38, 38, 0.08)' }]}>
+        <Text style={pdfStyles.subsectionTitle}>{EQC_REPORT_COPY.geoIncompleteTitle}</Text>
+        <Text style={pdfStyles.bodyText}>{geo.errorMessage ?? EQC_REPORT_COPY.unknownError}</Text>
+      </View>
+    );
+  }
+  if (geo.status === 'skipped') {
+    return (
+      <View style={pdfStyles.cardBox}>
+        <Text style={pdfStyles.bodyText}>{EQC_REPORT_COPY.geoIncomplete}</Text>
+      </View>
+    );
+  }
+  return null;
+}
+
 export function buildEventQuickCheckReportPages(report: EventQuickCheckReportModel): React.ReactElement[] {
   let pages: React.ReactElement[] = [];
+  const generatedLabel = new Date(report.meta.generatedAt).toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
 
   pages.push(
     <PdfCoverPage key="cover">
-      <PdfProjectReportCoverContent
+      <PdfScanReportCoverContent
         eyebrow={pdfCoverEyebrow(EQC_REPORT_COPY.pdfCoverEyebrow)}
         title={report.meta.title}
-        projectLine={`${report.meta.url} · ${report.meta.domain}`}
-        leadText={report.executive.summary ?? null}
+        urlLine={`${report.meta.url} · ${report.meta.domain}`}
+        metaLines={[generatedLabel, report.meta.playbookLabel]}
+        scoreItems={report.executive.kpiTiles.slice(0, 4).map((k) => ({
+          label: k.label,
+          value: formatKpiValue(k.value, k.unit),
+        }))}
       />
+      {report.executive.summary ? <Text style={pdfStyles.leadText}>{report.executive.summary}</Text> : null}
     </PdfCoverPage>
   );
 
@@ -78,23 +194,18 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
     <View>
       <PdfLeadText>{EQC_REPORT_COPY.pdfExecutiveLead}</PdfLeadText>
       {report.executive.fazit ? (
-        <View style={[pdfStyles.cardBox, { marginBottom: 8 }]}>
+        <View style={[pdfStyles.cardBox, { borderLeftWidth: 3, borderLeftColor: pdfColors.brand }]}>
           <Text style={pdfStyles.subsectionTitle}>{EQC_REPORT_COPY.fazit}</Text>
           <Text style={pdfStyles.bodyText}>{report.executive.fazit}</Text>
         </View>
       ) : null}
+      <PdfSectionHeader title={EQC_REPORT_COPY.sectionKpi} />
       <PdfStatGrid
         items={report.executive.kpiTiles.map((k) => ({
           label: k.label,
-          value: `${k.value}${k.unit ? ` ${k.unit}` : ''}`,
+          value: formatKpiValue(k.value, k.unit),
         }))}
       />
-      <PdfSectionHeader title={EQC_REPORT_COPY.sectionWorkflow} />
-      {report.workflow.steps.map((step) => (
-        <Text key={step.id} style={pdfStyles.metaText}>
-          {step.label}: {step.detail}
-        </Text>
-      ))}
     </View>
   );
 
@@ -102,7 +213,8 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
     pages,
     'domain',
     <View>
-      <PdfSectionHeader title={EQC_REPORT_COPY.pdfDomainSection} />
+      <PdfSectionHeader title={EQC_REPORT_COPY.sectionDomain} />
+      <PdfSectionIntro text={EQC_REPORT_COPY.pdfDomainSection} />
       {report.domain ? (
         <>
           <PdfStatGrid
@@ -110,12 +222,15 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
               { label: EQC_REPORT_COPY.colScore, value: `${report.domain.score}/100` },
               { label: EQC_REPORT_COPY.colPages, value: String(report.domain.totalPages) },
               { label: 'Fehler', value: String(report.domain.stats.errors) },
+              { label: 'Warnungen', value: String(report.domain.stats.warnings) },
             ]}
           />
-          {toPdfDataTable(
-            [EQC_REPORT_COPY.colIssue, EQC_REPORT_COPY.colCount],
-            report.domain.topIssues.map((i) => [i.title, i.count])
-          )}
+          {report.domain.topIssues.length > 0
+            ? toPdfDataTable(
+                [EQC_REPORT_COPY.colIssue, EQC_REPORT_COPY.colCount],
+                report.domain.topIssues.map((i) => [i.title, i.count])
+              )
+            : null}
         </>
       ) : (
         <PdfSectionIntro text={EQC_REPORT_COPY.noDomainScan} />
@@ -133,19 +248,33 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
           <View style={[pdfStyles.cardBox, { marginBottom: 8 }]}>
             <Text style={pdfStyles.subsectionTitle}>{report.persona.name}</Text>
             <Text style={pdfStyles.metaText}>
-              {report.persona.segment} · {Math.round(report.persona.confidence * 100)} %
+              {report.persona.segment} · {Math.round(report.persona.confidence * 100)} % Confidence
             </Text>
             <Text style={pdfStyles.bodyText}>{report.persona.headline}</Text>
+            {report.persona.bio ? <Text style={pdfStyles.bodyText}>{report.persona.bio}</Text> : null}
           </View>
-          <PdfSectionHeader title={EQC_REPORT_COPY.sectionPersonaTraits} />
-          <TraitBarsPdf traits={report.persona.traits} />
-          <PdfSectionHeader title={EQC_REPORT_COPY.pdfGoalsAndPain} />
-          {report.persona.goals.map((g, i) => (
-            <Text key={`g-${i}`} style={pdfStyles.bodyText}>• {g}</Text>
-          ))}
-          {report.persona.painPoints.map((p, i) => (
-            <Text key={`p-${i}`} style={pdfStyles.bodyText}>• {p}</Text>
-          ))}
+          {report.persona.traits.length > 0 ? (
+            <>
+              <PdfSectionHeader title={EQC_REPORT_COPY.sectionPersonaTraits} />
+              <TraitBarsPdf traits={report.persona.traits} />
+            </>
+          ) : null}
+          {report.persona.goals.length > 0 ? (
+            <>
+              <PdfSectionHeader title={EQC_REPORT_COPY.sectionGoals} />
+              {report.persona.goals.map((g, i) => (
+                <TintedListItem key={`g-${i}`} text={g} tint="goal" />
+              ))}
+            </>
+          ) : null}
+          {report.persona.painPoints.length > 0 ? (
+            <>
+              <PdfSectionHeader title={EQC_REPORT_COPY.sectionPainPoints} />
+              {report.persona.painPoints.map((p, i) => (
+                <TintedListItem key={`p-${i}`} text={p} tint="pain" />
+              ))}
+            </>
+          ) : null}
         </>
       ) : (
         <PdfSectionIntro text={EQC_REPORT_COPY.noPersona} />
@@ -153,29 +282,86 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
     </View>
   );
 
+  if (report.market) {
+    pages = pushContent(
+      pages,
+      'market',
+      <View>
+        <PdfSectionHeader title={EQC_REPORT_COPY.sectionMarket} />
+        <PdfSectionIntro text={EQC_REPORT_COPY.pdfMarketSection} />
+        {report.market.status !== 'complete' ? (
+          <View style={[pdfStyles.cardBox, { backgroundColor: 'rgba(243, 244, 246, 1)' }]}>
+            <Text style={pdfStyles.bodyText}>
+              {report.market.errorMessage ?? EQC_REPORT_COPY.marketIncomplete}
+            </Text>
+          </View>
+        ) : null}
+        {report.market.executiveSummary ? (
+          <Text style={pdfStyles.leadText}>{report.market.executiveSummary}</Text>
+        ) : null}
+        {report.market.keyFindings?.length
+          ? report.market.keyFindings.map((finding, i) => (
+              <Text key={`mf-${i}`} style={pdfStyles.bodyText}>
+                {i + 1}. {finding}
+              </Text>
+            ))
+          : null}
+        {report.market.implications ? (
+          <Text style={pdfStyles.bodyText}>{report.market.implications}</Text>
+        ) : null}
+      </View>
+    );
+  }
+
+  const citationRows = flattenCitationRows(report);
   pages = pushContent(
     pages,
     'geo',
     <View>
       <PdfSectionHeader title={EQC_REPORT_COPY.sectionGeoCheck} />
-      {(report.geo.status === 'failed' || report.geo.status === 'partial') && (
-        <View style={[pdfStyles.cardBox, { marginBottom: 8 }]}>
-          <Text style={pdfStyles.subsectionTitle}>{EQC_REPORT_COPY.geoIncompleteTitle}</Text>
-          <Text style={pdfStyles.bodyText}>{report.geo.errorMessage ?? EQC_REPORT_COPY.unknownError}</Text>
-        </View>
+      <GeoStatusBanner report={report} />
+      {(report.geo.geoFitnessScore != null || report.geo.overallScore != null) && (
+        <>
+          <PdfSectionHeader title={EQC_REPORT_COPY.sectionGeoMetrics} />
+          <PdfStatGrid
+            items={[
+              ...(report.geo.overallScore != null
+                ? [{ label: EQC_REPORT_COPY.kpiShareOfVoice, value: `${Math.round(report.geo.overallScore)}%` }]
+                : []),
+              ...(report.geo.geoFitnessScore != null
+                ? [{ label: EQC_REPORT_COPY.kpiGeoFitness, value: `${Math.round(report.geo.geoFitnessScore)}%` }]
+                : []),
+            ]}
+          />
+        </>
       )}
-      {report.geo.questions.map((q, i) => (
-        <Text key={i} style={pdfStyles.bodyText}>{i + 1}. {q}</Text>
-      ))}
-      {report.geo.competitors.length > 0
+      {report.geo.eeatDimensions?.length ? (
+        <>
+          <PdfSectionHeader title={EQC_REPORT_COPY.sectionGeoEeat} />
+          <EeatBarsPdf dimensions={report.geo.eeatDimensions} />
+        </>
+      ) : null}
+      {report.geo.questions.length > 0
+        ? report.geo.questions.map((q, i) => (
+            <Text key={i} style={pdfStyles.bodyText}>
+              {i + 1}. {q}
+            </Text>
+          ))
+        : null}
+      {citationRows.length > 0
         ? toPdfDataTable(
-            [EQC_REPORT_COPY.colName, EQC_REPORT_COPY.colScore, EQC_REPORT_COPY.colShareOfVoice],
-            report.geo.competitors.map((c) => [
-              c.name,
-              c.score ?? '—',
-              c.shareOfVoice != null ? `${Math.round(c.shareOfVoice * 100)}%` : '—',
-            ])
+            ['Modell', EQC_REPORT_COPY.colQuery, EQC_REPORT_COPY.colDomain, EQC_REPORT_COPY.colPosition],
+            citationRows
           )
+        : null}
+      {report.geo.recommendations?.length
+        ? report.geo.recommendations.map((r, i) => (
+            <PdfRecommendationRow
+              key={`geo-rec-${i}`}
+              title={[r.priority != null ? `[P${r.priority}]` : null, r.title].filter(Boolean).join(' ')}
+              description={r.description}
+            />
+          ))
         : null}
     </View>
   );
@@ -187,7 +373,7 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
       <PdfSectionHeader title={EQC_REPORT_COPY.sectionInsights} />
       {report.insights?.findings.map((f, i) => (
         <PdfRecommendationRow
-          key={i}
+          key={`f-${i}`}
           title={f.severity ? `[${eqcSeverityLabel(f.severity)}] ${f.title}` : f.title}
           description={f.description}
         />
@@ -199,9 +385,28 @@ export function buildEventQuickCheckReportPages(report: EventQuickCheckReportMod
           description={r.description}
         />
       )) ?? null}
-      {report.appendix.scanId ? (
+    </View>
+  );
+
+  pages = pushContent(
+    pages,
+    'appendix',
+    <View>
+      <PdfSectionHeader title={EQC_REPORT_COPY.sectionAppendix} />
+      {report.appendix.stepTable.rows.length > 0
+        ? toPdfDataTable(
+            report.appendix.stepTable.columns,
+            report.appendix.stepTable.rows.map((row) => row as Array<string | number | null>)
+          )
+        : null}
+      {report.appendix.links?.map((link, i) => (
+        <Text key={i} style={pdfStyles.metaText}>
+          {link.label}: {link.href}
+        </Text>
+      )) ?? null}
+      {report.appendix.scanId || report.appendix.geoJobId ? (
         <Text style={[pdfStyles.metaText, { marginTop: 8 }]}>
-          Scan-ID: {report.appendix.scanId}
+          {report.appendix.scanId ? `Scan-ID: ${report.appendix.scanId}` : ''}
           {report.appendix.geoJobId ? ` · GEO-Job: ${report.appendix.geoJobId}` : ''}
         </Text>
       ) : null}

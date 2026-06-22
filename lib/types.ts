@@ -954,6 +954,8 @@ export interface CompetitiveCitationRun {
     query: string;
     provider: string;
     citations: CompetitiveCitation[];
+    /** Natural language LLM answer (prose). */
+    answerText?: string;
     rawAnswerExcerpt?: string;
 }
 

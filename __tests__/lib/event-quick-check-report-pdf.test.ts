@@ -4,10 +4,10 @@ import { buildEventQuickCheckReportPages } from '@/components/pdf/EventQuickChec
 import { eventQuickCheckReportModelFixture } from '@/lib/integrations/plexon/fixtures/event-quick-check-report.fixture';
 
 describe('EventQuickCheckReportPdfDocument', () => {
-  it('builds 6 pages (cover + 5 sections)', () => {
+  it('builds branded pages for cover and all report chapters', () => {
     const report = eventQuickCheckReportModelFixture();
     const pages = buildEventQuickCheckReportPages(report);
-    expect(pages.length).toBeGreaterThanOrEqual(5);
-    expect(pages.length).toBeLessThanOrEqual(7);
+    expect(pages.length).toBeGreaterThanOrEqual(7);
+    expect(pages[0]?.key).toBe('cover');
   });
 });

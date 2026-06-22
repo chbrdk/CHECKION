@@ -639,6 +639,11 @@ export const DOMAIN_ISSUES_TABLE_PAGE_SIZE = 50;
 export const SEO_TABLE_PAGE_SIZE = 15;
 /** GEO analysis pages table: rows per page (pagination). */
 export const GEO_TABLE_PAGE_SIZE = 15;
+
+/** Max stored prose answer per competitive LLM query run. */
+export const GEO_COMPETITIVE_ANSWER_TEXT_MAX = 4000;
+/** Max stored raw JSON / provider payload per competitive LLM query run. */
+export const GEO_COMPETITIVE_RAW_ANSWER_MAX = 8000;
 /** SEO keywords card: show this many chips initially; "load more" shows rest. */
 export const SEO_KEYWORDS_INITIAL_SHOWN = 15;
 /** SEO page: URL lists (missing canonical, noindex) show this many initially; "load more" expands. */

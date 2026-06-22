@@ -4,12 +4,12 @@ export function eventQuickCheckReportModelFixture(): EventQuickCheckReportModel 
   return {
     templateId: 'event_quick_check',
     meta: {
-      title: 'Event Quick Check: bvik.org',
+      title: 'Quick Check: bvik.org',
       url: 'https://bvik.org',
       domain: 'bvik.org',
       projectName: 'bvik.org',
       generatedAt: '2026-06-15T12:00:00.000Z',
-      playbookLabel: 'Event Quick Check',
+      playbookLabel: 'Quick Check',
     },
     executive: {
       summary: 'Domain score 57 with accessibility issues.',
