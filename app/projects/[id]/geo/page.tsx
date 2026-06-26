@@ -99,7 +99,16 @@ export default function ProjectGeoPage() {
 
                 const errors: string[] = [];
                 if (projectRes.status === 'fulfilled') {
-                    if (projectRes.value?.data) setProject(projectRes.value.data);
+                    const projectPayload = projectRes.value as {
+                        data?: {
+                            id: string;
+                            name: string;
+                            domain: string | null;
+                            competitors?: string[];
+                            geoQueries?: string[];
+                        };
+                    };
+                    if (projectPayload?.data) setProject(projectPayload.data);
                     else {
                         setProject(null);
                         errors.push('project');
