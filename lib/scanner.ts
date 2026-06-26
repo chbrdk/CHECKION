@@ -12,6 +12,7 @@ import {
     SCAN_SCRIPT_RESOURCE_COUNT_CAP,
 } from '@/lib/constants';
 import { createScanPhaseTimer } from '@/lib/scan-phase-timing';
+import { gotoForScan } from '@/lib/scan-goto';
 import fs from 'fs';
 import path from 'path';
 import {
@@ -370,7 +371,7 @@ export async function runScan(
          */
         // Navigate first so we can dismiss cookie banners before pa11y runs
         report('navigate');
-        await page.goto(url, { waitUntil: 'networkidle2', timeout: SCAN_NAVIGATION_TIMEOUT_MS });
+        await gotoForScan(page, url);
         await dismissVisualInterruptions(page);
         phaseTiming.mark('navigation');
 

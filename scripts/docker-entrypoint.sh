@@ -4,9 +4,11 @@ set -e
 # Apply DB schema (create/update tables) before starting the app.
 if [ -n "$DATABASE_URL" ]; then
   # One-time: drop user_id FKs so PLEXON user IDs work without a row in CHECKION users table.
-  if [ -f "./lib/db/migrations/0004_drop_user_id_fk_for_plexon.sql" ]; then
+  if [ -f "./lib/db/migrations/0004_drop_user_id_fk_for_plexon.sql" ] && [ -f "./scripts/run-migration-0004.mjs" ]; then
     echo "[CHECKION] Running migration 0004 (drop user_id FKs for PLEXON)..."
     node ./scripts/run-migration-0004.mjs || true
+  elif [ -f "./lib/db/migrations/0004_drop_user_id_fk_for_plexon.sql" ]; then
+    echo "[CHECKION] Migration 0004 SQL present but scripts/run-migration-0004.mjs missing — skipping (rebuild image)."
   fi
   echo "[CHECKION] Running drizzle-kit push..."
   if npx drizzle-kit push; then

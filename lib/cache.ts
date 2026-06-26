@@ -209,27 +209,42 @@ export async function getCachedSavedJourneysCount(userId: string, domainScanId?:
 /** Profile "max" = stale-while-revalidate (Next.js 16). */
 const REVALIDATE_PROFILE = 'max' as const;
 
+/** True when `revalidateTag` runs outside a Next.js request/static-generation context (e.g. Docker entrypoint scripts). */
+export function isOutsideNextCacheContextError(error: unknown): boolean {
+    const msg = error instanceof Error ? error.message : String(error);
+    return msg.includes('static generation store missing');
+}
+
+function safeRevalidateTag(tag: string): void {
+    try {
+        revalidateTag(tag, REVALIDATE_PROFILE);
+    } catch (e) {
+        if (isOutsideNextCacheContextError(e)) return;
+        throw e;
+    }
+}
+
 export function invalidateScan(id: string): void {
-    revalidateTag(`scan-${id}`, REVALIDATE_PROFILE);
+    safeRevalidateTag(`scan-${id}`);
 }
 
 export function invalidateDomainScan(id: string): void {
-    revalidateTag(`domain-${id}`, REVALIDATE_PROFILE);
+    safeRevalidateTag(`domain-${id}`);
 }
 
 export function invalidateShare(token: string): void {
-    revalidateTag(`share-${token}`, REVALIDATE_PROFILE);
+    safeRevalidateTag(`share-${token}`);
 }
 
 export function invalidateScansList(userId: string): void {
-    revalidateTag(`scans-list-${userId}`, REVALIDATE_PROFILE);
+    safeRevalidateTag(`scans-list-${userId}`);
 }
 
 export function invalidateDomainList(userId: string): void {
-    revalidateTag(`domain-list-${userId}`, REVALIDATE_PROFILE);
+    safeRevalidateTag(`domain-list-${userId}`);
 }
 
 export function invalidateJourneys(userId: string, domainScanId?: string): void {
-    revalidateTag(`journeys-${userId}`, REVALIDATE_PROFILE);
-    if (domainScanId) revalidateTag(`journeys-${userId}-${domainScanId}`, REVALIDATE_PROFILE);
+    safeRevalidateTag(`journeys-${userId}`);
+    if (domainScanId) safeRevalidateTag(`journeys-${userId}-${domainScanId}`);
 }
