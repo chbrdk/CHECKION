@@ -131,7 +131,7 @@ export const FOCUS_NOT_OBSCURED_VERIFY_FN = function (selectors: string[], dismi
   }
 
   function isFocusable(el: HTMLElement) {
-    if (el.disabled) return false;
+    if ('disabled' in el && Boolean((el as HTMLButtonElement).disabled)) return false;
     const tabIndex = el.tabIndex;
     if (tabIndex < 0) {
       const tag = el.tagName.toLowerCase();
