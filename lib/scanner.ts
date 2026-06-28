@@ -24,6 +24,8 @@ import { AXE_RULE_WCAG_LEVEL } from './axe-wcag-levels';
 import { getRemediationUrl } from './remediation-urls';
 import { buildPageIndex } from './page-index';
 import { deduplicateIssues } from './issue-dedupe';
+import { filterScanFalsePositives } from './scan-issue-false-positive-filter';
+import { scrollPageForScanLayout } from './scan-scroll-settle';
 import { computeGeoDimensionsScore } from './geo-dimensions-score';
 import { writeScreenshot } from './screenshot-storage';
 import { detectSkipLinkOnPage } from './skip-link-detect';
@@ -375,6 +377,12 @@ export async function runScan(
         await dismissVisualInterruptions(page);
         phaseTiming.mark('navigation');
 
+        // Scroll first so lazy content loads; dismiss again before WCAG (reduces overlay false positives).
+        report('scroll_and_layout');
+        await scrollPageForScanLayout(page);
+        await dismissVisualInterruptions(page);
+        phaseTiming.mark('scroll_and_layout');
+
         report('wcag_checks');
         const results = await pa11y(url, {
             browser,
@@ -386,33 +394,7 @@ export async function runScan(
             wait: 1_000,
             ignoreUrl: true, // Page already loaded and banner dismissed above
         } as any);
-
-        // --- Aggressive Scroll for CLS ---
-        report('scroll_and_layout');
-        // Scroll down and up to trigger lazy loads and layout shifts
-        await page.evaluate(async function () {
-            const distance = 100;
-            const delay = 50;
-            const totalHeight = document.body.scrollHeight;
-            let currentScroll = 0;
-
-            // Scroll Down
-            while ((window.innerHeight + currentScroll) < totalHeight) {
-                window.scrollBy(0, distance);
-                currentScroll += distance;
-                await new Promise((resolve) => setTimeout(resolve, delay));
-                // Cap to avoid infinite loops
-                if (currentScroll > 5000) break;
-            }
-            // Scroll Up Trigger
-            window.scrollTo(0, 0);
-        });
-        // Allow time for shifts to settle
-        await new Promise((r) => setTimeout(r, 1000));
-
-        // Re-apply visual dismiss before screenshot (late CMPs, chat, newsletter modals)
-        await dismissVisualInterruptions(page);
-        phaseTiming.mark('pa11y_scroll');
+        phaseTiming.mark('wcag_checks');
 
         // --- Extract Performance Metrics (incl. LCP/INP from observers) ---
         const perfData = await page.evaluate(function () {
@@ -521,7 +503,17 @@ export async function runScan(
 
         report('issue_details');
         const rawIssues: Issue[] = await Promise.all(issuePromises);
-        const issues = deduplicateIssues(rawIssues);
+        const filtered = await filterScanFalsePositives(page, rawIssues);
+        if (filtered.removedCount > 0) {
+            const { breakdown } = filtered;
+            scanDebugLog(
+                `Filtered ${filtered.removedCount} scan false positive(s) ` +
+                    `(non-visible: ${breakdown.nonVisible}, contrast: ${breakdown.contrast}, ` +
+                    `link-in-text-block: ${breakdown.linkInTextBlock}, target-size: ${breakdown.targetSize}, ` +
+                    `focus-not-obscured: ${breakdown.focusNotObscured})`
+            );
+        }
+        const issues = deduplicateIssues(filtered.issues);
         phaseTiming.mark('issues');
 
         // 3. Capture Passed Audits using axe-core directly
