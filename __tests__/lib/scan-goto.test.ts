@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shouldFallbackScanNavigation } from '@/lib/scan-goto';
+import { shouldFallbackScanNavigation, ScanNavigationError } from '@/lib/scan-goto';
 
 describe('scan-goto', () => {
     it('falls back on navigation timeout errors', () => {
@@ -11,5 +11,11 @@ describe('scan-goto', () => {
 
     it('does not fall back on other navigation errors', () => {
         expect(shouldFallbackScanNavigation(new Error('net::ERR_CONNECTION_REFUSED'))).toBe(false);
+    });
+
+    it('ScanNavigationError carries reason and status', () => {
+        const err = new ScanNavigationError('HTTP 429', 'rate_limit', 'https://example.com', 429);
+        expect(err.reason).toBe('rate_limit');
+        expect(err.status).toBe(429);
     });
 });

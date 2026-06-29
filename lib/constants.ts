@@ -767,6 +767,38 @@ export const SCAN_NAVIGATION_TIMEOUT_MS = (() => {
     return 60_000;
 })();
 
+/** Min ms between Puppeteer navigations to the same host (WAF / rate-limit politeness). Env: `SCAN_HOST_MIN_DELAY_MS`. */
+export const SCAN_HOST_MIN_DELAY_MS = (() => {
+    const raw = typeof process !== 'undefined' ? process.env?.SCAN_HOST_MIN_DELAY_MS : undefined;
+    const n = raw != null && raw !== '' ? Number(raw) : NaN;
+    if (Number.isFinite(n) && n >= 0 && n <= 60_000) return Math.floor(n);
+    return 2_000;
+})();
+
+/** Retries for `gotoForScan` on HTTP 429/502/503 and bot challenges. Env: `SCAN_NAVIGATION_MAX_RETRIES`. */
+export const SCAN_NAVIGATION_MAX_RETRIES = (() => {
+    const raw = typeof process !== 'undefined' ? process.env?.SCAN_NAVIGATION_MAX_RETRIES : undefined;
+    const n = raw != null && raw !== '' ? Number(raw) : NaN;
+    if (Number.isFinite(n) && n >= 1 && n <= 8) return Math.floor(n);
+    return 4;
+})();
+
+/** Base backoff (ms) when Retry-After header is absent. Env: `SCAN_NAVIGATION_RETRY_BASE_MS`. */
+export const SCAN_NAVIGATION_RETRY_BASE_MS = (() => {
+    const raw = typeof process !== 'undefined' ? process.env?.SCAN_NAVIGATION_RETRY_BASE_MS : undefined;
+    const n = raw != null && raw !== '' ? Number(raw) : NaN;
+    if (Number.isFinite(n) && n >= 500 && n <= 120_000) return Math.floor(n);
+    return 5_000;
+})();
+
+/** Max wait for Cloudflare / WAF challenge auto-resolution after navigation. Env: `SCAN_BOT_CHALLENGE_WAIT_MS`. */
+export const SCAN_BOT_CHALLENGE_WAIT_MS = (() => {
+    const raw = typeof process !== 'undefined' ? process.env?.SCAN_BOT_CHALLENGE_WAIT_MS : undefined;
+    const n = raw != null && raw !== '' ? Number(raw) : NaN;
+    if (Number.isFinite(n) && n >= 5_000 && n <= 120_000) return Math.floor(n);
+    return 45_000;
+})();
+
 /** Max distinct third-party script hostnames collected early (consentSignals). Env: `SCAN_EARLY_THIRD_PARTY_SCRIPT_HOST_CAP`. */
 export const SCAN_EARLY_THIRD_PARTY_SCRIPT_HOST_CAP = (() => {
     const raw = typeof process !== 'undefined' ? process.env?.SCAN_EARLY_THIRD_PARTY_SCRIPT_HOST_CAP : undefined;

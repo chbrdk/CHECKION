@@ -25,6 +25,7 @@ import { getRemediationUrl } from './remediation-urls';
 import { buildPageIndex } from './page-index';
 import { deduplicateIssues } from './issue-dedupe';
 import { filterScanFalsePositives } from './scan-issue-false-positive-filter';
+import { configureScanBrowserPage, SCAN_PUPPETEER_LAUNCH_ARGS } from './scan-browser-profile';
 import { scrollPageForScanLayout } from './scan-scroll-settle';
 import { computeGeoDimensionsScore } from './geo-dimensions-score';
 import { writeScreenshot } from './screenshot-storage';
@@ -169,7 +170,7 @@ async function launchPuppeteerWithRetry(): Promise<Awaited<ReturnType<typeof pup
     for (let attempt = 0; attempt < PUPPETEER_LAUNCH_RETRIES; attempt++) {
         try {
             const browser = await puppeteer.launch({
-                args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                args: SCAN_PUPPETEER_LAUNCH_ARGS,
                 headless: true,
                 protocolTimeout: PUPPETEER_PROTOCOL_TIMEOUT_MS,
             });
@@ -224,6 +225,7 @@ export async function runScan(
     const page = await createScanPage(browser);
     const viewport = VIEWPORTS[device];
     await page.setViewport(viewport);
+    await configureScanBrowserPage(page, device);
     report('browser_ready');
 
     // Inject CLS, LCP, INP observers immediately
@@ -356,13 +358,6 @@ export async function runScan(
             // Ignore
         }
     });
-
-    // Set User Agent based on device (simplified)
-    if (device === 'mobile') {
-        await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1');
-    } else if (device === 'tablet') {
-        await page.setUserAgent('Mozilla/5.0 (iPad; CPU OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1');
-    }
 
     phaseTiming.mark('browser_setup');
 
