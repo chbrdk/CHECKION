@@ -19,7 +19,7 @@ const MAX_DEPTH = 3; // Home + 3 levels; max pages will likely hit first
 /** How many pages to scan in parallel during domain scan (env: DOMAIN_SCAN_CONCURRENCY). */
 const DOMAIN_SCAN_CONCURRENCY = Math.min(
     12,
-    Math.max(1, parseInt(process.env.DOMAIN_SCAN_CONCURRENCY || '12', 10) || 12),
+    Math.max(1, parseInt(process.env.DOMAIN_SCAN_CONCURRENCY || '3', 10) || 3),
 );
 
 /** Delay (ms) between starting new page scans to avoid rate limiting (env: DOMAIN_SCAN_DELAY_MS). */
@@ -355,7 +355,7 @@ export async function* runDomainScan(
             yield {
                 type: 'error',
                 url: raceResult.slot.url,
-                message: `Scan failed: ${raceResult.error?.message ?? 'Unknown error'}`,
+                message: raceResult.error?.message ?? 'Scan failed: Unknown error',
             };
         }
         yield {

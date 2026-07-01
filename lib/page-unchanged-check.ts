@@ -1,6 +1,4 @@
-/**
- * Cheap HTTP HEAD check before Puppeteer to skip unchanged pages on deep re-scan.
- */
+import { getScanFetchHeaders } from '@/lib/scan-browser-profile';
 
 export type PageUnchangedStatus = 'unchanged' | 'unknown' | 'changed';
 
@@ -22,7 +20,12 @@ export async function checkPageUnchangedByHeaders(
     try {
         const ac = new AbortController();
         const t = setTimeout(() => ac.abort(), HEAD_TIMEOUT_MS);
-        res = await fetch(url, { method: 'HEAD', redirect: 'follow', signal: ac.signal });
+        res = await fetch(url, {
+            method: 'HEAD',
+            redirect: 'follow',
+            signal: ac.signal,
+            headers: getScanFetchHeaders(),
+        });
         clearTimeout(t);
     } catch {
         return 'unknown';

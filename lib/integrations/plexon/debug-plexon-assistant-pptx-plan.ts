@@ -58,8 +58,6 @@ function summarizeSlideContent(slide: ReportSlide): string {
             return `${slide.chartType}, ${slide.series.length} series, ${slide.bullets?.length ?? 0} context bullets`;
         case 'closing':
             return `${slide.bullets.length} bullets`;
-        default:
-            return slide.kind;
     }
 }
 

@@ -112,6 +112,7 @@
     "startJourney": "Start journey",
     "startGeoEeat": "Start GEO/E-E-A-T",
     "startNewGeoEeat": "Start new GEO analysis",
+    "geoLoadPartialError": "Some GEO data could not be loaded. Reload the page or check API responses in the Network tab.",
     "domainRequiredForGeo": "Please set the project URL (domain) in company info first.",
     "domainRequiredForRankings": "Please set the company URL on the project first (settings / company info).",
     "rankTrackingDomainHint": "Tracked domain from project: {{domain}}",

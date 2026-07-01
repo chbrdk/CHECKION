@@ -24,6 +24,7 @@ import {
 import { MSQDX_BUTTON_THEME_ACCENT_SX, msqdxChipThemeAccentSx } from '@/lib/theme-accent';
 import { GeoQuestionCard } from '@/components/GeoQuestionCard';
 import { VirtualChipList } from '@/components/VirtualChipList';
+import { isBrowserExtensionMessageChannelError, readJsonResponse } from '@/lib/http/fetch-json';
 import type { GeoQuestionHistoryPoint } from '@/components/GeoQuestionCard';
 
 interface GeoQuestionHistoryItem {
@@ -57,6 +58,7 @@ export default function ProjectGeoPage() {
     const [suggestGeoQueriesError, setSuggestGeoQueriesError] = useState<string | null>(null);
     const [geoStartLoading, setGeoStartLoading] = useState(false);
     const [geoStartError, setGeoStartError] = useState<string | null>(null);
+    const [pageLoadError, setPageLoadError] = useState<string | null>(null);
     const [manageQueriesOpen, setManageQueriesOpen] = useState(false);
     const fetchedForIdRef = useFetchOnceForId();
 
@@ -81,32 +83,96 @@ export default function ProjectGeoPage() {
         setLoading(true);
         setHistoryLoading(true);
         setQuestionHistory([]);
-        Promise.all([
-            fetch(apiProject(id), { credentials: 'same-origin', signal }).then((r) => r.json()),
-            fetch(apiScanGeoEeatHistory({ limit: 100, projectId: id }), { credentials: 'same-origin', signal }).then((r) => r.json()),
-            fetch(apiProjectGeoSummary(id), { credentials: 'same-origin', signal }).then((r) => r.json()),
-            fetch(apiProjectGeoQuestionHistory(id, 90), { credentials: 'same-origin', signal }).then((r) => r.json()),
+        setPageLoadError(null);
+        void Promise.allSettled([
+            fetch(apiProject(id), { credentials: 'same-origin', signal }).then((r) => readJsonResponse(r)),
+            fetch(apiScanGeoEeatHistory({ limit: 100, projectId: id }), { credentials: 'same-origin', signal }).then(
+                (r) => readJsonResponse(r)
+            ),
+            fetch(apiProjectGeoSummary(id), { credentials: 'same-origin', signal }).then((r) => readJsonResponse(r)),
+            fetch(apiProjectGeoQuestionHistory(id, 90), { credentials: 'same-origin', signal }).then((r) =>
+                readJsonResponse(r)
+            ),
         ])
             .then(([projectRes, historyRes, summaryRes, questionRes]) => {
                 if (signal.aborted) return;
-                if (projectRes?.data) setProject(projectRes.data);
-                else setProject(null);
-                const runs = Array.isArray(historyRes?.runs) ? historyRes.runs : Array.isArray(historyRes?.data) ? historyRes.data : [];
-                setGeoRuns(runs);
-                if (summaryRes?.success && summaryRes?.data) {
-                    setGeoSummary({
-                        score: summaryRes.data.score ?? null,
-                        competitorScores: summaryRes.data.competitorScores ?? {},
-                    });
+
+                const errors: string[] = [];
+                if (projectRes.status === 'fulfilled') {
+                    const projectPayload = projectRes.value as {
+                        data?: {
+                            id: string;
+                            name: string;
+                            domain: string | null;
+                            competitors?: string[];
+                            geoQueries?: string[];
+                        };
+                    };
+                    if (projectPayload?.data) setProject(projectPayload.data);
+                    else {
+                        setProject(null);
+                        errors.push('project');
+                    }
+                } else if (projectRes.reason?.name !== 'AbortError') {
+                    setProject(null);
+                    errors.push('project');
                 }
-                if (questionRes?.success) {
-                    if (Array.isArray(questionRes.questions)) setQuestionHistory(questionRes.questions);
-                    setTargetDomain(typeof questionRes.targetDomain === 'string' ? questionRes.targetDomain : '');
-                    setCompetitorDomains(Array.isArray(questionRes.competitorDomains) ? questionRes.competitorDomains : []);
+
+                if (historyRes.status === 'fulfilled') {
+                    const historyResValue = historyRes.value as { runs?: unknown[]; data?: unknown[] };
+                    const runs = Array.isArray(historyResValue?.runs)
+                        ? historyResValue.runs
+                        : Array.isArray(historyResValue?.data)
+                          ? historyResValue.data
+                          : [];
+                    setGeoRuns(runs as Array<{ id: string; url: string; status: string; createdAt: string }>);
+                } else if (historyRes.reason?.name !== 'AbortError') {
+                    setGeoRuns([]);
+                    errors.push('history');
+                }
+
+                if (summaryRes.status === 'fulfilled') {
+                    const summaryResValue = summaryRes.value as {
+                        success?: boolean;
+                        data?: { score?: number | null; competitorScores?: Record<string, number> };
+                    };
+                    if (summaryResValue?.success && summaryResValue?.data) {
+                        setGeoSummary({
+                            score: summaryResValue.data.score ?? null,
+                            competitorScores: summaryResValue.data.competitorScores ?? {},
+                        });
+                    }
+                } else if (summaryRes.reason?.name !== 'AbortError') {
+                    errors.push('summary');
+                }
+
+                if (questionRes.status === 'fulfilled') {
+                    const questionResValue = questionRes.value as {
+                        success?: boolean;
+                        questions?: GeoQuestionHistoryItem[];
+                        targetDomain?: string;
+                        competitorDomains?: string[];
+                    };
+                    if (questionResValue?.success) {
+                        if (Array.isArray(questionResValue.questions)) setQuestionHistory(questionResValue.questions);
+                        setTargetDomain(typeof questionResValue.targetDomain === 'string' ? questionResValue.targetDomain : '');
+                        setCompetitorDomains(
+                            Array.isArray(questionResValue.competitorDomains) ? questionResValue.competitorDomains : []
+                        );
+                    }
+                } else if (questionRes.reason?.name !== 'AbortError') {
+                    setQuestionHistory([]);
+                    errors.push('questions');
+                }
+
+                if (errors.length > 0) {
+                    setPageLoadError(t('projects.geoLoadPartialError'));
                 }
             })
             .catch((err) => {
                 if (err?.name === 'AbortError') return;
+                if (isBrowserExtensionMessageChannelError(err)) return;
+                setPageLoadError(t('common.error'));
                 setQuestionHistory([]);
             })
             .finally(() => {
@@ -257,14 +323,15 @@ export default function ProjectGeoPage() {
                 body: JSON.stringify(body),
                 credentials: 'same-origin',
             });
-            const data = await res.json();
+            const data = await readJsonResponse<{ success?: boolean; jobId?: string; error?: string }>(res);
             if (!res.ok || !data.success) {
                 setGeoStartError(data.error ?? t('common.error'));
                 return;
             }
-            const jobId = data.jobId as string;
-            if (jobId) router.push(pathGeoEeat(jobId));
+            const jobId = data.jobId;
+            if (jobId) void router.push(pathGeoEeat(jobId));
         } catch (e) {
+            if (isBrowserExtensionMessageChannelError(e)) return;
             setGeoStartError(e instanceof Error ? e.message : t('common.error'));
         } finally {
             setGeoStartLoading(false);
@@ -290,6 +357,11 @@ export default function ProjectGeoPage() {
     return (
         <Box sx={{ py: 'var(--msqdx-spacing-md)', px: 1.5, width: '100%', maxWidth: '100%' }}>
             <Stack sx={{ gap: 2 }}>
+                {pageLoadError && (
+                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-status-warning)' }}>
+                        {pageLoadError}
+                    </MsqdxTypography>
+                )}
                 {/* Score-Karte: Unser GEO-Score + Competitor-Scores (wie SEO-Seite) */}
                 <MsqdxMoleculeCard
                     title={t('projects.geoScore')}
@@ -345,7 +417,7 @@ export default function ProjectGeoPage() {
                             <MsqdxButton
                                 variant="contained"
                                 size="small"
-                                onClick={handleStartGeoEeat}
+                                onClick={() => void handleStartGeoEeat()}
                                 disabled={!project.domain || geoStartLoading}
                                 sx={MSQDX_BUTTON_THEME_ACCENT_SX}
                             >
@@ -425,7 +497,7 @@ export default function ProjectGeoPage() {
                             <MsqdxButton
                                 variant="contained"
                                 size="small"
-                                onClick={handleStartGeoEeat}
+                                onClick={() => void handleStartGeoEeat()}
                                 disabled={!project.domain || geoStartLoading}
                                 sx={MSQDX_BUTTON_THEME_ACCENT_SX}
                             >

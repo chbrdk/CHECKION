@@ -2,7 +2,7 @@
 
 ## Was passiert?
 
-`scripts/sync-domain-scan-tags-from-projects.ts` führt dieselbe Logik wie **`POST /api/admin/domain-scans/sync-project-tags`** aus: **`domain_scans.tags`** werden aus **`projects.tags`** für alle Scans mit `project_id` abgeglichen (Modus `replaceFromProject` oder `fillEmpty`). Anschließend werden die Domain-Listen-Caches pro betroffenem Nutzer invalidiert.
+`scripts/sync-domain-scan-tags-from-projects.ts` führt dieselbe Logik wie **`POST /api/admin/domain-scans/sync-project-tags`** aus: **`domain_scans.tags`** werden aus **`projects.tags`** für alle Scans mit `project_id` abgeglichen (Modus `replaceFromProject` oder `fillEmpty`). Anschließend werden die Domain-Listen-Caches pro betroffenem Nutzer invalidiert (in API-Requests; beim **Container-Start vor `next start`** ist `revalidateTag` nicht verfügbar — `lib/cache.ts` ignoriert das still, DB-Sync bleibt wirksam).
 
 **Kein** LLM, **kein** Crawl — nur SQL + Cache.
 

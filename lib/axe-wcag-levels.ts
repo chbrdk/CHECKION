@@ -72,6 +72,9 @@ export const AXE_RULE_WCAG_LEVEL: Record<string, WcagLevel> = {
     'avoid-inline-spacing': 'AA',
     // WCAG 2.2
     'target-size': 'AA',
+    'focus-not-obscured': 'AA',
+    'focus-not-obscured-minimum': 'AA',
+    'focus-not-obscured-enhanced': 'AAA',
     // WCAG 2.x AAA & Experimental
     'color-contrast-enhanced': 'APCA',
     'identical-links-same-purpose': 'AAA',
