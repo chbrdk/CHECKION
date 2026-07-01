@@ -19,8 +19,11 @@ const MAX_DEPTH = 3; // Home + 3 levels; max pages will likely hit first
 /** How many pages to scan in parallel during domain scan (env: DOMAIN_SCAN_CONCURRENCY). */
 const DOMAIN_SCAN_CONCURRENCY = Math.min(
     12,
-    Math.max(1, parseInt(process.env.DOMAIN_SCAN_CONCURRENCY || '3', 10) || 3)
+    Math.max(1, parseInt(process.env.DOMAIN_SCAN_CONCURRENCY || '3', 10) || 3),
 );
+
+/** Delay (ms) between starting new page scans to avoid rate limiting (env: DOMAIN_SCAN_DELAY_MS). */
+const DOMAIN_SCAN_DELAY_MS = Math.max(0, parseInt(process.env.DOMAIN_SCAN_DELAY_MS || '500', 10) || 500);
 
 /** Return value from DB-backed scan control (pause / resume / cancel). */
 export type DomainScanControlState = 'run' | 'pause' | 'cancel';
@@ -68,7 +71,6 @@ export type DomainScanStreamUpdate =
     | { type: 'complete'; domainResult: DomainScanResultWithFullPages }
     | { type: 'cancelled'; domainResult: DomainScanResultWithFullPages };
 
-
 /** Treat www and non-www as same domain for internal link detection */
 function isSameDomain(a: string, b: string): boolean {
     try {
@@ -99,13 +101,13 @@ function pathDepth(url: string): number {
  * Depth 0 (Home) = 1.5x weight
  * Depth 1+ = 1.0x weight
  */
-function calculateDomainScore(pages: Array<{ result: ScanResult, depth: number }>): number {
+function calculateDomainScore(pages: Array<{ result: ScanResult; depth: number }>): number {
     if (pages.length === 0) return 0;
 
     let totalWeightedScore = 0;
     let totalWeight = 0;
 
-    pages.forEach(p => {
+    pages.forEach((p) => {
         const weight = p.depth === 0 ? 1.5 : 1.0;
         totalWeightedScore += (p.result.ux?.score || p.result.score) * weight;
         totalWeight += weight;
@@ -118,14 +120,14 @@ function calculateDomainScore(pages: Array<{ result: ScanResult, depth: number }
  * Identifies Systemic Issues (same issue ID appearing on >50% of pages)
  */
 function identifySystemicIssues(pages: Array<ScanResult>) {
-    const issueMap = new Map<string, { title: string, count: number, urls: string[] }>();
+    const issueMap = new Map<string, { title: string; count: number; urls: string[] }>();
     const totalPages = pages.length;
 
-    pages.forEach(page => {
+    pages.forEach((page) => {
         // Use a set to avoid counting the same issue multiple times per page
         const pageIssues = new Set<string>();
 
-        page.issues.forEach(issue => {
+        page.issues.forEach((issue) => {
             const key = issue.code; // Unique rule ID (e.g. "color-contrast")
             if (!pageIssues.has(key)) {
                 pageIssues.add(key);
@@ -148,7 +150,7 @@ function identifySystemicIssues(pages: Array<ScanResult>) {
                 issueId: key,
                 title: val.title,
                 count: val.count,
-                pages: val.urls
+                pages: val.urls,
             });
         }
     });
@@ -162,7 +164,7 @@ function identifySystemicIssues(pages: Array<ScanResult>) {
  */
 export async function* runDomainScan(
     startUrl: string,
-    options: DomainScanOptions = {}
+    options: DomainScanOptions = {},
 ): AsyncGenerator<DomainScanStreamUpdate, DomainScanResultWithFullPages, unknown> {
     const domainId = options.domainScanId ?? uuidv4();
     const baseUrl = new URL(startUrl);
@@ -171,8 +173,7 @@ export async function* runDomainScan(
     const maxPages = resolveDomainScanMaxPages(options.maxPages);
 
     const controlPollMs = 1000;
-    const pollControl = async (): Promise<DomainScanControlState> =>
-        (await options.getScanControl?.()) ?? 'run';
+    const pollControl = async (): Promise<DomainScanControlState> => (await options.getScanControl?.()) ?? 'run';
 
     async function waitUntilRunOrCancel(): Promise<'run' | 'cancel'> {
         for (;;) {
@@ -186,7 +187,7 @@ export async function* runDomainScan(
     let userCancel = false;
 
     // Queue: { url, depth }; seed from sitemap or start URL
-    let queue: Array<{ url: string, depth: number }> = [];
+    let queue: Array<{ url: string; depth: number }> = [];
     const visited = new Set<string>();
     let sitemapMode = false;
 
@@ -197,7 +198,7 @@ export async function* runDomainScan(
             // Only use sitemap when it provides enough URLs; otherwise fall back to link crawl so we discover pages from the first scan
             if (sitemapUrls.length > 1) {
                 const startNorm = normalizeScanUrl(startUrl);
-                sitemapUrls.forEach(u => {
+                sitemapUrls.forEach((u) => {
                     const n = normalizeScanUrl(u);
                     if (!visited.has(n)) {
                         visited.add(n);
@@ -218,7 +219,7 @@ export async function* runDomainScan(
         visited.add(normalizeScanUrl(startUrl));
     }
 
-    const results: Array<{ result: ScanResult, depth: number }> = [];
+    const results: Array<{ result: ScanResult; depth: number }> = [];
     const graphNodes: DomainScanResult['graph']['nodes'] = [];
     const graphLinks: DomainScanResult['graph']['links'] = [];
 
@@ -226,7 +227,7 @@ export async function* runDomainScan(
         type: 'init',
         message: sitemapMode
             ? `Starting scan for ${origin} (${queue.length} URLs from sitemap)`
-            : `Starting scan for ${origin}`
+            : `Starting scan for ${origin}`,
     };
 
     type InFlight = {
@@ -274,12 +275,12 @@ export async function* runDomainScan(
                 score: result.ux?.score || result.score,
                 depth: pathDepth(url),
                 status: 'ok',
-                title: result.seo?.title ?? undefined
+                title: result.seo?.title ?? undefined,
             });
             // Always discover internal links from scanned pages (sitemap and link-crawl). So pages like /impact are found even when they're in a sitemap we didn't fetch or only linked from the homepage.
             if (depth < MAX_DEPTH && results.length + queue.length < maxPages * 2) {
                 const newLinks = result.allLinks || [];
-                newLinks.forEach(link => {
+                newLinks.forEach((link) => {
                     const norm = normalizeScanUrl(link);
                     const isInternal = norm.startsWith(origin) || isSameDomain(link, origin);
                     if (isInternal && !visited.has(norm)) {
@@ -296,7 +297,7 @@ export async function* runDomainScan(
                 url,
                 score: 0,
                 depth: pathDepth(url),
-                status: 'error'
+                status: 'error',
             });
         }
     };
@@ -323,14 +324,17 @@ export async function* runDomainScan(
                 depth: current.depth,
                 scannedCount: results.length + inFlight.length + 1,
                 total: maxPages,
-                message: `Scanning ${current.url}...`
+                message: `Scanning ${current.url}...`,
             };
+            if (DOMAIN_SCAN_DELAY_MS > 0) {
+                await new Promise((r) => setTimeout(r, DOMAIN_SCAN_DELAY_MS));
+            }
             const promise = tryReuseOrRunFullScan(current);
             inFlight.push({
                 promise,
                 url: current.url,
                 depth: current.depth,
-                normalizedCurrent
+                normalizedCurrent,
             });
         }
 
@@ -339,9 +343,9 @@ export async function* runDomainScan(
         const raceResult = await Promise.race(
             inFlight.map((slot, i) =>
                 slot.promise
-                    .then(result => ({ i, slot, result, error: null }))
-                    .catch(error => ({ i, slot, result: null, error: error as Error }))
-            )
+                    .then((result) => ({ i, slot, result, error: null }))
+                    .catch((error) => ({ i, slot, result: null, error: error as Error })),
+            ),
         );
         inFlight.splice(raceResult.i, 1);
         if (raceResult.result) {
@@ -423,7 +427,8 @@ export async function* runDomainScan(
         },
         expertise: {
             pagesWithAuthorBio: pages.filter((p) => p.generative?.expertise?.hasAuthorBio).length,
-            pagesWithArticleAuthor: pages.filter((p) => p.generative?.technical?.articleSchemaQuality?.hasAuthor).length,
+            pagesWithArticleAuthor: pages.filter((p) => p.generative?.technical?.articleSchemaQuality?.hasAuthor)
+                .length,
             avgCitationsPerPage:
                 totalPages > 0
                     ? pages.reduce((sum, p) => sum + (p.generative?.content?.citationDensity ?? 0), 0) / totalPages
@@ -435,7 +440,7 @@ export async function* runDomainScan(
 
     // Final calculations
     const domainScore = calculateDomainScore(results);
-    const systemicIssues = identifySystemicIssues(results.map(r => r.result));
+    const systemicIssues = identifySystemicIssues(results.map((r) => r.result));
 
     const terminalStatus = userCancel ? 'cancelled' : 'complete';
     const finalResult: DomainScanResultWithFullPages = {
@@ -452,10 +457,10 @@ export async function* runDomainScan(
         pages: results.map((r) => r.result),
         graph: {
             nodes: graphNodes,
-            links: graphLinks
+            links: graphLinks,
         },
         systemicIssues,
-        eeat
+        eeat,
     };
 
     if (userCancel) {
