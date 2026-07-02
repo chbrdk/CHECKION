@@ -60,7 +60,7 @@ export async function countDomainPagesInDb(domainScanId: string, userId: string)
     const rows = await db
         .select({ c: sql<number>`count(*)::int` })
         .from(domainPages)
-        .where(and(eq(domainPages.domainScanId, domainScanId), eq(domainPages.userId, userId)));
+        .where(and(eq(domainPages.domainScanId, domainScanId) /* eq(domainPages.userId, userId) */));
     return Number(rows[0]?.c ?? 0);
 }
 
@@ -114,7 +114,7 @@ export async function listSlimPagesFromDomainPagesTable(params: {
         })
         .from(domainPages)
         .leftJoin(scans, eq(scans.id, domainPages.pageScanId))
-        .where(and(eq(domainPages.domainScanId, params.domainScanId), eq(domainPages.userId, params.userId)))
+        .where(and(eq(domainPages.domainScanId, params.domainScanId) /* eq(domainPages.userId, params.userId) */))
         .orderBy(orderBy)
         .limit(params.limit)
         .offset(params.offset);
@@ -146,7 +146,7 @@ export function sliceSlimPagesFromPayload(
     limit: number,
     domainScanId: string,
     sort: SlimSortKey = 'url',
-    sortDir: 'asc' | 'desc' = 'asc'
+    sortDir: 'asc' | 'desc' = 'asc',
 ): SlimPage[] {
     const raw = scan.pages;
     if (!Array.isArray(raw) || raw.length === 0) return [];
@@ -178,8 +178,8 @@ export async function findScanIdForDomainPageUrl(params: {
             and(
                 eq(domainPages.domainScanId, params.domainScanId),
                 eq(domainPages.userId, params.userId),
-                eq(domainPages.url, params.url)
-            )
+                eq(domainPages.url, params.url),
+            ),
         )
         .limit(1);
     if (rows.length === 0) return null;

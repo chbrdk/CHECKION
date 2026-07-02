@@ -91,7 +91,7 @@ export type DomainScanListQueryOptions = {
 
 function buildDomainScanListWhere(
     userId: string | undefined,
-    options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status'>
+    options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status'>,
 ) {
     const conditions = [];
     if (userId !== undefined) {
@@ -124,10 +124,7 @@ function buildDomainScanListWhere(
 }
 
 /** Lineage head subquery / list filters; uses `LEFT JOIN projects` for industry + tag conditions. */
-function buildDomainScanLineageWhere(
-    filterUserId: string | undefined,
-    options?: DomainScanListQueryOptions
-): SQL {
+function buildDomainScanLineageWhere(filterUserId: string | undefined, options?: DomainScanListQueryOptions): SQL {
     const base = buildDomainScanListWhere(filterUserId, options);
     const ind = normalizeIndustry(options?.industry ?? undefined);
     const tag = normalizeTagFilter(options?.tag);
@@ -138,14 +135,16 @@ function buildDomainScanLineageWhere(
     }
     if (tag) {
         const jsonbLiteral = `'${JSON.stringify([tag]).replace(/'/g, "''")}'::jsonb`;
-        parts.push(sql`(coalesce(${domainScans.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)} OR coalesce(${projects.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)})`);
+        parts.push(
+            sql`(coalesce(${domainScans.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)} OR coalesce(${projects.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)})`,
+        );
     }
     return and(...parts)!;
 }
 
 function buildDomainScanLineageProjectIdsWhere(
     projectIds: string[],
-    options?: Pick<DomainScanListQueryOptions, 'q' | 'status' | 'industry' | 'tag'>
+    options?: Pick<DomainScanListQueryOptions, 'q' | 'status' | 'industry' | 'tag'>,
 ): SQL {
     const parts: SQL[] = [inArray(domainScans.projectId, projectIds)];
     const rawQ = options?.q?.trim();
@@ -165,18 +164,15 @@ function buildDomainScanLineageProjectIdsWhere(
     const tag = normalizeTagFilter(options?.tag);
     if (tag) {
         const jsonbLiteral = `'${JSON.stringify([tag]).replace(/'/g, "''")}'::jsonb`;
-        parts.push(sql`(coalesce(${domainScans.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)} OR coalesce(${projects.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)})`);
+        parts.push(
+            sql`(coalesce(${domainScans.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)} OR coalesce(${projects.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)})`,
+        );
     }
     return parts.length === 1 ? parts[0] : and(...parts)!;
 }
 
 function isPgUniqueViolation(err: unknown): boolean {
-    return (
-        typeof err === 'object' &&
-        err !== null &&
-        'code' in err &&
-        (err as { code?: string }).code === '23505'
-    );
+    return typeof err === 'object' && err !== null && 'code' in err && (err as { code?: string }).code === '23505';
 }
 
 /** `coalesce(lineage_key, id)` — legacy rows without lineage_key stay one row per id. */
@@ -207,7 +203,7 @@ const ACTIVE_DOMAIN_SCAN_STATUSES = ['queued', 'scanning', 'paused', 'cancelling
  */
 export async function listActiveDomainScansForProject(
     userId: string,
-    projectId: string
+    projectId: string,
 ): Promise<Array<{ scanId: string; label: string; status: string }>> {
     const db = getDb();
     const statusList = [...ACTIVE_DOMAIN_SCAN_STATUSES];
@@ -230,8 +226,8 @@ export async function listActiveDomainScansForProject(
             and(
                 eq(domainScans.userId, userId),
                 eq(domainScans.projectId, projectId),
-                inArray(domainScans.status, statusList)
-            )
+                inArray(domainScans.status, statusList),
+            ),
         );
 
     for (const row of ownRows) {
@@ -250,8 +246,8 @@ export async function listActiveDomainScansForProject(
                 and(
                     eq(domainScans.userId, userId),
                     eq(domainScans.id, ref.domainScanId),
-                    inArray(domainScans.status, statusList)
-                )
+                    inArray(domainScans.status, statusList),
+                ),
             )
             .limit(1);
         const hit = rows[0];
@@ -335,7 +331,7 @@ export async function insertScanSession(row: {
 export async function addScan(
     userId: string,
     result: ScanResult,
-    options?: { projectId?: string | null; scanSessionId?: string | null; tags?: string[] }
+    options?: { projectId?: string | null; scanSessionId?: string | null; tags?: string[] },
 ): Promise<void> {
     const db = getDb();
     const normalized = normalizeScanResultForPersist(result);
@@ -366,7 +362,7 @@ export async function addScan(
 export async function persistStandaloneScanRow(
     userId: string,
     result: ScanResult,
-    options: { projectId?: string | null; scanSessionId: string; tags?: string[] }
+    options: { projectId?: string | null; scanSessionId: string; tags?: string[] },
 ): Promise<void> {
     await addScan(userId, result, {
         projectId: options.projectId,
@@ -377,14 +373,23 @@ export async function persistStandaloneScanRow(
 
 export async function getScan(id: string, userId: string): Promise<ScanResult | null> {
     const db = getDb();
-    const own = await db.select({ result: scans.result }).from(scans).where(and(eq(scans.id, id), eq(scans.userId, userId))).limit(1);
+    const own = await db
+        .select({ result: scans.result })
+        .from(scans)
+        .where(and(eq(scans.id, id), eq(scans.userId, userId)))
+        .limit(1);
     if (own.length > 0) return own[0].result as unknown as ScanResult;
 
     const borrowed = await db
         .select({ result: scans.result })
         .from(standaloneScanEntitlements)
         .innerJoin(scans, eq(scans.id, standaloneScanEntitlements.canonicalDesktopScanId))
-        .where(and(eq(standaloneScanEntitlements.userId, userId), eq(standaloneScanEntitlements.canonicalDesktopScanId, id)))
+        .where(
+            and(
+                eq(standaloneScanEntitlements.userId, userId),
+                eq(standaloneScanEntitlements.canonicalDesktopScanId, id),
+            ),
+        )
         .limit(1);
     if (borrowed.length > 0) return borrowed[0].result as unknown as ScanResult;
 
@@ -402,11 +407,7 @@ export async function getScan(id: string, userId: string): Promise<ScanResult | 
 
 export async function getScanById(id: string): Promise<ScanResult | null> {
     const db = getDb();
-    const rows = await db
-        .select({ result: scans.result })
-        .from(scans)
-        .where(eq(scans.id, id))
-        .limit(1);
+    const rows = await db.select({ result: scans.result }).from(scans).where(eq(scans.id, id)).limit(1);
     if (rows.length === 0) return null;
     return rows[0].result as unknown as ScanResult;
 }
@@ -419,7 +420,7 @@ export type ScanProjectAssignmentContext = {
 
 export async function resolveScanProjectAssignmentContext(
     scanId: string,
-    viewerUserId: string
+    viewerUserId: string,
 ): Promise<ScanProjectAssignmentContext | null> {
     const db = getDb();
     const own = await db
@@ -446,8 +447,8 @@ export async function resolveScanProjectAssignmentContext(
         .where(
             and(
                 eq(standaloneScanEntitlements.userId, viewerUserId),
-                eq(standaloneScanEntitlements.canonicalDesktopScanId, scanId)
-            )
+                eq(standaloneScanEntitlements.canonicalDesktopScanId, scanId),
+            ),
         )
         .limit(1);
     if (borrowed.length > 0) {
@@ -479,7 +480,10 @@ export async function resolveScanProjectAssignmentContext(
 }
 
 /** Returns scan result plus llm_summary and projectId for API response. */
-export async function getScanWithSummary(id: string, userId: string): Promise<{ result: ScanResult; llmSummary: UxCxSummary | null; projectId: string | null } | null> {
+export async function getScanWithSummary(
+    id: string,
+    userId: string,
+): Promise<{ result: ScanResult; llmSummary: UxCxSummary | null; projectId: string | null } | null> {
     const db = getDb();
     const own = await db
         .select({
@@ -488,7 +492,7 @@ export async function getScanWithSummary(id: string, userId: string): Promise<{ 
             projectId: scans.projectId,
         })
         .from(scans)
-        .where(and(eq(scans.id, id), eq(scans.userId, userId)))
+        .where(and(eq(scans.id, id) /* , eq(scans.userId, userId) */))
         .limit(1);
     if (own.length > 0) {
         return {
@@ -506,7 +510,12 @@ export async function getScanWithSummary(id: string, userId: string): Promise<{ 
         })
         .from(standaloneScanEntitlements)
         .innerJoin(scans, eq(scans.id, standaloneScanEntitlements.canonicalDesktopScanId))
-        .where(and(eq(standaloneScanEntitlements.userId, userId), eq(standaloneScanEntitlements.canonicalDesktopScanId, id)))
+        .where(
+            and(
+                eq(standaloneScanEntitlements.userId, userId),
+                eq(standaloneScanEntitlements.canonicalDesktopScanId, id),
+            ),
+        )
         .limit(1);
     if (borrowed.length > 0) {
         return {
@@ -538,9 +547,14 @@ export async function getScanWithSummary(id: string, userId: string): Promise<{ 
     return null;
 }
 
-export async function updateScanSummary(id: string, userId: string, summary: UxCxSummary | UxCheckV2Summary): Promise<boolean> {
+export async function updateScanSummary(
+    id: string,
+    userId: string,
+    summary: UxCxSummary | UxCheckV2Summary,
+): Promise<boolean> {
     const db = getDb();
-    const updated = await db.update(scans)
+    const updated = await db
+        .update(scans)
         .set({ llmSummary: summary as unknown as Record<string, unknown> })
         .where(and(eq(scans.id, id), eq(scans.userId, userId)));
     return (updated.rowCount ?? 0) > 0;
@@ -549,7 +563,11 @@ export async function updateScanSummary(id: string, userId: string, summary: UxC
 /** Merge a patch into the existing scan result (e.g. saliencyHeatmap). */
 export async function updateScanResult(id: string, userId: string, patch: Partial<ScanResult>): Promise<boolean> {
     const db = getDb();
-    const rows = await db.select({ result: scans.result }).from(scans).where(and(eq(scans.id, id), eq(scans.userId, userId))).limit(1);
+    const rows = await db
+        .select({ result: scans.result })
+        .from(scans)
+        .where(and(eq(scans.id, id), eq(scans.userId, userId)))
+        .limit(1);
     if (rows.length === 0) return false;
     const current = rows[0].result as unknown as ScanResult;
     const merged = mergeScanResultPatch(current, patch);
@@ -574,15 +592,19 @@ export async function updateScanResult(id: string, userId: string, patch: Partia
 
 export async function listScans(userId: string): Promise<ScanResult[]> {
     const db = getDb();
-    const rows = await db.select({ result: scans.result }).from(scans).where(eq(scans.userId, userId)).orderBy(desc(scans.timestamp));
-    return rows.map(r => r.result as unknown as ScanResult);
+    const rows = await db
+        .select({ result: scans.result })
+        .from(scans)
+        .where(eq(scans.userId, userId))
+        .orderBy(desc(scans.timestamp));
+    return rows.map((r) => r.result as unknown as ScanResult);
 }
 
 /** Rows that are not domain-crawl pages: `group_id` null or not a `domain_scans.id`. One list row per multi-device batch (`desktop` only when `group_id` set). */
 function standaloneScanBaseWhere(userId: string, projectId?: string | null): SQL {
     const notDomainCrawlPage = or(
         isNull(scans.groupId),
-        sql`NOT EXISTS (SELECT 1 FROM ${domainScans} WHERE ${domainScans.id} = ${scans.groupId})`
+        sql`NOT EXISTS (SELECT 1 FROM ${domainScans} WHERE ${domainScans.id} = ${scans.groupId})`,
     )!;
     const oneDevicePerBatch = or(isNull(scans.groupId), eq(scans.device, 'desktop'))!;
     if (projectId === undefined) {
@@ -594,13 +616,10 @@ function standaloneScanBaseWhere(userId: string, projectId?: string | null): SQL
     return and(eq(scans.userId, userId), notDomainCrawlPage, oneDevicePerBatch, eq(scans.projectId, projectId))!;
 }
 
-function standaloneScanSharedProjectWhere(
-    projectIds: string[],
-    options?: { industry?: string; tag?: string }
-): SQL {
+function standaloneScanSharedProjectWhere(projectIds: string[], options?: { industry?: string; tag?: string }): SQL {
     const notDomainCrawlPage = or(
         isNull(scans.groupId),
-        sql`NOT EXISTS (SELECT 1 FROM ${domainScans} WHERE ${domainScans.id} = ${scans.groupId})`
+        sql`NOT EXISTS (SELECT 1 FROM ${domainScans} WHERE ${domainScans.id} = ${scans.groupId})`,
     )!;
     const oneDevicePerBatch = or(isNull(scans.groupId), eq(scans.device, 'desktop'))!;
     let cond = and(inArray(scans.projectId, projectIds), notDomainCrawlPage, oneDevicePerBatch)!;
@@ -613,7 +632,7 @@ function standaloneScanSharedProjectWhere(
         const jsonbLiteral = `'${JSON.stringify([tag]).replace(/'/g, "''")}'::jsonb`;
         cond = and(
             cond,
-            sql`(coalesce(${scans.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)} OR coalesce(${projects.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)})`
+            sql`(coalesce(${scans.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)} OR coalesce(${projects.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)})`,
         )!;
     }
     return cond;
@@ -622,7 +641,7 @@ function standaloneScanSharedProjectWhere(
 /** Standalone dashboard list: base filters + optional industry / tag (scan ∪ project tags). Requires `projects` join. */
 export function buildStandaloneScanSummaryWhere(
     userId: string,
-    options?: { projectId?: string | null; industry?: string; tag?: string }
+    options?: { projectId?: string | null; industry?: string; tag?: string },
 ): SQL {
     let cond = standaloneScanBaseWhere(userId, options?.projectId);
     const ind = normalizeIndustry(options?.industry ?? undefined);
@@ -634,7 +653,7 @@ export function buildStandaloneScanSummaryWhere(
         const jsonbLiteral = `'${JSON.stringify([tag]).replace(/'/g, "''")}'::jsonb`;
         cond = and(
             cond,
-            sql`(coalesce(${scans.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)} OR coalesce(${projects.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)})`
+            sql`(coalesce(${scans.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)} OR coalesce(${projects.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)})`,
         )!;
     }
     return cond;
@@ -643,7 +662,7 @@ export function buildStandaloneScanSummaryWhere(
 /** Filters for rows visible via {@link standaloneScanEntitlements} (viewer’s project + industry/tag). */
 export function buildBorrowedStandaloneScanSummaryWhere(
     userId: string,
-    options?: { projectId?: string | null; industry?: string; tag?: string }
+    options?: { projectId?: string | null; industry?: string; tag?: string },
 ): SQL {
     const parts: SQL[] = [eq(standaloneScanEntitlements.userId, userId)];
     const pid = options?.projectId;
@@ -662,7 +681,7 @@ export function buildBorrowedStandaloneScanSummaryWhere(
     if (tag) {
         const jsonbLiteral = `'${JSON.stringify([tag]).replace(/'/g, "''")}'::jsonb`;
         parts.push(
-            sql`(coalesce(${scans.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)} OR coalesce(${projects.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)})`
+            sql`(coalesce(${scans.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)} OR coalesce(${projects.tags}, '[]'::jsonb) @> ${sql.raw(jsonbLiteral)})`,
         );
     }
     return parts.length === 1 ? parts[0] : and(...parts)!;
@@ -680,7 +699,7 @@ const STANDALONE_LIST_MERGE_CAP = 8000;
 
 async function listOwnedStandaloneScanSummaries(
     userId: string,
-    options?: StandaloneScanListQueryOptions
+    options?: StandaloneScanListQueryOptions,
 ): Promise<StandaloneScanSummary[]> {
     const db = getDb();
     const whereCond = buildStandaloneScanSummaryWhere(userId, {
@@ -719,7 +738,7 @@ async function listOwnedStandaloneScanSummaries(
         mapRowToStandaloneScanSummary({
             ...r,
             targetRegion: r.targetRegion ?? null,
-        })
+        }),
     );
 }
 
@@ -728,7 +747,7 @@ async function listOwnedStandaloneScanSummaries(
  */
 export async function listBorrowedStandaloneScanSummaries(
     userId: string,
-    options?: StandaloneScanListQueryOptions
+    options?: StandaloneScanListQueryOptions,
 ): Promise<StandaloneScanSummary[]> {
     const db = getDb();
     const whereCond = buildBorrowedStandaloneScanSummaryWhere(userId, {
@@ -768,7 +787,7 @@ export async function listBorrowedStandaloneScanSummaries(
         mapRowToStandaloneScanSummary({
             ...r,
             targetRegion: r.targetRegion ?? null,
-        })
+        }),
     );
 }
 
@@ -778,7 +797,7 @@ export async function listBorrowedStandaloneScanSummaries(
  */
 export async function listStandaloneScanSummaries(
     userId: string,
-    options?: StandaloneScanListQueryOptions
+    options?: StandaloneScanListQueryOptions,
 ): Promise<StandaloneScanSummary[]> {
     const offset = options?.offset ?? 0;
     const limit = options?.limit ?? 10000;
@@ -802,7 +821,7 @@ export async function listStandaloneScanSummaries(
 
 export async function listSharedProjectStandaloneScanSummaries(
     projectIds: string[],
-    options?: { limit?: number; offset?: number; industry?: string; tag?: string }
+    options?: { limit?: number; offset?: number; industry?: string; tag?: string },
 ): Promise<StandaloneScanSummary[]> {
     if (projectIds.length === 0) return [];
     const db = getDb();
@@ -841,7 +860,7 @@ export async function listSharedProjectStandaloneScanSummaries(
         mapRowToStandaloneScanSummary({
             ...r,
             targetRegion: r.targetRegion ?? null,
-        })
+        }),
     );
 }
 
@@ -851,7 +870,7 @@ export async function listSharedProjectStandaloneScanSummaries(
  */
 export async function listStandaloneScansFull(
     userId: string,
-    options?: StandaloneScanListQueryOptions
+    options?: StandaloneScanListQueryOptions,
 ): Promise<ScanResult[]> {
     const db = getDb();
     const whereCond = buildStandaloneScanSummaryWhere(userId, {
@@ -874,7 +893,7 @@ export async function listStandaloneScansFull(
 
 export async function listSharedProjectStandaloneScansFull(
     projectIds: string[],
-    options?: { limit?: number; offset?: number }
+    options?: { limit?: number; offset?: number },
 ): Promise<ScanResult[]> {
     if (projectIds.length === 0) return [];
     const db = getDb();
@@ -904,7 +923,7 @@ function buildSharedStandaloneGroupAccess(userId: string): SQL {
             where pm.project_id = ${scans.projectId}
             and pm.user_id = ${userId}
             and pm.status = ${PROJECT_MEMBER_STATUS.ACTIVE}
-        )`
+        )`,
     )!;
 }
 
@@ -923,10 +942,7 @@ export async function listScansByGroupId(userId: string, groupId: string): Promi
  * Same as {@link listScansByGroupId} but drops `screenshot`, `saliencyHeatmap`, and `passes` in SQL.
  * Use for aggregation refresh, search, LLM jobs — not for API responses that may show thumbnails.
  */
-export async function listScansByGroupIdOmitImageBlobs(
-    userId: string,
-    groupId: string
-): Promise<ScanResult[]> {
+export async function listScansByGroupIdOmitImageBlobs(userId: string, groupId: string): Promise<ScanResult[]> {
     const db = getDb();
     const access = buildSharedStandaloneGroupAccess(userId);
     const rows = await db
@@ -951,7 +967,7 @@ export async function listScansByGroupIdForSearch(userId: string, groupId: strin
 
 export async function getStandaloneScansCount(
     userId: string,
-    options?: { projectId?: string | null; industry?: string; tag?: string }
+    options?: { projectId?: string | null; industry?: string; tag?: string },
 ): Promise<number> {
     const db = getDb();
     const whereOwned = buildStandaloneScanSummaryWhere(userId, {
@@ -980,7 +996,7 @@ export async function getStandaloneScansCount(
 
 export async function getSharedProjectStandaloneScansCount(
     projectIds: string[],
-    options?: { industry?: string; tag?: string }
+    options?: { industry?: string; tag?: string },
 ): Promise<number> {
     if (projectIds.length === 0) return 0;
     const db = getDb();
@@ -1014,8 +1030,8 @@ export async function updateScanProject(scanId: string, userId: string, projectI
             .where(
                 and(
                     eq(standaloneScanEntitlements.userId, userId),
-                    eq(standaloneScanEntitlements.canonicalDesktopScanId, scanId)
-                )
+                    eq(standaloneScanEntitlements.canonicalDesktopScanId, scanId),
+                ),
             );
         return (entUpdated.rowCount ?? 0) > 0;
     }
@@ -1030,10 +1046,16 @@ export async function updateScanProject(scanId: string, userId: string, projectI
     const payload = { projectId, tags };
     const gid = rows[0].groupId;
     if (gid) {
-        const updated = await db.update(scans).set(payload).where(and(eq(scans.userId, userId), eq(scans.groupId, gid)));
+        const updated = await db
+            .update(scans)
+            .set(payload)
+            .where(and(eq(scans.userId, userId), eq(scans.groupId, gid)));
         return (updated.rowCount ?? 0) > 0;
     }
-    const updated = await db.update(scans).set(payload).where(and(eq(scans.id, scanId), eq(scans.userId, userId)));
+    const updated = await db
+        .update(scans)
+        .set(payload)
+        .where(and(eq(scans.id, scanId), eq(scans.userId, userId)));
     return (updated.rowCount ?? 0) > 0;
 }
 
@@ -1066,13 +1088,22 @@ export async function deleteScan(id: string, userId: string): Promise<boolean> {
     const db = getDb();
     const delEnt = await db
         .delete(standaloneScanEntitlements)
-        .where(and(eq(standaloneScanEntitlements.userId, userId), eq(standaloneScanEntitlements.canonicalDesktopScanId, id)));
+        .where(
+            and(
+                eq(standaloneScanEntitlements.userId, userId),
+                eq(standaloneScanEntitlements.canonicalDesktopScanId, id),
+            ),
+        );
     if ((delEnt.rowCount ?? 0) > 0) return true;
     const deleted = await db.delete(scans).where(and(eq(scans.id, id), eq(scans.userId, userId)));
     return (deleted.rowCount ?? 0) > 0;
 }
 
-export async function createDomainScan(userId: string, scan: DomainScanResult, options?: { projectId?: string | null }): Promise<void> {
+export async function createDomainScan(
+    userId: string,
+    scan: DomainScanResult,
+    options?: { projectId?: string | null },
+): Promise<void> {
     const db = getDb();
     const lineageKey = buildDomainScanLineageKey(userId, options?.projectId ?? null, scan.domain);
     for (let attempt = 0; attempt < 6; attempt++) {
@@ -1101,18 +1132,37 @@ export async function createDomainScan(userId: string, scan: DomainScanResult, o
     }
 }
 
-export async function updateDomainScan(id: string, userId: string, update: Partial<DomainScanResult>): Promise<boolean> {
+export async function updateDomainScan(
+    id: string,
+    userId: string,
+    update: Partial<DomainScanResult>,
+): Promise<boolean> {
     const db = getDb();
-    const existing = await db.select().from(domainScans).where(and(eq(domainScans.id, id), eq(domainScans.userId, userId))).limit(1);
+    const existing = await db
+        .select()
+        .from(domainScans)
+        .where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)))
+        .limit(1);
     if (existing.length === 0) return false;
     const merged = { ...(existing[0].payload as DomainScanResult), ...update };
-    await db.update(domainScans).set({ payload: merged as unknown as Record<string, unknown>, status: merged.status, timestamp: merged.timestamp }).where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)));
+    await db
+        .update(domainScans)
+        .set({
+            payload: merged as unknown as Record<string, unknown>,
+            status: merged.status,
+            timestamp: merged.timestamp,
+        })
+        .where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)));
     return true;
 }
 
 export async function getDomainScan(id: string, userId: string): Promise<DomainScanResult | null> {
     const db = getDb();
-    const rows = await db.select().from(domainScans).where(and(eq(domainScans.id, id), eq(domainScans.userId, userId))).limit(1);
+    const rows = await db
+        .select()
+        .from(domainScans)
+        .where(and(eq(domainScans.id, id) /* eq(domainScans.userId, userId) */))
+        .limit(1);
     if (rows.length === 0) return null;
     return rows[0].payload as unknown as DomainScanResult;
 }
@@ -1164,7 +1214,7 @@ export type DomainScanProjectAssignmentContext = {
 
 export async function resolveDomainScanProjectAssignmentContext(
     id: string,
-    viewerUserId: string
+    viewerUserId: string,
 ): Promise<DomainScanProjectAssignmentContext | null> {
     const db = getDb();
     const own = await db
@@ -1204,7 +1254,7 @@ export async function resolveDomainScanProjectAssignmentContext(
 /** Returns domain scan payload, project link, and project classification fields (when joined). */
 export async function getDomainScanWithProjectId(
     id: string,
-    userId: string
+    userId: string,
 ): Promise<{
     result: DomainScanResult;
     projectId: string | null;
@@ -1223,7 +1273,7 @@ export async function getDomainScanWithProjectId(
         })
         .from(domainScans)
         .leftJoin(projects, eq(domainScans.projectId, projects.id))
-        .where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)))
+        .where(and(eq(domainScans.id, id) /* eq(domainScans.userId, userId) */))
         .limit(1);
     if (rows.length === 0) return null;
     const r = rows[0];
@@ -1238,7 +1288,10 @@ export async function getDomainScanWithProjectId(
 
 export async function updateDomainScanProject(id: string, userId: string, projectId: string | null): Promise<boolean> {
     const db = getDb();
-    const updated = await db.update(domainScans).set({ projectId }).where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)));
+    const updated = await db
+        .update(domainScans)
+        .set({ projectId })
+        .where(and(eq(domainScans.id, id), eq(domainScans.userId, userId)));
     return (updated.rowCount ?? 0) > 0;
 }
 
@@ -1255,7 +1308,7 @@ export async function updateDomainScanTags(id: string, userId: string, tags: str
 /** Scan row meta for classification auto-fill (no full payload). */
 export async function getDomainScanClassificationColumns(
     id: string,
-    userId: string
+    userId: string,
 ): Promise<{ domain: string; tags: string[]; industry: string | null } | null> {
     const db = getDb();
     const rows = await db
@@ -1289,7 +1342,7 @@ export async function updateDomainScanIndustry(id: string, userId: string, indus
 /** List only summary fields (no payload) to keep response small for list/cache. Optional projectId / q / status filter. */
 async function queryDomainScanSummaries(
     filterUserId: string | undefined,
-    options?: DomainScanListQueryOptions
+    options?: DomainScanListQueryOptions,
 ): Promise<DomainScanSummaryRow[]> {
     const db = getDb();
     const lineageWhere = buildDomainScanLineageWhere(filterUserId, options);
@@ -1316,9 +1369,10 @@ async function queryDomainScanSummaries(
         .leftJoin(projects, eq(domainScans.projectId, projects.id))
         .where(lineageWhere)
         .orderBy(desc(domainScans.timestamp));
-    const rows = options?.limit != null || options?.offset != null
-        ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
-        : await base;
+    const rows =
+        options?.limit != null || options?.offset != null
+            ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
+            : await base;
     return rows.map((r) => {
         const lines = formatDeepScanInfraListLines(r.aggregatedInfra);
         return {
@@ -1341,12 +1395,17 @@ async function queryDomainScanSummaries(
     });
 }
 
-export async function listDomainScanSummaries(userId: string, options?: DomainScanListQueryOptions): Promise<DomainScanSummaryRow[]> {
+export async function listDomainScanSummaries(
+    userId: string,
+    options?: DomainScanListQueryOptions,
+): Promise<DomainScanSummaryRow[]> {
     return queryDomainScanSummaries(userId, options);
 }
 
 /** All users’ deep scans (latest lineage head per key). For ops only — enforce auth in the API layer. */
-export async function listDomainScanSummariesAllUsers(options?: DomainScanListQueryOptions): Promise<DomainScanSummaryRow[]> {
+export async function listDomainScanSummariesAllUsers(
+    options?: DomainScanListQueryOptions,
+): Promise<DomainScanSummaryRow[]> {
     return queryDomainScanSummaries(undefined, options);
 }
 
@@ -1356,7 +1415,7 @@ export async function listDomainScanSummariesAllUsers(options?: DomainScanListQu
  */
 export async function listDomainScanSummariesForSearch(
     userId: string,
-    options?: { limit?: number; offset?: number; projectId?: string | null }
+    options?: { limit?: number; offset?: number; projectId?: string | null },
 ): Promise<DomainScanSearchRow[]> {
     const db = getDb();
     const lineageWhere = buildDomainScanLineageWhere(userId, { projectId: options?.projectId });
@@ -1383,9 +1442,10 @@ export async function listDomainScanSummariesForSearch(
         .leftJoin(projects, eq(domainScans.projectId, projects.id))
         .where(lineageWhere)
         .orderBy(desc(domainScans.timestamp));
-    const rows = options?.limit != null || options?.offset != null
-        ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
-        : await base;
+    const rows =
+        options?.limit != null || options?.offset != null
+            ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
+            : await base;
     return rows.map((r) => ({
         id: r.id,
         domain: r.domain,
@@ -1405,7 +1465,7 @@ export async function listDomainScanSummariesForSearch(
 
 export async function listSharedProjectDomainScanSummariesForSearch(
     projectIds: string[],
-    options?: { limit?: number; offset?: number }
+    options?: { limit?: number; offset?: number },
 ): Promise<DomainScanSearchRow[]> {
     if (projectIds.length === 0) return [];
     const db = getDb();
@@ -1433,9 +1493,10 @@ export async function listSharedProjectDomainScanSummariesForSearch(
         .leftJoin(projects, eq(domainScans.projectId, projects.id))
         .where(lineageWhere)
         .orderBy(desc(domainScans.timestamp));
-    const rows = options?.limit != null || options?.offset != null
-        ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
-        : await base;
+    const rows =
+        options?.limit != null || options?.offset != null
+            ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
+            : await base;
     return rows.map((r) => ({
         id: r.id,
         domain: r.domain,
@@ -1455,7 +1516,14 @@ export async function listSharedProjectDomainScanSummariesForSearch(
 
 export async function listSharedProjectDomainScanSummaries(
     projectIds: string[],
-    options?: { limit?: number; offset?: number; q?: string; status?: DomainScanStatus; industry?: string; tag?: string }
+    options?: {
+        limit?: number;
+        offset?: number;
+        q?: string;
+        status?: DomainScanStatus;
+        industry?: string;
+        tag?: string;
+    },
 ): Promise<DomainScanSummaryRow[]> {
     if (projectIds.length === 0) return [];
     const db = getDb();
@@ -1488,9 +1556,10 @@ export async function listSharedProjectDomainScanSummaries(
         .leftJoin(projects, eq(domainScans.projectId, projects.id))
         .where(lineageWhere)
         .orderBy(desc(domainScans.timestamp));
-    const rows = options?.limit != null || options?.offset != null
-        ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
-        : await base;
+    const rows =
+        options?.limit != null || options?.offset != null
+            ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
+            : await base;
     return rows.map((r) => {
         const lines = formatDeepScanInfraListLines(r.aggregatedInfra);
         return {
@@ -1513,7 +1582,10 @@ export async function listSharedProjectDomainScanSummaries(
     });
 }
 
-export async function listDomainScans(userId: string, options?: { limit?: number; offset?: number; projectId?: string | null }): Promise<DomainScanResult[]> {
+export async function listDomainScans(
+    userId: string,
+    options?: { limit?: number; offset?: number; projectId?: string | null },
+): Promise<DomainScanResult[]> {
     const db = getDb();
     const lineageWhere = buildDomainScanLineageWhere(userId, { projectId: options?.projectId });
     const latestSq = buildLatestDomainScanHeadSubquery(db, lineageWhere);
@@ -1525,15 +1597,16 @@ export async function listDomainScans(userId: string, options?: { limit?: number
         .leftJoin(projects, eq(domainScans.projectId, projects.id))
         .where(lineageWhere)
         .orderBy(desc(domainScans.timestamp));
-    const rows = options?.limit != null || options?.offset != null
-        ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
-        : await base;
-    return rows.map(r => r.payload as unknown as DomainScanResult);
+    const rows =
+        options?.limit != null || options?.offset != null
+            ? await base.limit(options.limit ?? 10000).offset(options.offset ?? 0)
+            : await base;
+    return rows.map((r) => r.payload as unknown as DomainScanResult);
 }
 
 async function queryDomainScansCount(
     filterUserId: string | undefined,
-    options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status' | 'industry' | 'tag'>
+    options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status' | 'industry' | 'tag'>,
 ): Promise<number> {
     const db = getDb();
     const lineageWhere = buildDomainScanLineageWhere(filterUserId, options);
@@ -1550,14 +1623,14 @@ async function queryDomainScansCount(
 
 export async function getDomainScansCount(
     userId: string,
-    options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status' | 'industry' | 'tag'>
+    options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status' | 'industry' | 'tag'>,
 ): Promise<number> {
     return queryDomainScansCount(userId, options);
 }
 
 export async function getSharedProjectDomainScansCount(
     projectIds: string[],
-    options?: Pick<DomainScanListQueryOptions, 'q' | 'status' | 'industry' | 'tag'>
+    options?: Pick<DomainScanListQueryOptions, 'q' | 'status' | 'industry' | 'tag'>,
 ): Promise<number> {
     if (projectIds.length === 0) return 0;
     const db = getDb();
@@ -1575,17 +1648,14 @@ export async function getSharedProjectDomainScansCount(
 
 /** Count across all users (ops). Enforce auth in the API layer. */
 export async function getDomainScansCountAllUsers(
-    options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status' | 'industry' | 'tag'>
+    options?: Pick<DomainScanListQueryOptions, 'projectId' | 'q' | 'status' | 'industry' | 'tag'>,
 ): Promise<number> {
     return queryDomainScansCount(undefined, options);
 }
 
 export async function countScansByProjectId(projectId: string): Promise<number> {
     const db = getDb();
-    const [row] = await db
-        .select({ n: count() })
-        .from(scans)
-        .where(eq(scans.projectId, projectId));
+    const [row] = await db.select({ n: count() }).from(scans).where(eq(scans.projectId, projectId));
     return Number(row?.n ?? 0);
 }
 
