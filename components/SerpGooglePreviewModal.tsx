@@ -1,14 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-    Box,
-    CircularProgress,
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    IconButton,
-} from '@mui/material';
+import { Box, CircularProgress, Dialog, DialogContent, DialogTitle, IconButton } from '@mui/material';
 import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
 import { X } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -51,7 +44,7 @@ function formatDisplayUrl(link: string): string {
 function getResultRole(
     item: SerpOrganicResult,
     ourDomain: string,
-    competitorDomains: string[]
+    competitorDomains: string[],
 ): 'ours' | 'competitor' | null {
     if (domainMatchesOrganic(ourDomain, item.domain)) return 'ours';
     for (const c of competitorDomains) {
@@ -115,8 +108,7 @@ export function SerpGooglePreviewModal({
 
     const totalOrganic = data?.organic.length ?? 0;
 
-    const marketLabel =
-        data?.country && data?.language ? `${data.country.toUpperCase()} · ${data.language}` : '';
+    const marketLabel = data?.country && data?.language ? `${data.country.toUpperCase()} · ${data.language}` : '';
 
     return (
         <Dialog
@@ -286,7 +278,15 @@ export function SerpGooglePreviewModal({
                                             }),
                                         }}
                                     >
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 1,
+                                                flexWrap: 'wrap',
+                                                mb: 0.5,
+                                            }}
+                                        >
                                             <MsqdxTypography
                                                 variant="caption"
                                                 sx={{
@@ -301,6 +301,7 @@ export function SerpGooglePreviewModal({
                                                 <MsqdxChip
                                                     label={t('projects.serpPreviewYou')}
                                                     size="small"
+                                                    variant="outlined"
                                                     color="primary"
                                                     sx={{ height: 20, fontSize: '0.65rem' }}
                                                 />

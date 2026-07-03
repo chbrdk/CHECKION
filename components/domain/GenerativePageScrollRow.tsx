@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, useCallback } from 'react';
+import React, { memo, Profiler, useCallback } from 'react';
 import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
 import type { AggregatedGenerative } from '@/lib/domain-aggregation';
@@ -37,7 +37,7 @@ export const GenerativePageScrollRow = memo(function GenerativePageScrollRow({
                 open();
             }
         },
-        [open]
+        [open],
     );
 
     return (
@@ -86,9 +86,15 @@ export const GenerativePageScrollRow = memo(function GenerativePageScrollRow({
                 </MsqdxTypography>
             </Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'flex-end', flexShrink: 0 }}>
-                <MsqdxChip label={t('domainResult.generativeRowScoreChip', { score: page.score })} size="small" sx={CHIP_SX} />
+                <MsqdxChip
+                    variant="outlined"
+                    label={t('domainResult.generativeRowScoreChip', { score: page.score })}
+                    size="small"
+                    sx={CHIP_SX}
+                />
                 {page.discoverability != null ? (
                     <MsqdxChip
+                        variant="outlined"
                         label={t('domainResult.generativeRowDiscoverabilityChip', { score: page.discoverability })}
                         size="small"
                         sx={CHIP_SX}
@@ -96,16 +102,27 @@ export const GenerativePageScrollRow = memo(function GenerativePageScrollRow({
                 ) : null}
                 {page.repurposing != null ? (
                     <MsqdxChip
+                        variant="outlined"
                         label={t('domainResult.generativeRowRepurposingChip', { score: page.repurposing })}
                         size="small"
                         sx={CHIP_SX}
                     />
                 ) : null}
                 {page.hasLlmsTxt ? (
-                    <MsqdxChip label={t('domainResult.generativeRowLlmsChip')} size="small" sx={CHIP_SX} />
+                    <MsqdxChip
+                        variant="outlined"
+                        label={t('domainResult.generativeRowLlmsChip')}
+                        size="small"
+                        sx={CHIP_SX}
+                    />
                 ) : null}
                 {page.hasRecommendedSchema ? (
-                    <MsqdxChip label={t('domainResult.generativeRowSchemaChip')} size="small" sx={CHIP_SX} />
+                    <MsqdxChip
+                        variant="outlined"
+                        label={t('domainResult.generativeRowSchemaChip')}
+                        size="small"
+                        sx={CHIP_SX}
+                    />
                 ) : null}
             </Box>
         </Box>

@@ -1,23 +1,13 @@
 import React, { memo } from 'react';
 import { Box, alpha } from '@mui/material';
-import {
-    MsqdxAccordionItem,
-    MsqdxTypography,
-    MsqdxChip,
-} from '@msqdx/react'; // Assuming correct imports based on usage
-import {
-    MSQDX_SPACING,
-    MSQDX_THEME,
-    MSQDX_BRAND_PRIMARY,
-    MSQDX_STATUS,
-    MSQDX_NEUTRAL,
-} from '@msqdx/tokens';
+import { MsqdxAccordionItem, MsqdxTypography, MsqdxChip } from '@msqdx/react'; // Assuming correct imports based on usage
+import { MSQDX_SPACING, MSQDX_THEME, MSQDX_BRAND_PRIMARY, MSQDX_STATUS, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { Issue } from '@/lib/types';
 
-// Duplicate or import SEVERITY_CONFIG if possible. 
+// Duplicate or import SEVERITY_CONFIG if possible.
 // For now, redefining it here to keep component self-contained or I will export it from a shared file if I can.
-// But since I'm creating a new file, I'll copy the config for now or accept it as a prop? 
-// Better to define it here or import it. 
+// But since I'm creating a new file, I'll copy the config for now or accept it as a prop?
+// Better to define it here or import it.
 // I'll try to import it from types or constants if it exists there, but it likely exists only in page.tsx.
 // I will copy it here to ensure stability.
 
@@ -38,9 +28,12 @@ export const ScanIssueItem = memo(({ issue, index, registerRef }: ScanIssueItemP
     const config = SEVERITY_CONFIG[issue.type] || SEVERITY_CONFIG['notice'];
     const itemId = `issue-${index}`;
 
-    const handleRef = React.useCallback((el: HTMLDivElement | null) => {
-        registerRef(index, el);
-    }, [index, registerRef]);
+    const handleRef = React.useCallback(
+        (el: HTMLDivElement | null) => {
+            registerRef(index, el);
+        },
+        [index, registerRef],
+    );
 
     return (
         <Box
@@ -61,7 +54,14 @@ export const ScanIssueItem = memo(({ issue, index, registerRef }: ScanIssueItemP
             <MsqdxAccordionItem
                 id={itemId}
                 summary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: `${MSQDX_SPACING.scale.sm}px`, width: '100%' }}>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: `${MSQDX_SPACING.scale.sm}px`,
+                            width: '100%',
+                        }}
+                    >
                         {/* Severity dot */}
                         <Box
                             sx={{
@@ -83,10 +83,18 @@ export const ScanIssueItem = memo(({ issue, index, registerRef }: ScanIssueItemP
                             >
                                 {issue.message}
                             </MsqdxTypography>
-                            <Box sx={{ display: 'flex', gap: `${MSQDX_SPACING.scale.xs}px`, mt: `${MSQDX_SPACING.scale.xs}px`, flexWrap: 'wrap' }}>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    gap: `${MSQDX_SPACING.scale.xs}px`,
+                                    mt: `${MSQDX_SPACING.scale.xs}px`,
+                                    flexWrap: 'wrap',
+                                }}
+                            >
                                 <MsqdxChip
                                     label={config.label}
                                     size="small"
+                                    variant="outlined"
                                     sx={{
                                         backgroundColor: alpha(config.color, 0.12),
                                         color: config.color,
@@ -99,9 +107,16 @@ export const ScanIssueItem = memo(({ issue, index, registerRef }: ScanIssueItemP
                                     <MsqdxChip
                                         label={issue.wcagLevel === 'APCA' ? 'APCA' : `Level ${issue.wcagLevel}`}
                                         size="small"
+                                        variant="outlined"
                                         sx={{
-                                            backgroundColor: issue.wcagLevel === 'APCA' ? alpha(MSQDX_BRAND_PRIMARY.purple, 0.12) : alpha(MSQDX_STATUS.info.base, 0.12),
-                                            color: issue.wcagLevel === 'APCA' ? MSQDX_BRAND_PRIMARY.purple : MSQDX_STATUS.info.base,
+                                            backgroundColor:
+                                                issue.wcagLevel === 'APCA'
+                                                    ? alpha(MSQDX_BRAND_PRIMARY.purple, 0.12)
+                                                    : alpha(MSQDX_STATUS.info.base, 0.12),
+                                            color:
+                                                issue.wcagLevel === 'APCA'
+                                                    ? MSQDX_BRAND_PRIMARY.purple
+                                                    : MSQDX_STATUS.info.base,
                                             fontWeight: 600,
                                             fontSize: '0.6rem',
                                             height: 20,
@@ -111,6 +126,7 @@ export const ScanIssueItem = memo(({ issue, index, registerRef }: ScanIssueItemP
                                 <MsqdxChip
                                     label={issue.runner}
                                     size="small"
+                                    variant="outlined"
                                     sx={{
                                         backgroundColor: alpha(MSQDX_NEUTRAL[400], 0.1),
                                         color: MSQDX_THEME.dark.text.tertiary,
@@ -122,6 +138,7 @@ export const ScanIssueItem = memo(({ issue, index, registerRef }: ScanIssueItemP
                                     <MsqdxChip
                                         label={issue.code.length > 50 ? issue.code.slice(0, 50) + '…' : issue.code}
                                         size="small"
+                                        variant="outlined"
                                         sx={{
                                             backgroundColor: alpha(MSQDX_BRAND_PRIMARY.purple, 0.08),
                                             color: MSQDX_BRAND_PRIMARY.purple,

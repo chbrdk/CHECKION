@@ -17,7 +17,7 @@ export const SystemicIssueScrollRow = memo(function SystemicIssueScrollRow({ iss
     const { body, docUrl } = useMemo(() => splitSystemicIssueTitle(issue.title), [issue.title]);
     const fixText = useMemo(
         () => t('domainResult.fixingRuleAffects', { issueId: issue.issueId, count: issue.count }),
-        [t, issue.issueId, issue.count]
+        [t, issue.issueId, issue.count],
     );
 
     return (
@@ -58,7 +58,12 @@ export const SystemicIssueScrollRow = memo(function SystemicIssueScrollRow({ iss
                     {body}
                 </MsqdxTypography>
                 <Box sx={{ justifySelf: 'end', alignSelf: 'start' }}>
-                    <MsqdxChip label={t('domainResult.issuePagesCount', { count: issue.count })} size="small" brandColor="pink" />
+                    <MsqdxChip
+                        label={t('domainResult.issuePagesCount', { count: issue.count })}
+                        size="small"
+                        variant="outlined"
+                        brandColor="pink"
+                    />
                 </Box>
                 {docUrl ? (
                     <Box
@@ -81,7 +86,10 @@ export const SystemicIssueScrollRow = memo(function SystemicIssueScrollRow({ iss
                     </Box>
                 ) : null}
             </Box>
-            <MsqdxTypography variant="body2" sx={{ fontSize: '0.8125rem', lineHeight: 1.35, color: 'var(--color-text-on-light)' }}>
+            <MsqdxTypography
+                variant="body2"
+                sx={{ fontSize: '0.8125rem', lineHeight: 1.35, color: 'var(--color-text-on-light)' }}
+            >
                 {fixText}
             </MsqdxTypography>
         </Box>

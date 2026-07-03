@@ -33,6 +33,7 @@ export function CompetitorAlertsBanner({
                     <MsqdxChip
                         key={a.id}
                         size="small"
+                        variant="outlined"
                         label={t('projects.competitorChanges.alertChip', {
                             domain: a.domain,
                             new: a.summary.newCount,

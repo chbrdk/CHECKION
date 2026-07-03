@@ -85,6 +85,7 @@ export function PageIndexCard({
                             key={type}
                             label={`${SEMANTIC_TYPE_LABELS[type as PageIndexRegionType] ?? type}: ${count}`}
                             size="small"
+                            variant="outlined"
                             sx={{ height: 20, fontSize: '0.65rem' }}
                         />
                     ))}
@@ -155,7 +156,11 @@ function RegionRow({
                     minWidth: 36,
                 }}
             >
-                {region.tag === 'button' ? t('results.pageIndexTagButton') : region.tag === 'p' ? t('results.pageIndexTagParagraph') : region.tag}
+                {region.tag === 'button'
+                    ? t('results.pageIndexTagButton')
+                    : region.tag === 'p'
+                      ? t('results.pageIndexTagParagraph')
+                      : region.tag}
             </Box>
             <MsqdxTypography
                 variant="body2"
@@ -211,6 +216,7 @@ function RegionRow({
                     <MsqdxChip
                         label={semanticLabel}
                         size="small"
+                        variant="outlined"
                         sx={{
                             height: 20,
                             fontSize: '0.65rem',
@@ -223,4 +229,3 @@ function RegionRow({
         </Box>
     );
 }
-

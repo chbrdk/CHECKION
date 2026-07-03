@@ -54,7 +54,7 @@ const UxAuditPageRow = memo(function UxAuditPageRow({ url, ariaLabel, onOpen, ch
                 onOpen();
             }
         },
-        [onOpen]
+        [onOpen],
     );
 
     return (
@@ -105,6 +105,7 @@ const UxAuditPageRow = memo(function UxAuditPageRow({ url, ariaLabel, onOpen, ch
             <MsqdxChip
                 label={chipLabel}
                 size="small"
+                variant="outlined"
                 sx={{
                     flexShrink: 0,
                     fontSize: '0.7rem',
@@ -124,16 +125,16 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
     const { locale } = useI18n();
     const dwellLocale: DwellLocale = locale === 'en' ? 'en' : 'de';
     const hh = ux.headingHierarchy;
-    const showHeadingsHint =
-        hh.totalPages > 0 && (hh.pagesWithMultipleH1 > 0 || hh.pagesWithSkippedLevels > 0);
+    const showHeadingsHint = hh.totalPages > 0 && (hh.pagesWithMultipleH1 > 0 || hh.pagesWithSkippedLevels > 0);
 
     const read = ux.readability;
-    const readLine = read.pagesWithReadability > 0
-        ? t('domainResult.uxAuditKpiReadabilityLine', {
-              grade: read.grade,
-              score: read.score,
-          })
-        : t('domainResult.uxAuditKpiReadabilityEmpty');
+    const readLine =
+        read.pagesWithReadability > 0
+            ? t('domainResult.uxAuditKpiReadabilityLine', {
+                  grade: read.grade,
+                  score: read.score,
+              })
+            : t('domainResult.uxAuditKpiReadabilityEmpty');
 
     const hasPriority = ux.pagesByScore.length > 0;
     const hasReadabilitySection = ux.pageCount > 0;
@@ -196,12 +197,18 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                         sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX, width: '100%' }}
                     >
                         {!hasReadabilityRows ? (
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
+                            <MsqdxTypography
+                                variant="body2"
+                                sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}
+                            >
                                 {t('domainResult.uxAuditReadabilityNoData')}
                             </MsqdxTypography>
                         ) : (
                             <Stack spacing={2}>
-                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-on-light)', lineHeight: 1.45 }}>
+                                <MsqdxTypography
+                                    variant="body2"
+                                    sx={{ color: 'var(--color-text-on-light)', lineHeight: 1.45 }}
+                                >
                                     {t('domainResult.uxAuditReadabilityRange', {
                                         avg: read.score,
                                         min: read.minScore,
@@ -217,11 +224,24 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                                         const pct = total > 0 ? Math.round((n / total) * 100) : 0;
                                         return (
                                             <Box key={band}>
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.25, gap: 1 }}>
-                                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        mb: 0.25,
+                                                        gap: 1,
+                                                    }}
+                                                >
+                                                    <MsqdxTypography
+                                                        variant="caption"
+                                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                                    >
                                                         {t(`domainResult.uxAuditReadabilityBand.${band}`)}
                                                     </MsqdxTypography>
-                                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                                    <MsqdxTypography
+                                                        variant="caption"
+                                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                                    >
                                                         {n} ({pct}%)
                                                     </MsqdxTypography>
                                                 </Box>
@@ -248,7 +268,10 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                                 </Stack>
                                 {(read.hardestPages ?? []).length > 0 ? (
                                     <Stack spacing={0.5}>
-                                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)' }}>
+                                        <MsqdxTypography
+                                            variant="caption"
+                                            sx={{ fontWeight: 600, color: 'var(--color-text-muted-on-light)' }}
+                                        >
                                             {t('domainResult.uxAuditReadabilityHardest')}
                                         </MsqdxTypography>
                                         <Stack spacing={1}>
@@ -258,7 +281,10 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                                                     url={url}
                                                     ariaLabel={t('domainResult.uxAuditOpenScanAria', { url })}
                                                     onOpen={() => onOpenPageUrl(url)}
-                                                    chipLabel={t('domainResult.uxAuditReadabilityChip', { score, grade })}
+                                                    chipLabel={t('domainResult.uxAuditReadabilityChip', {
+                                                        score,
+                                                        grade,
+                                                    })}
                                                 />
                                             ))}
                                         </Stack>
@@ -376,7 +402,10 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                             bgcolor: 'var(--color-card-bg)',
                         }}
                     >
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}
+                        >
                             {t('domainResult.uxAuditKpiUxScore')}
                         </MsqdxTypography>
                         <MsqdxTypography variant="h5" sx={{ fontWeight: 700, color: kpiScoreColor(ux.score), mt: 0.5 }}>
@@ -391,7 +420,10 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                             bgcolor: 'var(--color-card-bg)',
                         }}
                     >
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}
+                        >
                             {t('domainResult.uxAuditKpiCls')}
                         </MsqdxTypography>
                         <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mt: 0.5 }}>
@@ -406,7 +438,10 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                             bgcolor: 'var(--color-card-bg)',
                         }}
                     >
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}
+                        >
                             {t('domainResult.uxAuditKpiBrokenLinks')}
                         </MsqdxTypography>
                         <MsqdxTypography
@@ -428,7 +463,10 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                             bgcolor: 'var(--color-card-bg)',
                         }}
                     >
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}
+                        >
                             {t('domainResult.uxAuditKpiReadability')}
                         </MsqdxTypography>
                         <MsqdxTypography variant="body1" sx={{ fontWeight: 600, mt: 0.5, lineHeight: 1.3 }}>
@@ -445,7 +483,10 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                             bgcolor: 'var(--color-card-bg)',
                         }}
                     >
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}
+                        >
                             {t('domainResult.uxAuditDwellTitle')}
                         </MsqdxTypography>
                         <MsqdxTypography variant="body1" sx={{ fontWeight: 600, mt: 0.5, lineHeight: 1.35 }}>
@@ -457,7 +498,15 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                                 total: ux.pageCount,
                             })}
                         </MsqdxTypography>
-                        <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{
+                                display: 'block',
+                                mt: 0.75,
+                                color: 'var(--color-text-muted-on-light)',
+                                lineHeight: 1.45,
+                            }}
+                        >
                             {t('domainResult.uxAuditDwellHint')}
                         </MsqdxTypography>
                     </Box>
@@ -471,7 +520,10 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                             bgcolor: 'var(--color-card-bg)',
                         }}
                     >
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}
+                        >
                             {t('domainResult.uxAuditLabMetricsTitle')}
                         </MsqdxTypography>
                         {ux.labLongTasks ? (
@@ -485,19 +537,33 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                             </MsqdxTypography>
                         ) : null}
                         {ux.labScriptBytesAvg != null ? (
-                            <MsqdxTypography variant="body2" sx={{ mt: ux.labLongTasks ? 0.75 : 0.75, lineHeight: 1.45 }}>
+                            <MsqdxTypography
+                                variant="body2"
+                                sx={{ mt: ux.labLongTasks ? 0.75 : 0.75, lineHeight: 1.45 }}
+                            >
                                 {t('domainResult.uxAuditLabScriptKb', {
                                     kb: Math.round(ux.labScriptBytesAvg / 1024),
                                 })}
                             </MsqdxTypography>
                         ) : null}
-                        <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.75, color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{
+                                display: 'block',
+                                mt: 0.75,
+                                color: 'var(--color-text-muted-on-light)',
+                                lineHeight: 1.45,
+                            }}
+                        >
                             {t('domainResult.uxAuditLabMetricsHint')}
                         </MsqdxTypography>
                     </Box>
                 ) : null}
                 {showHeadingsHint ? (
-                    <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
+                    <MsqdxTypography
+                        variant="caption"
+                        sx={{ display: 'block', color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}
+                    >
                         {t('domainResult.uxAuditHeadingsHint', {
                             multiH1: hh.pagesWithMultipleH1,
                             skipped: hh.pagesWithSkippedLevels,
@@ -517,8 +583,12 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
                             minWidth: 0,
                         }}
                     >
-                        <Box sx={{ flex: { md: '1 1 0' }, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>{priorityCard}</Box>
-                        <Box sx={{ flex: { md: '1 1 0' }, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>{detailColumn}</Box>
+                        <Box sx={{ flex: { md: '1 1 0' }, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>
+                            {priorityCard}
+                        </Box>
+                        <Box sx={{ flex: { md: '1 1 0' }, minWidth: 0, width: { xs: '100%', md: 'auto' } }}>
+                            {detailColumn}
+                        </Box>
                     </Box>
                 ) : null}
                 {hasPriority && !hasDetailContent ? <Box sx={{ minWidth: 0 }}>{priorityCard}</Box> : null}
@@ -530,7 +600,11 @@ function DomainResultUxAuditSectionInner({ t, ux, onOpenPageUrl }: DomainResultU
 
 export const DomainResultUxAuditSection = memo(DomainResultUxAuditSectionInner);
 
-function DomainResultUxAuditEmptyInner({ t }: { t: (key: string, params?: Record<string, string | number>) => string }) {
+function DomainResultUxAuditEmptyInner({
+    t,
+}: {
+    t: (key: string, params?: Record<string, string | number>) => string;
+}) {
     return (
         <MsqdxMoleculeCard
             title={t('domainResult.uxAuditTitle')}

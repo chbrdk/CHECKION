@@ -40,7 +40,12 @@ export const SeoDensityScrollRow = memo(function SeoDensityScrollRow({
                     {row.url}
                 </MsqdxTypography>
                 <Tooltip title={t('domainResult.openPage')}>
-                    <IconButton size="small" aria-label={t('domainResult.openPageAria', { url: row.url })} onClick={open} sx={{ flexShrink: 0 }}>
+                    <IconButton
+                        size="small"
+                        aria-label={t('domainResult.openPageAria', { url: row.url })}
+                        onClick={open}
+                        sx={{ flexShrink: 0 }}
+                    >
                         <ExternalLink size={16} strokeWidth={2} aria-hidden />
                     </IconButton>
                 </Tooltip>
@@ -50,7 +55,11 @@ export const SeoDensityScrollRow = memo(function SeoDensityScrollRow({
                     {t('domainResult.seoWordCount', { count: row.wordCount.toLocaleString(lc) })}
                 </MsqdxTypography>
                 {row.topKeywordCount > 0 && (
-                    <MsqdxTypography variant="caption" component="span" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography
+                        variant="caption"
+                        component="span"
+                        sx={{ color: 'var(--color-text-muted-on-light)' }}
+                    >
                         {t('domainResult.seoTopKeywords', { count: row.topKeywordCount })}
                     </MsqdxTypography>
                 )}
@@ -58,6 +67,7 @@ export const SeoDensityScrollRow = memo(function SeoDensityScrollRow({
                     <MsqdxChip
                         label={t('domainResult.seoSkinnyChip')}
                         size="small"
+                        variant="outlined"
                         sx={{
                             height: 18,
                             fontSize: '0.65rem',

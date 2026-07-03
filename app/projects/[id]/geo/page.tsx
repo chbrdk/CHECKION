@@ -5,13 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
 import Link from 'next/link';
 import { Box, Dialog, DialogTitle, DialogContent, Stack } from '@mui/material';
-import {
-    MsqdxTypography,
-    MsqdxButton,
-    MsqdxFormField,
-    MsqdxChip,
-    MsqdxMoleculeCard,
-} from '@msqdx/react';
+import { MsqdxTypography, MsqdxButton, MsqdxFormField, MsqdxChip, MsqdxMoleculeCard } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
     apiProject,
@@ -37,7 +31,7 @@ export default function ProjectGeoPage() {
     const params = useParams();
     const router = useRouter();
     const { t } = useI18n();
-    const id = typeof params.id === 'string' ? params.id : params.id?.[0] ?? null;
+    const id = typeof params.id === 'string' ? params.id : (params.id?.[0] ?? null);
     const [project, setProject] = useState<{
         id: string;
         name: string;
@@ -52,7 +46,10 @@ export default function ProjectGeoPage() {
     const [competitorDomains, setCompetitorDomains] = useState<string[]>([]);
     const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
     const [historyLoading, setHistoryLoading] = useState(false);
-    const [geoSummary, setGeoSummary] = useState<{ score: number | null; competitorScores: Record<string, number> }>({ score: null, competitorScores: {} });
+    const [geoSummary, setGeoSummary] = useState<{ score: number | null; competitorScores: Record<string, number> }>({
+        score: null,
+        competitorScores: {},
+    });
     const [addGeoQueryValue, setAddGeoQueryValue] = useState('');
     const [suggestGeoQueriesLoading, setSuggestGeoQueriesLoading] = useState(false);
     const [suggestGeoQueriesError, setSuggestGeoQueriesError] = useState<string | null>(null);
@@ -87,11 +84,11 @@ export default function ProjectGeoPage() {
         void Promise.allSettled([
             fetch(apiProject(id), { credentials: 'same-origin', signal }).then((r) => readJsonResponse(r)),
             fetch(apiScanGeoEeatHistory({ limit: 100, projectId: id }), { credentials: 'same-origin', signal }).then(
-                (r) => readJsonResponse(r)
+                (r) => readJsonResponse(r),
             ),
             fetch(apiProjectGeoSummary(id), { credentials: 'same-origin', signal }).then((r) => readJsonResponse(r)),
             fetch(apiProjectGeoQuestionHistory(id, 90), { credentials: 'same-origin', signal }).then((r) =>
-                readJsonResponse(r)
+                readJsonResponse(r),
             ),
         ])
             .then(([projectRes, historyRes, summaryRes, questionRes]) => {
@@ -155,9 +152,11 @@ export default function ProjectGeoPage() {
                     };
                     if (questionResValue?.success) {
                         if (Array.isArray(questionResValue.questions)) setQuestionHistory(questionResValue.questions);
-                        setTargetDomain(typeof questionResValue.targetDomain === 'string' ? questionResValue.targetDomain : '');
+                        setTargetDomain(
+                            typeof questionResValue.targetDomain === 'string' ? questionResValue.targetDomain : '',
+                        );
                         setCompetitorDomains(
-                            Array.isArray(questionResValue.competitorDomains) ? questionResValue.competitorDomains : []
+                            Array.isArray(questionResValue.competitorDomains) ? questionResValue.competitorDomains : [],
                         );
                     }
                 } else if (questionRes.reason?.name !== 'AbortError') {
@@ -196,9 +195,8 @@ export default function ProjectGeoPage() {
         return Array.from(set);
     }, [questionHistory]);
 
-    const effectiveModelId = selectedModelId && allModelIds.includes(selectedModelId)
-        ? selectedModelId
-        : (allModelIds[0] ?? null);
+    const effectiveModelId =
+        selectedModelId && allModelIds.includes(selectedModelId) ? selectedModelId : (allModelIds[0] ?? null);
 
     const handleAddGeoQuery = useCallback(async () => {
         const q = addGeoQueryValue.trim();
@@ -236,7 +234,7 @@ export default function ProjectGeoPage() {
                 // ignore
             }
         },
-        [id, geoQueries, loadProject]
+        [id, geoQueries, loadProject],
     );
 
     const renderGeoModelChip = useCallback(
@@ -249,14 +247,20 @@ export default function ProjectGeoPage() {
                 sx={{ ...msqdxChipThemeAccentSx(effectiveModelId === modelId), fontSize: 11 }}
             />
         ),
-        [effectiveModelId]
+        [effectiveModelId],
     );
 
     const renderGeoQueryChip = useCallback(
         (query: string) => (
-            <MsqdxChip label={query} onDelete={() => void handleRemoveGeoQuery(query)} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
+            <MsqdxChip
+                label={query}
+                onDelete={() => void handleRemoveGeoQuery(query)}
+                size="small"
+                variant="outlined"
+                sx={{ mr: 0.5, mb: 0.5 }}
+            />
         ),
-        [handleRemoveGeoQuery]
+        [handleRemoveGeoQuery],
     );
 
     const handleSuggestGeoQueries = useCallback(async () => {
@@ -308,7 +312,13 @@ export default function ProjectGeoPage() {
             const comps = Array.isArray(project.competitors) ? project.competitors : [];
             const queries = Array.isArray(project.geoQueries) ? project.geoQueries : [];
             const runCompetitive = comps.length > 0 || queries.length > 0;
-            const body: { url: string; projectId: string; runCompetitive?: boolean; competitors?: string[]; queries?: string[] } = {
+            const body: {
+                url: string;
+                projectId: string;
+                runCompetitive?: boolean;
+                competitors?: string[];
+                queries?: string[];
+            } = {
                 url,
                 projectId: project.id,
             };
@@ -372,7 +382,10 @@ export default function ProjectGeoPage() {
                 >
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'baseline' }}>
                         <Box>
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                            <MsqdxTypography
+                                variant="caption"
+                                sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}
+                            >
                                 {t('projects.ourScore')}
                             </MsqdxTypography>
                             <MsqdxTypography
@@ -392,13 +405,21 @@ export default function ProjectGeoPage() {
                                 {geoSummary.score != null ? `${geoSummary.score}/100` : '—'}
                             </MsqdxTypography>
                         </Box>
-                        {geoSummary.competitorScores && Object.keys(geoSummary.competitorScores).length > 0 &&
+                        {geoSummary.competitorScores &&
+                            Object.keys(geoSummary.competitorScores).length > 0 &&
                             Object.entries(geoSummary.competitorScores).map(([domain, score]) => (
                                 <Box key={domain}>
-                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}
+                                    >
                                         {domain}
                                     </MsqdxTypography>
-                                    <MsqdxTypography variant="h4" weight="bold" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                    <MsqdxTypography
+                                        variant="h4"
+                                        weight="bold"
+                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                    >
                                         {score}/100
                                     </MsqdxTypography>
                                 </Box>
@@ -421,7 +442,11 @@ export default function ProjectGeoPage() {
                                 disabled={!project.domain || geoStartLoading}
                                 sx={MSQDX_BUTTON_THEME_ACCENT_SX}
                             >
-                                {geoStartLoading ? t('common.loading') : geoRuns.length === 0 ? t('projects.startGeoEeat') : t('projects.startNewGeoEeat')}
+                                {geoStartLoading
+                                    ? t('common.loading')
+                                    : geoRuns.length === 0
+                                      ? t('projects.startGeoEeat')
+                                      : t('projects.startNewGeoEeat')}
                             </MsqdxButton>
                             <MsqdxButton variant="outlined" size="small" onClick={() => setManageQueriesOpen(true)}>
                                 {t('projects.geoQueries')}
@@ -441,7 +466,11 @@ export default function ProjectGeoPage() {
                             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                                 {t('geoEeat.competitiveModelLabel', { model: '' }).replace(': ', '')}
                             </MsqdxTypography>
-                            <VirtualChipList items={allModelIds} getItemKey={(modelId) => modelId} renderChip={renderGeoModelChip} />
+                            <VirtualChipList
+                                items={allModelIds}
+                                getItemKey={(modelId) => modelId}
+                                renderChip={renderGeoModelChip}
+                            />
                         </Box>
                     )}
 
@@ -457,7 +486,12 @@ export default function ProjectGeoPage() {
                         <Box
                             sx={{
                                 display: 'grid',
-                                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(3, 1fr)' },
+                                gridTemplateColumns: {
+                                    xs: '1fr',
+                                    sm: 'repeat(2, 1fr)',
+                                    md: 'repeat(3, 1fr)',
+                                    lg: 'repeat(3, 1fr)',
+                                },
                                 gap: 2,
                             }}
                         >
@@ -518,7 +552,10 @@ export default function ProjectGeoPage() {
             >
                 <DialogTitle sx={{ fontWeight: 600 }}>{t('projects.geoQueries')}</DialogTitle>
                 <DialogContent>
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
+                    <MsqdxTypography
+                        variant="caption"
+                        sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}
+                    >
                         {t('projects.geoQueriesDescription')}
                     </MsqdxTypography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', mb: 1.5 }}>
@@ -530,7 +567,12 @@ export default function ProjectGeoPage() {
                             onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleAddGeoQuery()}
                             sx={{ minWidth: 240, flex: '1 1 240px' }}
                         />
-                        <MsqdxButton variant="outlined" size="small" onClick={handleAddGeoQuery} disabled={!addGeoQueryValue.trim()}>
+                        <MsqdxButton
+                            variant="outlined"
+                            size="small"
+                            onClick={handleAddGeoQuery}
+                            disabled={!addGeoQueryValue.trim()}
+                        >
                             {t('projects.addGeoQuery')}
                         </MsqdxButton>
                         <MsqdxButton
@@ -543,7 +585,10 @@ export default function ProjectGeoPage() {
                         </MsqdxButton>
                     </Box>
                     {suggestGeoQueriesError && (
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}
+                        >
                             {suggestGeoQueriesError}
                         </MsqdxTypography>
                     )}
@@ -552,7 +597,11 @@ export default function ProjectGeoPage() {
                             {t('projects.emptyGeoQueries')}
                         </MsqdxTypography>
                     ) : (
-                        <VirtualChipList items={geoQueries} getItemKey={(query) => query} renderChip={renderGeoQueryChip} />
+                        <VirtualChipList
+                            items={geoQueries}
+                            getItemKey={(query) => query}
+                            renderChip={renderGeoQueryChip}
+                        />
                     )}
                 </DialogContent>
             </Dialog>

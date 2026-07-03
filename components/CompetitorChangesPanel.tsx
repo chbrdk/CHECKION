@@ -41,7 +41,7 @@ function DiffSummaryChips({ diff }: { diff: DomainScanDiffResult }) {
             {chips
                 .filter((c) => c.show)
                 .map((c) => (
-                    <MsqdxChip key={c.label} size="small" label={c.label} />
+                    <MsqdxChip key={c.label} size="small" variant="outlined" label={c.label} />
                 ))}
         </Box>
     );
@@ -116,7 +116,11 @@ function DomainDiffBlock({
                                 <MsqdxTypography
                                     key={p.url}
                                     variant="caption"
-                                    sx={{ display: 'block', color: 'var(--color-text-muted-on-light)', wordBreak: 'break-all' }}
+                                    sx={{
+                                        display: 'block',
+                                        color: 'var(--color-text-muted-on-light)',
+                                        wordBreak: 'break-all',
+                                    }}
                                 >
                                     {p.url}
                                 </MsqdxTypography>
@@ -132,7 +136,11 @@ function DomainDiffBlock({
                                 <MsqdxTypography
                                     key={p.url}
                                     variant="caption"
-                                    sx={{ display: 'block', color: 'var(--color-text-muted-on-light)', wordBreak: 'break-all' }}
+                                    sx={{
+                                        display: 'block',
+                                        color: 'var(--color-text-muted-on-light)',
+                                        wordBreak: 'break-all',
+                                    }}
                                 >
                                     {p.url}
                                 </MsqdxTypography>
@@ -177,8 +185,7 @@ export function CompetitorChangesPanel({
         Object.values(data?.competitors ?? {}).some((d) => activityCount(d) > 0);
 
     const hasComparable =
-        Boolean(data?.own?.previousScanId) ||
-        Object.values(data?.competitors ?? {}).some((d) => d?.previousScanId);
+        Boolean(data?.own?.previousScanId) || Object.values(data?.competitors ?? {}).some((d) => d?.previousScanId);
 
     return (
         <MsqdxMoleculeCard
@@ -197,10 +204,7 @@ export function CompetitorChangesPanel({
             ) : (
                 <Box>
                     {!anyActivity && hasComparable ? (
-                        <MsqdxTypography
-                            variant="body2"
-                            sx={{ color: 'var(--color-text-muted-on-light)', mb: 1 }}
-                        >
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1 }}>
                             {t('projects.competitorChanges.allUnchanged')}
                         </MsqdxTypography>
                     ) : null}
@@ -231,9 +235,7 @@ export function CompetitorChangesPanel({
 }
 
 /** Badge count for competitor row in project overview. */
-export function competitorChangeBadgeCount(
-    diff: DomainScanDiffResult | null | undefined,
-): number {
+export function competitorChangeBadgeCount(diff: DomainScanDiffResult | null | undefined): number {
     if (!diff?.previousScanId) return 0;
     return diff.summary.newCount + diff.summary.likelyUpdatedCount;
 }

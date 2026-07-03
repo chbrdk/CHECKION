@@ -1,14 +1,20 @@
 import type { ReactNode } from 'react';
 import { Box, alpha, LinearProgress } from '@mui/material';
-import {
-    MsqdxTypography,
-    MsqdxMoleculeCard,
-    MsqdxChip,
-    MsqdxTooltip,
-} from '@msqdx/react';
+import { MsqdxTypography, MsqdxMoleculeCard, MsqdxChip, MsqdxTooltip } from '@msqdx/react';
 import { MSQDX_SPACING, MSQDX_THEME, MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { GenerativeEngineAudit, YmylResult, GeoAudit } from '@/lib/types';
-import { Brain, FileText, Database, Quote, UserCheck, Bot, CheckCircle2, XCircle, Info, AlertTriangle } from 'lucide-react';
+import {
+    Brain,
+    FileText,
+    Database,
+    Quote,
+    UserCheck,
+    Bot,
+    CheckCircle2,
+    XCircle,
+    Info,
+    AlertTriangle,
+} from 'lucide-react';
 
 export function GenerativeOptimizerCard({
     data,
@@ -46,7 +52,12 @@ export function GenerativeOptimizerCard({
                             <MsqdxChip
                                 label={`YMYL (${ymyl.confidence})`}
                                 size="small"
-                                sx={{ bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12), color: MSQDX_STATUS.warning.base, fontWeight: 600 }}
+                                variant="outlined"
+                                sx={{
+                                    bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12),
+                                    color: MSQDX_STATUS.warning.base,
+                                    fontWeight: 600,
+                                }}
                             />
                         )}
                         {geo?.targetRegionMismatch && (
@@ -54,19 +65,36 @@ export function GenerativeOptimizerCard({
                                 icon={<AlertTriangle size={14} />}
                                 label={`Server-Standort weicht von Zielregion ${geo.targetRegion ?? ''} ab`}
                                 size="small"
-                                sx={{ bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12), color: MSQDX_STATUS.warning.base }}
+                                variant="outlined"
+                                sx={{
+                                    bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12),
+                                    color: MSQDX_STATUS.warning.base,
+                                }}
                             />
                         )}
                     </Box>
                 )}
 
                 {/* Global Score + Breakdown Tooltip */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 'var(--msqdx-spacing-sm)', bgcolor: alpha(getScoreColor(data.score), 0.08), borderRadius: 2, border: `1px solid ${alpha(getScoreColor(data.score), 0.25)}` }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: 'var(--msqdx-spacing-sm)',
+                        bgcolor: alpha(getScoreColor(data.score), 0.08),
+                        borderRadius: 2,
+                        border: `1px solid ${alpha(getScoreColor(data.score), 0.25)}`,
+                    }}
+                >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-sm)' }}>
                         <Brain size={32} color={getScoreColor(data.score)} />
                         <Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <MsqdxTypography variant="h5" sx={{ fontWeight: 800, color: getScoreColor(data.score) }}>
+                                <MsqdxTypography
+                                    variant="h5"
+                                    sx={{ fontWeight: 800, color: getScoreColor(data.score) }}
+                                >
                                     {data.score}/100
                                 </MsqdxTypography>
                                 {data.scoreBreakdown && data.scoreBreakdown.length > 0 && (
@@ -75,19 +103,27 @@ export function GenerativeOptimizerCard({
                                             <Box component="ul" sx={{ m: 0, pl: 1.5, fontSize: '0.75rem' }}>
                                                 {data.scoreBreakdown.map((b, i) => (
                                                     <li key={i} style={{ marginBottom: 4 }}>
-                                                        {b.factor}: {b.points > 0 ? '+' : ''}{b.points}
+                                                        {b.factor}: {b.points > 0 ? '+' : ''}
+                                                        {b.points}
                                                     </li>
                                                 ))}
                                             </Box>
                                         }
                                     >
                                         <Box component="span" sx={{ display: 'inline-flex', cursor: 'help' }}>
-                                            <Info size={16} style={{ color: textTertiary }} aria-label="Score-Berechnung" />
+                                            <Info
+                                                size={16}
+                                                style={{ color: textTertiary }}
+                                                aria-label="Score-Berechnung"
+                                            />
                                         </Box>
                                     </MsqdxTooltip>
                                 )}
                             </Box>
-                            <MsqdxTypography variant="caption" sx={{ color: textTertiary, fontWeight: 600, textTransform: 'uppercase' }}>
+                            <MsqdxTypography
+                                variant="caption"
+                                sx={{ color: textTertiary, fontWeight: 600, textTransform: 'uppercase' }}
+                            >
                                 Score für KI-Auswertbarkeit
                             </MsqdxTypography>
                         </Box>
@@ -95,12 +131,23 @@ export function GenerativeOptimizerCard({
                     <MsqdxChip
                         label={data.score >= 70 ? 'KI-bereit' : 'Optimierung nötig'}
                         size="small"
-                        sx={{ bgcolor: alpha(getScoreColor(data.score), 0.12), color: getScoreColor(data.score), fontWeight: 700 }}
+                        variant="outlined"
+                        sx={{
+                            bgcolor: alpha(getScoreColor(data.score), 0.12),
+                            color: getScoreColor(data.score),
+                            fontWeight: 700,
+                        }}
                     />
                 </Box>
 
                 {data.dimensions && (
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 'var(--msqdx-spacing-sm)' }}>
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                            gap: 'var(--msqdx-spacing-sm)',
+                        }}
+                    >
                         <GeoDimensionColumn
                             label="Auffindbarkeit"
                             subtitle="Gefunden werden (Robots, llms.txt, Indexierung)"
@@ -121,26 +168,54 @@ export function GenerativeOptimizerCard({
                 )}
 
                 {data.repurposingSignals && (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xxs)', alignItems: 'center' }}>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 'var(--msqdx-spacing-xxs)',
+                            alignItems: 'center',
+                        }}
+                    >
                         <MsqdxTypography variant="caption" sx={{ color: textTertiary, width: '100%', mb: 0.25 }}>
                             On-Page-Signale
                         </MsqdxTypography>
                         {data.repurposingSignals.hasFaqPageSchema ? (
-                            <MsqdxChip label="FAQPage JSON-LD" size="small" sx={{ height: 22, fontSize: '0.65rem' }} />
+                            <MsqdxChip
+                                label="FAQPage JSON-LD"
+                                size="small"
+                                variant="outlined"
+                                sx={{ height: 22, fontSize: '0.65rem' }}
+                            />
                         ) : null}
                         {data.repurposingSignals.hasHowToSchema ? (
-                            <MsqdxChip label="HowTo JSON-LD" size="small" sx={{ height: 22, fontSize: '0.65rem' }} />
+                            <MsqdxChip
+                                label="HowTo JSON-LD"
+                                size="small"
+                                variant="outlined"
+                                sx={{ height: 22, fontSize: '0.65rem' }}
+                            />
                         ) : null}
                         {data.repurposingSignals.hasBreadcrumbList ? (
-                            <MsqdxChip label="BreadcrumbList" size="small" sx={{ height: 22, fontSize: '0.65rem' }} />
+                            <MsqdxChip
+                                label="BreadcrumbList"
+                                size="small"
+                                variant="outlined"
+                                sx={{ height: 22, fontSize: '0.65rem' }}
+                            />
                         ) : null}
                         {data.repurposingSignals.organizationOrWebSiteWithTrust ? (
-                            <MsqdxChip label="Org / WebSite" size="small" sx={{ height: 22, fontSize: '0.65rem' }} />
+                            <MsqdxChip
+                                label="Org / WebSite"
+                                size="small"
+                                variant="outlined"
+                                sx={{ height: 22, fontSize: '0.65rem' }}
+                            />
                         ) : null}
                         {(data.repurposingSignals.headingH2Count ?? 0) > 0 ? (
                             <MsqdxChip
                                 label={`H2: ${data.repurposingSignals.headingH2Count}`}
                                 size="small"
+                                variant="outlined"
                                 sx={{ height: 22, fontSize: '0.65rem' }}
                             />
                         ) : null}
@@ -149,69 +224,171 @@ export function GenerativeOptimizerCard({
 
                 {/* Technical Section */}
                 <Box>
-                    <SectionHeader icon={<Bot size={18} />} title="Technische KI-Bereitschaft" color={MSQDX_STATUS.info.base} />
+                    <SectionHeader
+                        icon={<Bot size={18} />}
+                        title="Technische KI-Bereitschaft"
+                        color={MSQDX_STATUS.info.base}
+                    />
                     <Box sx={{ display: 'grid', gap: 'var(--msqdx-spacing-xs)' }}>
-                        <StatusRow label="llms.txt-Unterstützung" status={data.technical.hasLlmsTxt} textTertiary={textTertiary} />
-                        {data.technical.hasLlmsTxt && data.technical.llmsTxtSections && data.technical.llmsTxtSections.length > 0 && (
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--msqdx-spacing-xxs)' }}>
-                                <MsqdxTypography variant="caption" sx={{ color: textTertiary, mr: 'var(--msqdx-spacing-xs)' }}>Abschnitte:</MsqdxTypography>
-                                {data.technical.llmsTxtSections.map((s, i) => (
-                                    <MsqdxChip key={i} label={s} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.6rem' }} />
-                                ))}
-                                {data.technical.llmsTxtHasSitemap && (
-                                    <MsqdxChip label="Sitemap" size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: alpha(MSQDX_BRAND_PRIMARY.green, 0.1), color: MSQDX_BRAND_PRIMARY.green }} />
-                                )}
-                            </Box>
-                        )}
-                        {data.technical.hasLlmsTxt && data.technical.llmsTxtHasSitemap !== undefined && !data.technical.llmsTxtHasSitemap && (
-                            <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.warning.base }}>llms.txt enthält keine Sitemap-URL</MsqdxTypography>
-                        )}
+                        <StatusRow
+                            label="llms.txt-Unterstützung"
+                            status={data.technical.hasLlmsTxt}
+                            textTertiary={textTertiary}
+                        />
+                        {data.technical.hasLlmsTxt &&
+                            data.technical.llmsTxtSections &&
+                            data.technical.llmsTxtSections.length > 0 && (
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
+                                        alignItems: 'center',
+                                        gap: 'var(--msqdx-spacing-xxs)',
+                                    }}
+                                >
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ color: textTertiary, mr: 'var(--msqdx-spacing-xs)' }}
+                                    >
+                                        Abschnitte:
+                                    </MsqdxTypography>
+                                    {data.technical.llmsTxtSections.map((s, i) => (
+                                        <MsqdxChip
+                                            key={i}
+                                            label={s}
+                                            size="small"
+                                            variant="outlined"
+                                            sx={{ height: 18, fontSize: '0.6rem' }}
+                                        />
+                                    ))}
+                                    {data.technical.llmsTxtHasSitemap && (
+                                        <MsqdxChip
+                                            label="Sitemap"
+                                            size="small"
+                                            variant="outlined"
+                                            sx={{
+                                                height: 18,
+                                                fontSize: '0.6rem',
+                                                bgcolor: alpha(MSQDX_BRAND_PRIMARY.green, 0.1),
+                                                color: MSQDX_BRAND_PRIMARY.green,
+                                            }}
+                                        />
+                                    )}
+                                </Box>
+                            )}
+                        {data.technical.hasLlmsTxt &&
+                            data.technical.llmsTxtHasSitemap !== undefined &&
+                            !data.technical.llmsTxtHasSitemap && (
+                                <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.warning.base }}>
+                                    llms.txt enthält keine Sitemap-URL
+                                </MsqdxTypography>
+                            )}
                         {data.technical.llmsTxtRulesContent && (
-                            <Box sx={{ p: 1, borderRadius: 1, bgcolor: MSQDX_NEUTRAL[50], border: `1px solid ${MSQDX_NEUTRAL[200]}` }}>
-                                <MsqdxTypography variant="caption" sx={{ color: textTertiary, display: 'block', mb: 0.5 }}>Rules-Inhalt (llms.txt)</MsqdxTypography>
-                                <MsqdxTypography variant="caption" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                            <Box
+                                sx={{
+                                    p: 1,
+                                    borderRadius: 1,
+                                    bgcolor: MSQDX_NEUTRAL[50],
+                                    border: `1px solid ${MSQDX_NEUTRAL[200]}`,
+                                }}
+                            >
+                                <MsqdxTypography
+                                    variant="caption"
+                                    sx={{ color: textTertiary, display: 'block', mb: 0.5 }}
+                                >
+                                    Rules-Inhalt (llms.txt)
+                                </MsqdxTypography>
+                                <MsqdxTypography
+                                    variant="caption"
+                                    sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+                                >
                                     {data.technical.llmsTxtRulesContent}
                                 </MsqdxTypography>
                             </Box>
                         )}
-                        {data.technical.llmsTxtRobotsConsistencyWarnings && data.technical.llmsTxtRobotsConsistencyWarnings.length > 0 && (
-                            <Box sx={{ p: 1, borderRadius: 1, bgcolor: alpha(MSQDX_STATUS.warning.base, 0.08), border: `1px solid ${alpha(MSQDX_STATUS.warning.base, 0.3)}` }}>
-                                <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.warning.base, fontWeight: 600, display: 'block', mb: 0.5 }}>Robots vs. llms.txt</MsqdxTypography>
-                                {data.technical.llmsTxtRobotsConsistencyWarnings.map((w, i) => (
-                                    <MsqdxTypography key={i} variant="caption" sx={{ display: 'block' }}>• {w}</MsqdxTypography>
-                                ))}
-                            </Box>
-                        )}
+                        {data.technical.llmsTxtRobotsConsistencyWarnings &&
+                            data.technical.llmsTxtRobotsConsistencyWarnings.length > 0 && (
+                                <Box
+                                    sx={{
+                                        p: 1,
+                                        borderRadius: 1,
+                                        bgcolor: alpha(MSQDX_STATUS.warning.base, 0.08),
+                                        border: `1px solid ${alpha(MSQDX_STATUS.warning.base, 0.3)}`,
+                                    }}
+                                >
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{
+                                            color: MSQDX_STATUS.warning.base,
+                                            fontWeight: 600,
+                                            display: 'block',
+                                            mb: 0.5,
+                                        }}
+                                    >
+                                        Robots vs. llms.txt
+                                    </MsqdxTypography>
+                                    {data.technical.llmsTxtRobotsConsistencyWarnings.map((w, i) => (
+                                        <MsqdxTypography key={i} variant="caption" sx={{ display: 'block' }}>
+                                            • {w}
+                                        </MsqdxTypography>
+                                    ))}
+                                </Box>
+                            )}
                         {data.technical.llmsTxtSpecCompliant && (
                             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                 <MsqdxChip
-                                    icon={data.technical.llmsTxtSpecCompliant.hasTitle ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                                    icon={
+                                        data.technical.llmsTxtSpecCompliant.hasTitle ? (
+                                            <CheckCircle2 size={12} />
+                                        ) : (
+                                            <XCircle size={12} />
+                                        )
+                                    }
                                     label="Title (H1)"
                                     size="small"
+                                    variant="outlined"
                                     sx={{ height: 20, fontSize: '0.65rem' }}
                                 />
                                 <MsqdxChip
-                                    icon={data.technical.llmsTxtSpecCompliant.hasDescription ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                                    icon={
+                                        data.technical.llmsTxtSpecCompliant.hasDescription ? (
+                                            <CheckCircle2 size={12} />
+                                        ) : (
+                                            <XCircle size={12} />
+                                        )
+                                    }
                                     label="Description"
                                     size="small"
+                                    variant="outlined"
                                     sx={{ height: 20, fontSize: '0.65rem' }}
                                 />
                             </Box>
                         )}
-                        {data.technical.llmsTxtMarkdownUrlsReachable && data.technical.llmsTxtMarkdownUrlsReachable.length > 0 && (
-                            <Box>
-                                <MsqdxTypography variant="caption" sx={{ color: textTertiary, mb: 0.5, display: 'block' }}>Markdown-URLs (llms.txt)</MsqdxTypography>
-                                {data.technical.llmsTxtMarkdownUrlsReachable.map((u, i) => (
-                                    <MsqdxChip
-                                        key={i}
-                                        label={`${u.url.slice(0, 40)}…: ${u.status}`}
-                                        size="small"
-                                        sx={{ height: 20, fontSize: '0.6rem', mr: 0.5, mb: 0.5 }}
-                                    />
-                                ))}
-                            </Box>
-                        )}
-                        <StatusRow label="KI-Bot-Zugriff (Robots.txt)" status={data.technical.hasRobotsAllowingAI} textTertiary={textTertiary} />
+                        {data.technical.llmsTxtMarkdownUrlsReachable &&
+                            data.technical.llmsTxtMarkdownUrlsReachable.length > 0 && (
+                                <Box>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ color: textTertiary, mb: 0.5, display: 'block' }}
+                                    >
+                                        Markdown-URLs (llms.txt)
+                                    </MsqdxTypography>
+                                    {data.technical.llmsTxtMarkdownUrlsReachable.map((u, i) => (
+                                        <MsqdxChip
+                                            key={i}
+                                            label={`${u.url.slice(0, 40)}…: ${u.status}`}
+                                            size="small"
+                                            variant="outlined"
+                                            sx={{ height: 20, fontSize: '0.6rem', mr: 0.5, mb: 0.5 }}
+                                        />
+                                    ))}
+                                </Box>
+                            )}
+                        <StatusRow
+                            label="KI-Bot-Zugriff (Robots.txt)"
+                            status={data.technical.hasRobotsAllowingAI}
+                            textTertiary={textTertiary}
+                        />
                         {data.technical.aiBotStatus && data.technical.aiBotStatus.length > 0 && (
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xxs)' }}>
                                 {data.technical.aiBotStatus.map(({ bot, status }) => (
@@ -219,63 +396,150 @@ export function GenerativeOptimizerCard({
                                         key={bot}
                                         label={`${bot}: ${status}`}
                                         size="small"
+                                        variant="outlined"
                                         sx={{
                                             height: 20,
                                             fontSize: '0.6rem',
-                                            bgcolor: status === 'allowed' ? alpha(MSQDX_BRAND_PRIMARY.green, 0.1) : alpha(MSQDX_STATUS.error.base, 0.1),
-                                            color: status === 'allowed' ? MSQDX_BRAND_PRIMARY.green : MSQDX_STATUS.error.base
+                                            bgcolor:
+                                                status === 'allowed'
+                                                    ? alpha(MSQDX_BRAND_PRIMARY.green, 0.1)
+                                                    : alpha(MSQDX_STATUS.error.base, 0.1),
+                                            color:
+                                                status === 'allowed'
+                                                    ? MSQDX_BRAND_PRIMARY.green
+                                                    : MSQDX_STATUS.error.base,
                                         }}
                                     />
                                 ))}
                             </Box>
                         )}
                         {data.technical.metaRobotsContent !== undefined && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xs)' }}>
-                                <MsqdxTypography variant="body2" sx={{ color: textTertiary }}>Meta Robots</MsqdxTypography>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    flexWrap: 'wrap',
+                                    gap: 'var(--msqdx-spacing-xs)',
+                                }}
+                            >
+                                <MsqdxTypography variant="body2" sx={{ color: textTertiary }}>
+                                    Meta Robots
+                                </MsqdxTypography>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)' }}>
-                                    <MsqdxTypography variant="caption" sx={{ fontFamily: 'monospace', color: textPrimary }}>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ fontFamily: 'monospace', color: textPrimary }}
+                                    >
                                         {data.technical.metaRobotsContent || '(nicht gesetzt)'}
                                     </MsqdxTypography>
-                                    {data.technical.metaRobotsIndexable ? <CheckCircle2 size={14} color={MSQDX_BRAND_PRIMARY.green} /> : <XCircle size={14} color={MSQDX_STATUS.error.base} />}
+                                    {data.technical.metaRobotsIndexable ? (
+                                        <CheckCircle2 size={14} color={MSQDX_BRAND_PRIMARY.green} />
+                                    ) : (
+                                        <XCircle size={14} color={MSQDX_STATUS.error.base} />
+                                    )}
                                 </Box>
                             </Box>
                         )}
                         {data.technical.metaRobotsIndexable === false && (
-                            <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.error.base }}>Seite ist noindex – nicht in Suchmaschinen/AI indexierbar</MsqdxTypography>
+                            <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.error.base }}>
+                                Seite ist noindex – nicht in Suchmaschinen/AI indexierbar
+                            </MsqdxTypography>
                         )}
-                        {data.technical.recommendedSchemaTypesFound && data.technical.recommendedSchemaTypesFound.length > 0 && (
-                            <Box sx={{ mt: 1 }}>
-                                <MsqdxTypography variant="caption" sx={{ color: textTertiary, mb: 'var(--msqdx-spacing-xxs)', display: 'block' }}>Empfohlene Schema-Typen (KI)</MsqdxTypography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xxs)' }}>
-                                    {data.technical.recommendedSchemaTypesFound.map((s, i) => (
-                                        <MsqdxChip key={i} label={s} size="small" sx={{ height: 20, fontSize: '0.65rem', bgcolor: alpha(MSQDX_BRAND_PRIMARY.green, 0.1), color: MSQDX_BRAND_PRIMARY.green }} />
-                                    ))}
+                        {data.technical.recommendedSchemaTypesFound &&
+                            data.technical.recommendedSchemaTypesFound.length > 0 && (
+                                <Box sx={{ mt: 1 }}>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ color: textTertiary, mb: 'var(--msqdx-spacing-xxs)', display: 'block' }}
+                                    >
+                                        Empfohlene Schema-Typen (KI)
+                                    </MsqdxTypography>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xxs)' }}>
+                                        {data.technical.recommendedSchemaTypesFound.map((s, i) => (
+                                            <MsqdxChip
+                                                key={i}
+                                                label={s}
+                                                size="small"
+                                                variant="outlined"
+                                                sx={{
+                                                    height: 20,
+                                                    fontSize: '0.65rem',
+                                                    bgcolor: alpha(MSQDX_BRAND_PRIMARY.green, 0.1),
+                                                    color: MSQDX_BRAND_PRIMARY.green,
+                                                }}
+                                            />
+                                        ))}
+                                    </Box>
                                 </Box>
-                            </Box>
-                        )}
-                        {data.technical.missingRecommendedSchemaTypes && data.technical.missingRecommendedSchemaTypes.length > 0 && (
-                            <Box>
-                                <MsqdxTypography variant="caption" sx={{ color: textTertiary, mb: 'var(--msqdx-spacing-xxs)', display: 'block' }}>Fehlende empfohlene Typen</MsqdxTypography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xxs)' }}>
-                                    {data.technical.missingRecommendedSchemaTypes.map((s, i) => (
-                                        <MsqdxChip key={i} label={s} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.65rem', borderColor: alpha(MSQDX_STATUS.warning.base, 0.5), color: textTertiary }} />
-                                    ))}
+                            )}
+                        {data.technical.missingRecommendedSchemaTypes &&
+                            data.technical.missingRecommendedSchemaTypes.length > 0 && (
+                                <Box>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ color: textTertiary, mb: 'var(--msqdx-spacing-xxs)', display: 'block' }}
+                                    >
+                                        Fehlende empfohlene Typen
+                                    </MsqdxTypography>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xxs)' }}>
+                                        {data.technical.missingRecommendedSchemaTypes.map((s, i) => (
+                                            <MsqdxChip
+                                                key={i}
+                                                label={s}
+                                                size="small"
+                                                variant="outlined"
+                                                sx={{
+                                                    height: 20,
+                                                    fontSize: '0.65rem',
+                                                    borderColor: alpha(MSQDX_STATUS.warning.base, 0.5),
+                                                    color: textTertiary,
+                                                }}
+                                            />
+                                        ))}
+                                    </Box>
                                 </Box>
-                            </Box>
-                        )}
+                            )}
                         {data.technical.articleSchemaQuality && (
-                            <Box sx={{ mt: 1, p: 'var(--msqdx-spacing-sm)', borderRadius: 1, border: `1px solid ${MSQDX_NEUTRAL[200]}`, bgcolor: MSQDX_NEUTRAL[50] }}>
-                                <MsqdxTypography variant="caption" sx={{ color: textTertiary, mb: 'var(--msqdx-spacing-xs)', display: 'block' }}>Article/NewsArticle Schema</MsqdxTypography>
+                            <Box
+                                sx={{
+                                    mt: 1,
+                                    p: 'var(--msqdx-spacing-sm)',
+                                    borderRadius: 1,
+                                    border: `1px solid ${MSQDX_NEUTRAL[200]}`,
+                                    bgcolor: MSQDX_NEUTRAL[50],
+                                }}
+                            >
+                                <MsqdxTypography
+                                    variant="caption"
+                                    sx={{ color: textTertiary, mb: 'var(--msqdx-spacing-xs)', display: 'block' }}
+                                >
+                                    Article/NewsArticle Schema
+                                </MsqdxTypography>
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xs)' }}>
                                     {['datePublished', 'dateModified', 'author'].map((field) => {
-                                        const status = data.technical.articleSchemaQuality![field === 'datePublished' ? 'hasDatePublished' : field === 'dateModified' ? 'hasDateModified' : 'hasAuthor'];
+                                        const status =
+                                            data.technical.articleSchemaQuality![
+                                                field === 'datePublished'
+                                                    ? 'hasDatePublished'
+                                                    : field === 'dateModified'
+                                                      ? 'hasDateModified'
+                                                      : 'hasAuthor'
+                                            ];
                                         return (
                                             <MsqdxChip
                                                 key={field}
                                                 icon={status ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
                                                 label={field}
                                                 size="small"
-                                                sx={{ height: 22, fontSize: '0.65rem', bgcolor: status ? alpha(MSQDX_BRAND_PRIMARY.green, 0.1) : alpha(MSQDX_STATUS.error.base, 0.1), color: status ? MSQDX_BRAND_PRIMARY.green : MSQDX_STATUS.error.base }}
+                                                sx={{
+                                                    height: 22,
+                                                    fontSize: '0.65rem',
+                                                    bgcolor: status
+                                                        ? alpha(MSQDX_BRAND_PRIMARY.green, 0.1)
+                                                        : alpha(MSQDX_STATUS.error.base, 0.1),
+                                                    color: status ? MSQDX_BRAND_PRIMARY.green : MSQDX_STATUS.error.base,
+                                                }}
                                             />
                                         );
                                     })}
@@ -283,25 +547,59 @@ export function GenerativeOptimizerCard({
                             </Box>
                         )}
                         <Box sx={{ mt: 1 }}>
-                            <MsqdxTypography variant="caption" sx={{ color: textTertiary, mb: 'var(--msqdx-spacing-xs)', display: 'block' }}>Schema.org-Abdeckung</MsqdxTypography>
+                            <MsqdxTypography
+                                variant="caption"
+                                sx={{ color: textTertiary, mb: 'var(--msqdx-spacing-xs)', display: 'block' }}
+                            >
+                                Schema.org-Abdeckung
+                            </MsqdxTypography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xxs)' }}>
                                 {data.technical.schemaCoverage.length > 0 ? (
                                     data.technical.schemaCoverage.map((s, i) => (
-                                        <MsqdxChip key={i} label={s} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />
+                                        <MsqdxChip
+                                            key={i}
+                                            label={s}
+                                            size="small"
+                                            variant="outlined"
+                                            sx={{ height: 20, fontSize: '0.65rem' }}
+                                        />
                                     ))
                                 ) : (
-                                    <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.error.base }}>Kein für KI relevantes Schema gefunden</MsqdxTypography>
+                                    <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.error.base }}>
+                                        Kein für KI relevantes Schema gefunden
+                                    </MsqdxTypography>
                                 )}
                             </Box>
                         </Box>
                         {data.technical.jsonLdErrors && data.technical.jsonLdErrors.length > 0 ? (
-                            <Box sx={{ mt: 1, p: 'var(--msqdx-spacing-sm)', borderRadius: 1, bgcolor: alpha(MSQDX_STATUS.error.base, 0.06), border: `1px solid ${alpha(MSQDX_STATUS.error.base, 0.3)}` }}>
-                                <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.error.base, fontWeight: 600, display: 'block', mb: 'var(--msqdx-spacing-xs)' }}>
+                            <Box
+                                sx={{
+                                    mt: 1,
+                                    p: 'var(--msqdx-spacing-sm)',
+                                    borderRadius: 1,
+                                    bgcolor: alpha(MSQDX_STATUS.error.base, 0.06),
+                                    border: `1px solid ${alpha(MSQDX_STATUS.error.base, 0.3)}`,
+                                }}
+                            >
+                                <MsqdxTypography
+                                    variant="caption"
+                                    sx={{
+                                        color: MSQDX_STATUS.error.base,
+                                        fontWeight: 600,
+                                        display: 'block',
+                                        mb: 'var(--msqdx-spacing-xs)',
+                                    }}
+                                >
                                     JSON-LD Parse-Fehler
                                 </MsqdxTypography>
                                 <Box component="ul" sx={{ m: 0, pl: 2, color: textPrimary }}>
                                     {data.technical.jsonLdErrors.map((msg, i) => (
-                                        <MsqdxTypography key={i} component="li" variant="caption" sx={{ fontFamily: 'monospace', fontSize: '0.7rem' }}>
+                                        <MsqdxTypography
+                                            key={i}
+                                            component="li"
+                                            variant="caption"
+                                            sx={{ fontFamily: 'monospace', fontSize: '0.7rem' }}
+                                        >
                                             {msg}
                                         </MsqdxTypography>
                                     ))}
@@ -309,7 +607,14 @@ export function GenerativeOptimizerCard({
                             </Box>
                         ) : (
                             data.technical.schemaCoverage.length > 0 && (
-                                <MsqdxTypography variant="caption" sx={{ color: MSQDX_BRAND_PRIMARY.green, display: 'block', mt: 'var(--msqdx-spacing-xs)' }}>
+                                <MsqdxTypography
+                                    variant="caption"
+                                    sx={{
+                                        color: MSQDX_BRAND_PRIMARY.green,
+                                        display: 'block',
+                                        mt: 'var(--msqdx-spacing-xs)',
+                                    }}
+                                >
                                     JSON-LD syntaktisch valide
                                 </MsqdxTypography>
                             )
@@ -319,31 +624,87 @@ export function GenerativeOptimizerCard({
 
                 {/* Content Structure */}
                 <Box>
-                    <SectionHeader icon={<Database size={18} />} title="Inhaltsstruktur" color={MSQDX_BRAND_PRIMARY.purple} />
+                    <SectionHeader
+                        icon={<Database size={18} />}
+                        title="Inhaltsstruktur"
+                        color={MSQDX_BRAND_PRIMARY.purple}
+                    />
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--msqdx-spacing-sm)' }}>
-                        <MetricItem label="Tabellen" value={data.content.tableCount} status={data.content.tableCount > 0} textPrimary={textPrimary} textTertiary={textTertiary} />
-                        <MetricItem label="FAQ-Abschnitte" value={data.content.faqCount} status={data.content.faqCount > 0} textPrimary={textPrimary} textTertiary={textTertiary} />
-                        <MetricItem label="Zitate" value={data.content.citationDensity} status={data.content.citationDensity > 2} textPrimary={textPrimary} textTertiary={textTertiary} />
-                        <MetricItem label="Zitate mit Links" value={data.content.citationsWithLinks ?? 0} status={(data.content.citationsWithLinks ?? 0) > 0} textPrimary={textPrimary} textTertiary={textTertiary} />
-                        <MetricItem label="Listen-Dichte" value={data.content.listDensity} status={data.content.listDensity > 0.5} textPrimary={textPrimary} textTertiary={textTertiary} />
+                        <MetricItem
+                            label="Tabellen"
+                            value={data.content.tableCount}
+                            status={data.content.tableCount > 0}
+                            textPrimary={textPrimary}
+                            textTertiary={textTertiary}
+                        />
+                        <MetricItem
+                            label="FAQ-Abschnitte"
+                            value={data.content.faqCount}
+                            status={data.content.faqCount > 0}
+                            textPrimary={textPrimary}
+                            textTertiary={textTertiary}
+                        />
+                        <MetricItem
+                            label="Zitate"
+                            value={data.content.citationDensity}
+                            status={data.content.citationDensity > 2}
+                            textPrimary={textPrimary}
+                            textTertiary={textTertiary}
+                        />
+                        <MetricItem
+                            label="Zitate mit Links"
+                            value={data.content.citationsWithLinks ?? 0}
+                            status={(data.content.citationsWithLinks ?? 0) > 0}
+                            textPrimary={textPrimary}
+                            textTertiary={textTertiary}
+                        />
+                        <MetricItem
+                            label="Listen-Dichte"
+                            value={data.content.listDensity}
+                            status={data.content.listDensity > 0.5}
+                            textPrimary={textPrimary}
+                            textTertiary={textTertiary}
+                        />
                     </Box>
                 </Box>
 
                 {/* E-E-A-T Section */}
                 <Box>
-                    <SectionHeader icon={<UserCheck size={18} />} title="Autorität & Expertise" color={MSQDX_BRAND_PRIMARY.green} />
+                    <SectionHeader
+                        icon={<UserCheck size={18} />}
+                        title="Autorität & Expertise"
+                        color={MSQDX_BRAND_PRIMARY.green}
+                    />
                     <Box sx={{ display: 'flex', gap: 'var(--msqdx-spacing-xs)' }}>
                         <MsqdxChip
                             icon={data.expertise.hasAuthorBio ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
                             label="Autoren-Bio erkannt"
                             size="small"
-                            sx={{ bgcolor: data.expertise.hasAuthorBio ? alpha(MSQDX_BRAND_PRIMARY.green, 0.12) : alpha(MSQDX_STATUS.error.base, 0.1), color: data.expertise.hasAuthorBio ? MSQDX_BRAND_PRIMARY.green : MSQDX_STATUS.error.base }}
+                            variant="outlined"
+                            sx={{
+                                bgcolor: data.expertise.hasAuthorBio
+                                    ? alpha(MSQDX_BRAND_PRIMARY.green, 0.12)
+                                    : alpha(MSQDX_STATUS.error.base, 0.1),
+                                color: data.expertise.hasAuthorBio
+                                    ? MSQDX_BRAND_PRIMARY.green
+                                    : MSQDX_STATUS.error.base,
+                            }}
                         />
                         <MsqdxChip
-                            icon={data.expertise.hasExpertCitations ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                            icon={
+                                data.expertise.hasExpertCitations ? <CheckCircle2 size={14} /> : <XCircle size={14} />
+                            }
                             label="Experten-Zitate"
                             size="small"
-                            sx={{ bgcolor: data.expertise.hasExpertCitations ? alpha(MSQDX_BRAND_PRIMARY.green, 0.12) : alpha(MSQDX_STATUS.error.base, 0.1), color: data.expertise.hasExpertCitations ? MSQDX_BRAND_PRIMARY.green : MSQDX_STATUS.error.base }}
+                            variant="outlined"
+                            sx={{
+                                bgcolor: data.expertise.hasExpertCitations
+                                    ? alpha(MSQDX_BRAND_PRIMARY.green, 0.12)
+                                    : alpha(MSQDX_STATUS.error.base, 0.1),
+                                color: data.expertise.hasExpertCitations
+                                    ? MSQDX_BRAND_PRIMARY.green
+                                    : MSQDX_STATUS.error.base,
+                            }}
                         />
                     </Box>
                 </Box>
@@ -382,7 +743,10 @@ function GeoDimensionColumn({
                     <MsqdxTypography variant="caption" sx={{ fontWeight: 800, color, display: 'block' }}>
                         {label}
                     </MsqdxTypography>
-                    <MsqdxTypography variant="caption" sx={{ color: textTertiary, display: 'block', fontSize: '0.65rem', lineHeight: 1.35 }}>
+                    <MsqdxTypography
+                        variant="caption"
+                        sx={{ color: textTertiary, display: 'block', fontSize: '0.65rem', lineHeight: 1.35 }}
+                    >
                         {subtitle}
                     </MsqdxTypography>
                 </Box>
@@ -426,9 +790,22 @@ function GeoDimensionColumn({
 
 function SectionHeader({ icon, title, color }: { icon: ReactNode; title: string; color: string }) {
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)', color }}>
+        <Box
+            sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--msqdx-spacing-xs)',
+                mb: 'var(--msqdx-spacing-xs)',
+                color,
+            }}
+        >
             {icon}
-            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{title}</MsqdxTypography>
+            <MsqdxTypography
+                variant="subtitle2"
+                sx={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+            >
+                {title}
+            </MsqdxTypography>
         </Box>
     );
 }
@@ -436,17 +813,40 @@ function SectionHeader({ icon, title, color }: { icon: ReactNode; title: string;
 function StatusRow({ label, status, textTertiary }: { label: string; status: boolean; textTertiary: string }) {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <MsqdxTypography variant="body2" sx={{ color: textTertiary }}>{label}</MsqdxTypography>
-            {status ? <CheckCircle2 size={16} color={MSQDX_BRAND_PRIMARY.green} /> : <XCircle size={16} color={MSQDX_STATUS.error.base} />}
+            <MsqdxTypography variant="body2" sx={{ color: textTertiary }}>
+                {label}
+            </MsqdxTypography>
+            {status ? (
+                <CheckCircle2 size={16} color={MSQDX_BRAND_PRIMARY.green} />
+            ) : (
+                <XCircle size={16} color={MSQDX_STATUS.error.base} />
+            )}
         </Box>
     );
 }
 
-function MetricItem({ label, value, status, textPrimary, textTertiary }: { label: string; value: number; status: boolean; textPrimary: string; textTertiary: string }) {
+function MetricItem({
+    label,
+    value,
+    status,
+    textPrimary,
+    textTertiary,
+}: {
+    label: string;
+    value: number;
+    status: boolean;
+    textPrimary: string;
+    textTertiary: string;
+}) {
     return (
         <Box sx={{ p: 1, borderRadius: 1, border: `1px solid ${MSQDX_NEUTRAL[200]}`, bgcolor: MSQDX_NEUTRAL[50] }}>
-            <MsqdxTypography variant="caption" sx={{ color: textTertiary, display: 'block' }}>{label}</MsqdxTypography>
-            <MsqdxTypography variant="h6" sx={{ fontSize: '1.2rem', fontWeight: 700, color: status ? textPrimary : textTertiary }}>
+            <MsqdxTypography variant="caption" sx={{ color: textTertiary, display: 'block' }}>
+                {label}
+            </MsqdxTypography>
+            <MsqdxTypography
+                variant="h6"
+                sx={{ fontSize: '1.2rem', fontWeight: 700, color: status ? textPrimary : textTertiary }}
+            >
                 {value}
             </MsqdxTypography>
         </Box>

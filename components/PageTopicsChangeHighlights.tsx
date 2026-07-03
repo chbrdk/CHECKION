@@ -7,7 +7,9 @@ import type { DomainScanDiffResult, DomainThemeChange } from '@/lib/domain-scan-
 
 function collectThemeHighlights(diff: DomainScanDiffResult | null): DomainThemeChange[] {
     if (!diff?.themes?.length) return [];
-    return diff.themes.filter((t) => t.kind === 'new' || t.kind === 'strengthened' || t.kind === 'tier_changed').slice(0, 8);
+    return diff.themes
+        .filter((t) => t.kind === 'new' || t.kind === 'strengthened' || t.kind === 'tier_changed')
+        .slice(0, 8);
 }
 
 export function PageTopicsChangeHighlights({
@@ -37,6 +39,7 @@ export function PageTopicsChangeHighlights({
                             <MsqdxChip
                                 key={`${domain}-${th.themeTagKey}`}
                                 size="small"
+                                variant="outlined"
                                 label={`${th.themeTag} (${th.kind})`}
                             />
                         ))}

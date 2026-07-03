@@ -45,7 +45,12 @@ export const ScannedPagesTableRow = memo(function ScannedPagesTableRow({
             }}
         >
             <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', minWidth: 0, borderRight: tableBorder }}>
-                <MsqdxTypography variant="caption" noWrap title={page.url} sx={{ fontWeight: 500, fontSize: '0.75rem' }}>
+                <MsqdxTypography
+                    variant="caption"
+                    noWrap
+                    title={page.url}
+                    sx={{ fontWeight: 500, fontSize: '0.75rem' }}
+                >
                     {page.url}
                 </MsqdxTypography>
             </Box>
@@ -53,6 +58,7 @@ export const ScannedPagesTableRow = memo(function ScannedPagesTableRow({
                 <MsqdxChip
                     label={String(page.score ?? 0)}
                     size="small"
+                    variant="outlined"
                     brandColor={page.score > 80 ? 'green' : 'orange'}
                     sx={{ fontSize: '0.7rem', height: 20, minHeight: 20 }}
                 />

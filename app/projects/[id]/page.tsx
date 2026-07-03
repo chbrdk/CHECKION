@@ -4,13 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
 import { Box } from '@mui/material';
-import {
-    MsqdxTypography,
-    MsqdxButton,
-    MsqdxMoleculeCard,
-    MsqdxFormField,
-    MsqdxChip,
-} from '@msqdx/react';
+import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxFormField, MsqdxChip } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
     apiProject,
@@ -65,7 +59,13 @@ interface ProjectData {
     valueProposition?: string | null;
     competitors?: string[];
     geoQueries?: string[];
-    counts: { domainScans: number; journeyRuns: number; geoEeatRuns: number; singleScans: number; rankTrackingKeywords: number };
+    counts: {
+        domainScans: number;
+        journeyRuns: number;
+        geoEeatRuns: number;
+        singleScans: number;
+        rankTrackingKeywords: number;
+    };
 }
 
 interface RankingSummaryData {
@@ -85,7 +85,12 @@ interface DomainSummaryData {
     totalPageCount: number;
     aggregated: {
         performance?: { avgTtfb: number; avgFcp: number; avgLcp: number; avgDomLoad: number; pageCount: number } | null;
-        eco?: { avgCo2: number; totalPageWeight: number; gradeDistribution: Record<string, number>; pageCount: number } | null;
+        eco?: {
+            avgCo2: number;
+            totalPageWeight: number;
+            gradeDistribution: Record<string, number>;
+            pageCount: number;
+        } | null;
         pageClassification?: AggregatedPageClassification | null;
     };
 }
@@ -104,7 +109,7 @@ export default function ProjectDetailPage() {
     const router = useRouter();
     const { t } = useI18n();
     const { domainScan } = useStatusUi();
-    const id = typeof params.id === 'string' ? params.id : params.id?.[0] ?? null;
+    const id = typeof params.id === 'string' ? params.id : (params.id?.[0] ?? null);
     const [project, setProject] = useState<ProjectData | null>(null);
     const [loading, setLoading] = useState(true);
     const [rankingSummary, setRankingSummary] = useState<RankingSummaryData | null>(null);
@@ -113,14 +118,13 @@ export default function ProjectDetailPage() {
     const [domainSummaryAllCompetitors, setDomainSummaryAllCompetitors] = useState<
         Record<
             string,
-            | {
-                  scanId: string;
-                  score: number;
-                  totalPageCount: number;
-                  status: string;
-                  aggregated?: { pageClassification?: AggregatedPageClassification | null };
-              }
-            | null
+            {
+                scanId: string;
+                score: number;
+                totalPageCount: number;
+                status: string;
+                aggregated?: { pageClassification?: AggregatedPageClassification | null };
+            } | null
         >
     >({});
     const [competitorChanges, setCompetitorChanges] = useState<CompetitorChangesPanelData | null>(null);
@@ -186,7 +190,12 @@ export default function ProjectDetailPage() {
 
     const normalizeDomainInput = useCallback((value: string) => {
         let v = value.trim().toLowerCase();
-        v = v.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').split('/')[0] ?? '';
+        v =
+            v
+                .replace(/^https?:\/\//, '')
+                .replace(/^www\./, '')
+                .replace(/\/$/, '')
+                .split('/')[0] ?? '';
         return v;
     }, []);
 
@@ -226,7 +235,7 @@ export default function ProjectDetailPage() {
                 // ignore
             }
         },
-        [id, competitors, loadProject]
+        [id, competitors, loadProject],
     );
 
     const handleSuggestCompetitors = useCallback(async () => {
@@ -283,14 +292,14 @@ export default function ProjectDetailPage() {
                             label: s.label,
                             scanRootUrl: toScanStartUrl(s.label),
                             status: s.status,
-                        }))
+                        })),
                     );
                 }
             } catch {
                 /* ignore */
             }
         },
-        [id]
+        [id],
     );
 
     const loadDomainSummaryAll = useCallback(async () => {
@@ -303,14 +312,13 @@ export default function ProjectDetailPage() {
                     own: DomainSummaryData | null;
                     competitors: Record<
                         string,
-                        | {
-                              scanId: string;
-                              score: number;
-                              totalPageCount: number;
-                              status: string;
-                              aggregated?: { pageClassification?: AggregatedPageClassification | null };
-                          }
-                        | null
+                        {
+                            scanId: string;
+                            score: number;
+                            totalPageCount: number;
+                            status: string;
+                            aggregated?: { pageClassification?: AggregatedPageClassification | null };
+                        } | null
                     >;
                 };
                 setDomainSummary(d.own ?? null);
@@ -372,14 +380,13 @@ export default function ProjectDetailPage() {
                         own: DomainSummaryData | null;
                         competitors: Record<
                             string,
-                            | {
-                                  scanId: string;
-                                  score: number;
-                                  totalPageCount: number;
-                                  status: string;
-                                  aggregated?: { pageClassification?: AggregatedPageClassification | null };
-                              }
-                            | null
+                            {
+                                scanId: string;
+                                score: number;
+                                totalPageCount: number;
+                                status: string;
+                                aggregated?: { pageClassification?: AggregatedPageClassification | null };
+                            } | null
                         >;
                     };
                     setDomainSummary(d.own ?? null);
@@ -438,7 +445,7 @@ export default function ProjectDetailPage() {
                         scanId,
                         projectId: id,
                         maxPages: deepScanMaxPages,
-                    })
+                    }),
                 );
                 return;
             }
@@ -482,7 +489,7 @@ export default function ProjectDetailPage() {
                 setCompetitorScanLoadingDomain(null);
             }
         },
-        [id, loadDomainSummaryAll, domainScan.attach, deepScanMaxPages]
+        [id, loadDomainSummaryAll, domainScan.attach, deepScanMaxPages],
     );
 
     const dismissCompetitorAlerts = useCallback(async () => {
@@ -590,7 +597,7 @@ export default function ProjectDetailPage() {
                         void loadDomainSummaryAll();
                     } else if (st) {
                         setActiveDeepScans((prev) =>
-                            prev.map((row) => (row.scanId === scanId ? { ...row, status: st } : row))
+                            prev.map((row) => (row.scanId === scanId ? { ...row, status: st } : row)),
                         );
                     }
                 }
@@ -598,7 +605,7 @@ export default function ProjectDetailPage() {
                 // ignore
             }
         },
-        [loadDomainSummaryAll]
+        [loadDomainSummaryAll],
     );
 
     const activeDeepScansRef = useRef<ActiveDeepScanRow[]>([]);
@@ -625,7 +632,7 @@ export default function ProjectDetailPage() {
                         } catch {
                             return { scanId: row.scanId, data: null };
                         }
-                    })
+                    }),
                 );
                 setActiveDeepScans((prev) => {
                     const next: ActiveDeepScanRow[] = [];
@@ -698,10 +705,7 @@ export default function ProjectDetailPage() {
 
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-            <CompetitorAlertsBanner
-                alerts={competitorAlerts}
-                onDismiss={() => void dismissCompetitorAlerts()}
-            />
+            <CompetitorAlertsBanner alerts={competitorAlerts} onDismiss={() => void dismissCompetitorAlerts()} />
             <Box
                 sx={{
                     display: 'grid',
@@ -726,9 +730,7 @@ export default function ProjectDetailPage() {
                                     size="small"
                                     loading={restartDeepScanLoading}
                                     disabled={!project.domain?.trim() || restartDeepScanLoading}
-                                    title={
-                                        !project.domain?.trim() ? t('projects.domainRequiredForGeo') : undefined
-                                    }
+                                    title={!project.domain?.trim() ? t('projects.domainRequiredForGeo') : undefined}
                                     onClick={() => void handleRestartDeepScan()}
                                 >
                                     {t('projects.startDeepScan')}
@@ -772,7 +774,10 @@ export default function ProjectDetailPage() {
                         </MsqdxTypography>
                     )}
                     <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid var(--color-border-subtle, #eee)' }}>
-                        <MsqdxTypography variant="caption" sx={{ display: 'block', mb: 1, color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ display: 'block', mb: 1, color: 'var(--color-text-muted-on-light)' }}
+                        >
                             {t('projects.classificationTitle')}
                         </MsqdxTypography>
                         <MsqdxTypography
@@ -804,10 +809,7 @@ export default function ProjectDetailPage() {
                                 variant="caption"
                                 sx={{ display: 'block', mt: 0.5, color: 'var(--color-text-muted-on-light)' }}
                             >
-                                {t('projects.industryLegacyHint').replace(
-                                    '{{value}}',
-                                    classificationIndustry.trim()
-                                )}
+                                {t('projects.industryLegacyHint').replace('{{value}}', classificationIndustry.trim())}
                             </MsqdxTypography>
                         ) : null}
                         <Box sx={{ mt: 1.5 }}>
@@ -832,79 +834,99 @@ export default function ProjectDetailPage() {
 
                 {/* Row 1 col 2: Ranking-Score */}
                 <MsqdxMoleculeCard
-                            title={t('projects.rankingScore')}
-                            variant="flat"
-                            borderRadius="lg"
-                            footerDivider
-                            sx={{ gridColumn: { xs: 1, md: 2 }, gridRow: { xs: 2, md: 1 }, bgcolor: 'var(--color-card-bg)' }}
-                            actions={
-                                id ? (
-                                    <Link href={pathProjectRankings(id)} style={{ textDecoration: 'none' }}>
-                                        <MsqdxButton variant="outlined" size="small">
-                                            {t('projects.viewAllRankings')}
-                                        </MsqdxButton>
-                                    </Link>
-                                ) : null
-                            }
-                        >
-                            {listsLoading ? (
-                                <MsqdxTypography variant="body2" sx={{ py: 1 }}>{t('common.loading')}</MsqdxTypography>
-                            ) : (
-                                <>
-                                    <MsqdxTypography variant="h4" weight="bold" sx={{ mb: 0.5 }}>
-                                        {rankingSummary?.score != null ? `${rankingSummary.score}/100` : '—'}
-                                    </MsqdxTypography>
-                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                        {rankingSummary ? t('projects.keywordCount', { count: rankingSummary.keywordCount }) : ''}
-                                        {rankingSummary?.lastUpdated ? ` · ${t('projects.lastUpdate')}: ${new Date(rankingSummary.lastUpdated).toLocaleDateString()}` : ''}
-                                    </MsqdxTypography>
-                                </>
-                            )}
-                        </MsqdxMoleculeCard>
+                    title={t('projects.rankingScore')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider
+                    sx={{ gridColumn: { xs: 1, md: 2 }, gridRow: { xs: 2, md: 1 }, bgcolor: 'var(--color-card-bg)' }}
+                    actions={
+                        id ? (
+                            <Link href={pathProjectRankings(id)} style={{ textDecoration: 'none' }}>
+                                <MsqdxButton variant="outlined" size="small">
+                                    {t('projects.viewAllRankings')}
+                                </MsqdxButton>
+                            </Link>
+                        ) : null
+                    }
+                >
+                    {listsLoading ? (
+                        <MsqdxTypography variant="body2" sx={{ py: 1 }}>
+                            {t('common.loading')}
+                        </MsqdxTypography>
+                    ) : (
+                        <>
+                            <MsqdxTypography variant="h4" weight="bold" sx={{ mb: 0.5 }}>
+                                {rankingSummary?.score != null ? `${rankingSummary.score}/100` : '—'}
+                            </MsqdxTypography>
+                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                {rankingSummary
+                                    ? t('projects.keywordCount', { count: rankingSummary.keywordCount })
+                                    : ''}
+                                {rankingSummary?.lastUpdated
+                                    ? ` · ${t('projects.lastUpdate')}: ${new Date(rankingSummary.lastUpdated).toLocaleDateString()}`
+                                    : ''}
+                            </MsqdxTypography>
+                        </>
+                    )}
+                </MsqdxMoleculeCard>
 
                 {/* Row 1 col 3: GEO */}
                 <MsqdxMoleculeCard
-                            title={t('projects.geoScore')}
-                            variant="flat"
-                            borderRadius="lg"
-                            footerDivider
-                            actions={
-                                id ? (
-                                    <Link href={pathProjectGeo(id)} style={{ textDecoration: 'none' }}>
-                                        <MsqdxButton variant="outlined" size="small">
-                                            {t('projects.viewGeo')}
-                                        </MsqdxButton>
-                                    </Link>
-                                ) : null
-                            }
-                            sx={{ gridColumn: { xs: 1, md: 3 }, gridRow: { xs: 3, md: 1 }, bgcolor: 'var(--color-card-bg)' }}
-                        >
-                            {listsLoading ? (
-                                <MsqdxTypography variant="body2" sx={{ py: 1 }}>{t('common.loading')}</MsqdxTypography>
-                            ) : (
-                                <>
-                                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 1 }}>
-                                        <MsqdxTypography variant="h4" weight="bold">
-                                            {geoSummary?.score != null ? `${geoSummary.score}/100` : '—'}
-                                        </MsqdxTypography>
-                                    </Box>
-                                    {geoSummary?.runs && geoSummary.runs.length > 0 && (
-                                        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-                                            {geoSummary.runs.slice(0, 5).map((g) => (
-                                                <Box key={g.id} component="li" sx={listItemSx}>
-                                                    <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 300 }}>
-                                                        {new Date(g.createdAt).toLocaleDateString()} · {g.status}
-                                                    </MsqdxTypography>
-                                                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push(pathGeoEeat(g.id))}>
-                                                        {t('projects.open')}
-                                                    </MsqdxButton>
-                                                </Box>
-                                            ))}
+                    title={t('projects.geoScore')}
+                    variant="flat"
+                    borderRadius="lg"
+                    footerDivider
+                    actions={
+                        id ? (
+                            <Link href={pathProjectGeo(id)} style={{ textDecoration: 'none' }}>
+                                <MsqdxButton variant="outlined" size="small">
+                                    {t('projects.viewGeo')}
+                                </MsqdxButton>
+                            </Link>
+                        ) : null
+                    }
+                    sx={{ gridColumn: { xs: 1, md: 3 }, gridRow: { xs: 3, md: 1 }, bgcolor: 'var(--color-card-bg)' }}
+                >
+                    {listsLoading ? (
+                        <MsqdxTypography variant="body2" sx={{ py: 1 }}>
+                            {t('common.loading')}
+                        </MsqdxTypography>
+                    ) : (
+                        <>
+                            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 1 }}>
+                                <MsqdxTypography variant="h4" weight="bold">
+                                    {geoSummary?.score != null ? `${geoSummary.score}/100` : '—'}
+                                </MsqdxTypography>
+                            </Box>
+                            {geoSummary?.runs && geoSummary.runs.length > 0 && (
+                                <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+                                    {geoSummary.runs.slice(0, 5).map((g) => (
+                                        <Box key={g.id} component="li" sx={listItemSx}>
+                                            <MsqdxTypography
+                                                variant="body2"
+                                                sx={{
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                    maxWidth: 300,
+                                                }}
+                                            >
+                                                {new Date(g.createdAt).toLocaleDateString()} · {g.status}
+                                            </MsqdxTypography>
+                                            <MsqdxButton
+                                                variant="outlined"
+                                                size="small"
+                                                onClick={() => router.push(pathGeoEeat(g.id))}
+                                            >
+                                                {t('projects.open')}
+                                            </MsqdxButton>
                                         </Box>
-                                    )}
-                                </>
+                                    ))}
+                                </Box>
                             )}
-                        </MsqdxMoleculeCard>
+                        </>
+                    )}
+                </MsqdxMoleculeCard>
 
                 {/* Row 2 col 2: Domain Score (Deep Scan) */}
                 <MsqdxMoleculeCard
@@ -917,7 +939,10 @@ export default function ProjectDetailPage() {
                     actions={
                         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                             {domainSummary?.scanId && (
-                                <Link href={pathDomain(domainSummary.scanId, { projectId: id })} style={{ textDecoration: 'none' }}>
+                                <Link
+                                    href={pathDomain(domainSummary.scanId, { projectId: id })}
+                                    style={{ textDecoration: 'none' }}
+                                >
                                     <MsqdxButton variant="outlined" size="small">
                                         {t('projects.open')}
                                     </MsqdxButton>
@@ -933,7 +958,7 @@ export default function ProjectDetailPage() {
                                     {restartDeepScanLoading ? t('common.loading') : t('projects.restartDeepScan')}
                                 </MsqdxButton>
                             )}
-                            {(project?.domain || (competitors.length > 0)) && (
+                            {(project?.domain || competitors.length > 0) && (
                                 <MsqdxButton
                                     variant="outlined"
                                     size="small"
@@ -960,7 +985,9 @@ export default function ProjectDetailPage() {
                         </Box>
                     ) : null}
                     {listsLoading ? (
-                        <MsqdxTypography variant="body2" sx={{ py: 1 }}>{t('common.loading')}</MsqdxTypography>
+                        <MsqdxTypography variant="body2" sx={{ py: 1 }}>
+                            {t('common.loading')}
+                        </MsqdxTypography>
                     ) : activeDeepScans.length > 0 ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, py: 0.5, width: '100%' }}>
                             <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
@@ -997,14 +1024,23 @@ export default function ProjectDetailPage() {
                                         <MsqdxTypography variant="body2" weight="medium">
                                             {row.label}
                                         </MsqdxTypography>
-                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                        <MsqdxTypography
+                                            variant="caption"
+                                            sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                        >
                                             {st}
                                             {row.progress && row.progress.total > 0
                                                 ? ` · ${row.progress.scanned} / ${row.progress.total} ${t('domainResult.pagesScanned')}`
                                                 : ''}
                                         </MsqdxTypography>
                                         {row.progress?.currentUrl ? (
-                                            <MsqdxTypography variant="caption" sx={{ wordBreak: 'break-all', color: 'var(--color-text-muted-on-light)' }}>
+                                            <MsqdxTypography
+                                                variant="caption"
+                                                sx={{
+                                                    wordBreak: 'break-all',
+                                                    color: 'var(--color-text-muted-on-light)',
+                                                }}
+                                            >
                                                 {row.progress.currentUrl}
                                             </MsqdxTypography>
                                         ) : null}
@@ -1015,18 +1051,32 @@ export default function ProjectDetailPage() {
                                                 </MsqdxButton>
                                             </Link>
                                             {canPause ? (
-                                                <MsqdxButton variant="outlined" size="small" onClick={() => handleDeepScanControl(row.scanId, 'pause')}>
+                                                <MsqdxButton
+                                                    variant="outlined"
+                                                    size="small"
+                                                    onClick={() => handleDeepScanControl(row.scanId, 'pause')}
+                                                >
                                                     {t('projects.deepScanPause')}
                                                 </MsqdxButton>
                                             ) : null}
                                             {canResume ? (
-                                                <MsqdxButton variant="outlined" size="small" onClick={() => handleDeepScanControl(row.scanId, 'resume')}>
+                                                <MsqdxButton
+                                                    variant="outlined"
+                                                    size="small"
+                                                    onClick={() => handleDeepScanControl(row.scanId, 'resume')}
+                                                >
                                                     {t('projects.deepScanResume')}
                                                 </MsqdxButton>
                                             ) : null}
                                             {canCancel ? (
-                                                <MsqdxButton variant="outlined" size="small" onClick={() => handleDeepScanControl(row.scanId, 'cancel')}>
-                                                    {st === 'cancelling' ? t('domain.finalizeCancelScan') : t('projects.deepScanCancel')}
+                                                <MsqdxButton
+                                                    variant="outlined"
+                                                    size="small"
+                                                    onClick={() => handleDeepScanControl(row.scanId, 'cancel')}
+                                                >
+                                                    {st === 'cancelling'
+                                                        ? t('domain.finalizeCancelScan')
+                                                        : t('projects.deepScanCancel')}
                                                 </MsqdxButton>
                                             ) : null}
                                         </Box>
@@ -1052,65 +1102,94 @@ export default function ProjectDetailPage() {
                                         {domainSummary.score}
                                     </MsqdxTypography>
                                 </Box>
-                                <MsqdxTypography variant="body2" sx={{ mt: 1, color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography
+                                    variant="body2"
+                                    sx={{ mt: 1, color: 'var(--color-text-muted-on-light)' }}
+                                >
                                     {domainSummary.totalPageCount} {t('domainResult.pagesScanned')}
                                 </MsqdxTypography>
                             </Box>
                             {Object.keys(domainSummaryAllCompetitors).length > 0 && (
                                 <Box sx={{ mt: 1.5, width: '100%' }}>
-                                    <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}
+                                    >
                                         {t('projects.competitorDeepScans')}
                                     </MsqdxTypography>
                                     <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
                                         {Object.entries(domainSummaryAllCompetitors).map(([domain, comp]) => {
                                             const scanBusy =
                                                 competitorScanLoadingDomain != null &&
-                                                normalizeDomain(competitorScanLoadingDomain) === normalizeDomain(domain);
+                                                normalizeDomain(competitorScanLoadingDomain) ===
+                                                    normalizeDomain(domain);
                                             const changeBadge = competitorChangeBadgeCount(
                                                 competitorChanges?.competitors[domain] ?? null,
                                             );
                                             return (
-                                            <Box
-                                                key={domain}
-                                                component="li"
-                                                sx={{
-                                                    display: 'flex',
-                                                    flexWrap: 'wrap',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'space-between',
-                                                    py: 0.35,
-                                                    gap: 0.5,
-                                                }}
-                                            >
-                                                <MsqdxTypography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: '1 1 120px', minWidth: 0 }}>
-                                                    {domain}
-                                                    {changeBadge > 0 ? ` · +${changeBadge}` : ''}
-                                                    {comp
-                                                        ? comp.status === 'complete'
-                                                            ? ` · ${comp.score}`
-                                                            : ` · ${comp.status}`
-                                                        : ' · —'}
-                                                </MsqdxTypography>
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, flexShrink: 0 }}>
-                                                    {comp ? (
+                                                <Box
+                                                    key={domain}
+                                                    component="li"
+                                                    sx={{
+                                                        display: 'flex',
+                                                        flexWrap: 'wrap',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        py: 0.35,
+                                                        gap: 0.5,
+                                                    }}
+                                                >
+                                                    <MsqdxTypography
+                                                        variant="caption"
+                                                        sx={{
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap',
+                                                            flex: '1 1 120px',
+                                                            minWidth: 0,
+                                                        }}
+                                                    >
+                                                        {domain}
+                                                        {changeBadge > 0 ? ` · +${changeBadge}` : ''}
+                                                        {comp
+                                                            ? comp.status === 'complete'
+                                                                ? ` · ${comp.score}`
+                                                                : ` · ${comp.status}`
+                                                            : ' · —'}
+                                                    </MsqdxTypography>
+                                                    <Box
+                                                        sx={{
+                                                            display: 'flex',
+                                                            flexWrap: 'wrap',
+                                                            gap: 0.5,
+                                                            flexShrink: 0,
+                                                        }}
+                                                    >
+                                                        {comp ? (
+                                                            <MsqdxButton
+                                                                variant="outlined"
+                                                                size="small"
+                                                                onClick={() =>
+                                                                    router.push(
+                                                                        pathDomain(comp.scanId, { projectId: id }),
+                                                                    )
+                                                                }
+                                                            >
+                                                                {t('projects.open')}
+                                                            </MsqdxButton>
+                                                        ) : null}
                                                         <MsqdxButton
                                                             variant="outlined"
                                                             size="small"
-                                                            onClick={() => router.push(pathDomain(comp.scanId, { projectId: id }))}
+                                                            disabled={scanBusy}
+                                                            onClick={() => void handleStartCompetitorDeepScan(domain)}
                                                         >
-                                                            {t('projects.open')}
+                                                            {scanBusy
+                                                                ? t('common.loading')
+                                                                : t('projects.competitorDeepScan')}
                                                         </MsqdxButton>
-                                                    ) : null}
-                                                    <MsqdxButton
-                                                        variant="outlined"
-                                                        size="small"
-                                                        disabled={scanBusy}
-                                                        onClick={() => void handleStartCompetitorDeepScan(domain)}
-                                                    >
-                                                        {scanBusy ? t('common.loading') : t('projects.competitorDeepScan')}
-                                                    </MsqdxButton>
+                                                    </Box>
                                                 </Box>
-                                            </Box>
                                             );
                                         })}
                                     </Box>
@@ -1138,18 +1217,35 @@ export default function ProjectDetailPage() {
                     sx={{ gridColumn: { xs: 1, md: 3 }, gridRow: { xs: 5, md: 2 }, bgcolor: 'var(--color-card-bg)' }}
                 >
                     {listsLoading ? (
-                        <MsqdxTypography variant="body2" sx={{ py: 1 }}>{t('common.loading')}</MsqdxTypography>
+                        <MsqdxTypography variant="body2" sx={{ py: 1 }}>
+                            {t('common.loading')}
+                        </MsqdxTypography>
                     ) : domainSummary?.aggregated ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                             {domainSummary.aggregated.performance && (
                                 <Box>
-                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}
+                                    >
                                         {t('domainResult.performanceAvg')}
                                     </MsqdxTypography>
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                        <MsqdxChip size="small" label={`TTFB ${domainSummary.aggregated.performance.avgTtfb} ms`} />
-                                        <MsqdxChip size="small" label={`FCP ${domainSummary.aggregated.performance.avgFcp} ms`} />
-                                        <MsqdxChip size="small" label={`LCP ${domainSummary.aggregated.performance.avgLcp} ms`} />
+                                        <MsqdxChip
+                                            size="small"
+                                            variant="outlined"
+                                            label={`TTFB ${domainSummary.aggregated.performance.avgTtfb} ms`}
+                                        />
+                                        <MsqdxChip
+                                            size="small"
+                                            variant="outlined"
+                                            label={`FCP ${domainSummary.aggregated.performance.avgFcp} ms`}
+                                        />
+                                        <MsqdxChip
+                                            size="small"
+                                            variant="outlined"
+                                            label={`LCP ${domainSummary.aggregated.performance.avgLcp} ms`}
+                                        />
                                     </Box>
                                 </Box>
                             )}
@@ -1162,7 +1258,8 @@ export default function ProjectDetailPage() {
                                             borderRadius: '50%',
                                             border: '3px solid',
                                             borderColor:
-                                                (domainSummary.aggregated.eco.gradeDistribution['A+'] ?? domainSummary.aggregated.eco.gradeDistribution['A'])
+                                                (domainSummary.aggregated.eco.gradeDistribution['A+'] ??
+                                                domainSummary.aggregated.eco.gradeDistribution['A'])
                                                     ? THEME_ACCENT_CSS
                                                     : 'var(--color-secondary-dx-orange)',
                                             display: 'flex',
@@ -1171,15 +1268,26 @@ export default function ProjectDetailPage() {
                                         }}
                                     >
                                         <MsqdxTypography variant="h4" sx={{ lineHeight: 1 }}>
-                                            {Object.entries(domainSummary.aggregated.eco.gradeDistribution).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—'}
+                                            {Object.entries(domainSummary.aggregated.eco.gradeDistribution).sort(
+                                                (a, b) => b[1] - a[1],
+                                            )[0]?.[0] ?? '—'}
                                         </MsqdxTypography>
                                     </Box>
                                     <Box>
                                         <MsqdxTypography variant="body2" weight="bold">
                                             {domainSummary.aggregated.eco.avgCo2}g CO₂
                                         </MsqdxTypography>
-                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                            {(domainSummary.aggregated.eco.totalPageWeight / 1024 / 1024 / Math.max(1, domainSummary.aggregated.eco.pageCount)).toFixed(2)} MB Ø
+                                        <MsqdxTypography
+                                            variant="caption"
+                                            sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                        >
+                                            {(
+                                                domainSummary.aggregated.eco.totalPageWeight /
+                                                1024 /
+                                                1024 /
+                                                Math.max(1, domainSummary.aggregated.eco.pageCount)
+                                            ).toFixed(2)}{' '}
+                                            MB Ø
                                         </MsqdxTypography>
                                     </Box>
                                 </Box>
@@ -1219,7 +1327,9 @@ export default function ProjectDetailPage() {
                                 onClick={handleSuggestCompetitors}
                                 disabled={suggestCompetitorsLoading || !project.domain}
                             >
-                                {suggestCompetitorsLoading ? t('common.loading') : t('projects.suggestCompetitorsWithAi')}
+                                {suggestCompetitorsLoading
+                                    ? t('common.loading')
+                                    : t('projects.suggestCompetitorsWithAi')}
                             </MsqdxButton>
                         </Box>
                     }
@@ -1232,7 +1342,9 @@ export default function ProjectDetailPage() {
                     ) : (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 1.5 }}>
                             {competitors.map((domain) => {
-                                const scanBusy = competitorScanLoadingDomain != null && normalizeDomain(competitorScanLoadingDomain) === normalizeDomain(domain);
+                                const scanBusy =
+                                    competitorScanLoadingDomain != null &&
+                                    normalizeDomain(competitorScanLoadingDomain) === normalizeDomain(domain);
                                 return (
                                     <Box
                                         key={domain}
@@ -1244,7 +1356,10 @@ export default function ProjectDetailPage() {
                                             py: 0.25,
                                         }}
                                     >
-                                        <MsqdxTypography variant="body2" sx={{ flex: '1 1 140px', minWidth: 0, wordBreak: 'break-all' }}>
+                                        <MsqdxTypography
+                                            variant="body2"
+                                            sx={{ flex: '1 1 140px', minWidth: 0, wordBreak: 'break-all' }}
+                                        >
                                             {domain}
                                         </MsqdxTypography>
                                         <MsqdxButton
@@ -1255,7 +1370,12 @@ export default function ProjectDetailPage() {
                                         >
                                             {scanBusy ? t('common.loading') : t('projects.competitorDeepScan')}
                                         </MsqdxButton>
-                                        <MsqdxButton variant="text" size="small" color="inherit" onClick={() => handleRemoveCompetitor(domain)}>
+                                        <MsqdxButton
+                                            variant="text"
+                                            size="small"
+                                            color="inherit"
+                                            onClick={() => handleRemoveCompetitor(domain)}
+                                        >
                                             {t('projects.removeCompetitor')}
                                         </MsqdxButton>
                                     </Box>
@@ -1264,7 +1384,10 @@ export default function ProjectDetailPage() {
                         </Box>
                     )}
                     {suggestCompetitorsError && (
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}
+                        >
                             {suggestCompetitorsError}
                         </MsqdxTypography>
                     )}
@@ -1297,7 +1420,11 @@ export default function ProjectDetailPage() {
                             </MsqdxButton>
                         </Link>
                     }
-                    sx={{ gridColumn: { xs: 1, md: '1 / -1' }, gridRow: { xs: 7, md: 3 }, bgcolor: 'var(--color-card-bg)' }}
+                    sx={{
+                        gridColumn: { xs: 1, md: '1 / -1' },
+                        gridRow: { xs: 7, md: 3 },
+                        bgcolor: 'var(--color-card-bg)',
+                    }}
                 >
                     {listsLoading ? (
                         <MsqdxTypography variant="body2">{t('common.loading')}</MsqdxTypography>
@@ -1313,7 +1440,7 @@ export default function ProjectDetailPage() {
                                     ([, c]) =>
                                         c?.status === 'complete' &&
                                         c.aggregated?.pageClassification &&
-                                        c.aggregated.pageClassification.coverage.pagesWithClassification > 0
+                                        c.aggregated.pageClassification.coverage.pagesWithClassification > 0,
                                 ).length;
                                 const compTotal = Object.keys(domainSummaryAllCompetitors).length;
                                 if (!ownN && compTotal === 0) {

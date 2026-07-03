@@ -28,14 +28,33 @@ const shellContainerSx = {
 export function DomainResultShell({ children }: { children: React.ReactNode }) {
     const { t, locale } = useI18n();
     const router = useRouter();
-    const { loadError, shellHeader, domainId, projectId, setProjectId, activeSection, fromProjectId, domainLinkQuery } =
-        useDomainScanChrome();
+    const {
+        loadError,
+        shellHeader,
+        domainId,
+        projectId,
+        /* setProjectId, */ activeSection,
+        fromProjectId,
+        domainLinkQuery,
+    } = useDomainScanChrome();
 
     if (loadError) {
         return (
             <Box sx={shellContainerSx}>
-                <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', py: 8 }}>
-                    <MsqdxTypography variant="h5" sx={{ color: 'var(--color-text-muted-on-light)', textAlign: 'center', maxWidth: 480 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 'var(--msqdx-spacing-md)',
+                        py: 8,
+                    }}
+                >
+                    <MsqdxTypography
+                        variant="h5"
+                        sx={{ color: 'var(--color-text-muted-on-light)', textAlign: 'center', maxWidth: 480 }}
+                    >
                         {t('domainResult.notFound')}
                     </MsqdxTypography>
                     <MsqdxButton
@@ -54,8 +73,19 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
     if (!shellHeader) {
         return (
             <Box sx={shellContainerSx}>
-                <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', py: 8 }}>
-                    <MsqdxTypography variant="h5" sx={{ mb: 'var(--msqdx-spacing-md)' }}>{t('domainResult.loading')}</MsqdxTypography>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 'var(--msqdx-spacing-md)',
+                        py: 8,
+                    }}
+                >
+                    <MsqdxTypography variant="h5" sx={{ mb: 'var(--msqdx-spacing-md)' }}>
+                        {t('domainResult.loading')}
+                    </MsqdxTypography>
                     <CircularProgress sx={{ color: 'var(--color-theme-accent)' }} />
                 </Box>
             </Box>
@@ -102,11 +132,11 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
                                     resourceType="domain"
                                     resourceId={domainId}
                                     currentProjectId={projectId}
-                                    onAssigned={() =>
+                                    /* onAssigned={() =>
                                         fetch(apiScanDomainSummary(domainId, { light: true }))
                                             .then((r) => r.json())
                                             .then((d: { projectId?: string | null }) => setProjectId(d.projectId ?? null))
-                                    }
+                                    } */
                                 />
                             )}
                             <SharePanel resourceType="domain" resourceId={domainId} labelNamespace="domainResult" />
