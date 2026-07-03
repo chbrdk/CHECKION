@@ -48,7 +48,10 @@ function normalizePageUrl(url: string): string {
 }
 
 /** Find the region whose heading best matches the trigger label (for click highlight). */
-function regionRectForTrigger(regions: PageIndexRegion[] | undefined, triggerLabel: string | undefined): { x: number; y: number; width: number; height: number } | null {
+function regionRectForTrigger(
+    regions: PageIndexRegion[] | undefined,
+    triggerLabel: string | undefined,
+): { x: number; y: number; width: number; height: number } | null {
     if (!triggerLabel?.trim() || !regions?.length) return null;
     const label = triggerLabel.trim().toLowerCase();
     let best: PageIndexRegion | null = null;
@@ -56,7 +59,7 @@ function regionRectForTrigger(regions: PageIndexRegion[] | undefined, triggerLab
     for (const r of regions) {
         const text = (r.headingText ?? '').toLowerCase();
         if (!text) continue;
-        const score = text.includes(label) ? label.length : (label.includes(text) ? text.length : 0);
+        const score = text.includes(label) ? label.length : label.includes(text) ? text.length : 0;
         if (score > 0 && score > bestScore) {
             bestScore = score;
             best = r;
@@ -73,15 +76,29 @@ function findabilityLabel(score: number | undefined, t: (key: string) => string)
     return t('domainResult.journeyFindabilityLow');
 }
 
-const KNOWN_REGION_TYPES = ['nav', 'hero', 'main', 'footer', 'aside', 'about', 'contact', 'product', 'pricing', 'faq', 'team', 'unknown'];
+const KNOWN_REGION_TYPES = [
+    'nav',
+    'hero',
+    'main',
+    'footer',
+    'aside',
+    'about',
+    'contact',
+    'product',
+    'pricing',
+    'faq',
+    'team',
+    'unknown',
+];
 
 function regionTypeLabel(semanticType: string | undefined, t: (key: string) => string): string {
     if (!semanticType) return '';
     const key = `domainResult.journeyRegion_${semanticType}`;
     const out = t(key);
-    return KNOWN_REGION_TYPES.includes(semanticType) ? out : semanticType.charAt(0).toUpperCase() + semanticType.slice(1);
+    return KNOWN_REGION_TYPES.includes(semanticType)
+        ? out
+        : semanticType.charAt(0).toUpperCase() + semanticType.slice(1);
 }
-
 
 /** Screenshot with optional highlight rect (where the agent "clicked"). Handles 404 gracefully. */
 function StepScreenshot({
@@ -98,13 +115,34 @@ function StepScreenshot({
     const src = apiScanScreenshot(scanId);
     if (failed) {
         return (
-            <Box sx={{ width: '100%', borderRadius: 1, bgcolor: 'var(--color-neutral-100)', aspectRatio: '16/10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>{alt}</MsqdxTypography>
+            <Box
+                sx={{
+                    width: '100%',
+                    borderRadius: 1,
+                    bgcolor: 'var(--color-neutral-100)',
+                    aspectRatio: '16/10',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                    {alt}
+                </MsqdxTypography>
             </Box>
         );
     }
     return (
-        <Box sx={{ position: 'relative', width: '100%', borderRadius: 1, overflow: 'hidden', bgcolor: 'var(--color-neutral-100)', aspectRatio: '16/10' }}>
+        <Box
+            sx={{
+                position: 'relative',
+                width: '100%',
+                borderRadius: 1,
+                overflow: 'hidden',
+                bgcolor: 'var(--color-neutral-100)',
+                aspectRatio: '16/10',
+            }}
+        >
             <Box
                 component="img"
                 alt={alt}
@@ -112,7 +150,8 @@ function StepScreenshot({
                 loading="lazy"
                 onLoad={(e) => {
                     const img = e.target as HTMLImageElement;
-                    if (img.naturalWidth && img.naturalHeight) setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
+                    if (img.naturalWidth && img.naturalHeight)
+                        setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
                 }}
                 onError={() => setFailed(true)}
                 sx={{ width: '100%', height: 'auto', display: 'block', verticalAlign: 'middle' }}
@@ -170,12 +209,18 @@ export function JourneyFlowchart({
             {(goalReached || message) && (
                 <Box>
                     {goalReached && (
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-secondary-dx-green)', fontWeight: 600 }}>
+                        <MsqdxTypography
+                            variant="body2"
+                            sx={{ color: 'var(--color-secondary-dx-green)', fontWeight: 600 }}
+                        >
                             {t('domainResult.journeyGoalReached')}
                         </MsqdxTypography>
                     )}
                     {message && (
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.5 }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.5 }}
+                        >
                             {message}
                         </MsqdxTypography>
                     )}
@@ -196,10 +241,13 @@ export function JourneyFlowchart({
                     {steps.map((step, i) => {
                         if (i !== activeIndex) return null;
                         const screenshotPageUrl = i === 0 ? step.pageUrl : steps[i - 1].pageUrl;
-                        const screenshotPage = pages.find((p) => normalizePageUrl(p.url) === normalizePageUrl(screenshotPageUrl));
-                        const highlightRect = i > 0 && screenshotPage?.pageIndex?.regions
-                            ? regionRectForTrigger(screenshotPage.pageIndex.regions, step.triggerLabel)
-                            : null;
+                        const screenshotPage = pages.find(
+                            (p) => normalizePageUrl(p.url) === normalizePageUrl(screenshotPageUrl),
+                        );
+                        const highlightRect =
+                            i > 0 && screenshotPage?.pageIndex?.regions
+                                ? regionRectForTrigger(screenshotPage.pageIndex.regions, step.triggerLabel)
+                                : null;
                         return (
                             <Box
                                 key={step.index}
@@ -209,12 +257,17 @@ export function JourneyFlowchart({
                                     maxWidth: 900,
                                     borderRadius: 2,
                                     border: '1px solid',
-                                    borderColor: goalReached && i === steps.length - 1 ? 'var(--color-secondary-dx-green)' : 'var(--color-neutral-200, #e0e0e0)',
+                                    borderColor:
+                                        goalReached && i === steps.length - 1
+                                            ? 'var(--color-secondary-dx-green)'
+                                            : 'var(--color-neutral-200, #e0e0e0)',
                                     bgcolor: 'var(--color-background-on-light)',
                                     p: 3,
                                     cursor: onStepClick ? 'pointer' : 'default',
                                     transition: 'box-shadow 0.2s, border-color 0.2s',
-                                    '&:hover': onStepClick ? { boxShadow: 2, borderColor: 'var(--color-theme-accent, #1976d2)' } : {},
+                                    '&:hover': onStepClick
+                                        ? { boxShadow: 2, borderColor: 'var(--color-theme-accent, #1976d2)' }
+                                        : {},
                                 }}
                             >
                                 {screenshotPage && (
@@ -222,67 +275,148 @@ export function JourneyFlowchart({
                                         <StepScreenshot
                                             scanId={screenshotPage.id}
                                             highlightRect={highlightRect}
-                                            alt={i === 0 ? (step.pageTitle || step.pageUrl) : (t('domainResult.journeySourceOnPage') + ': ' + (step.triggerLabel || ''))}
+                                            alt={
+                                                i === 0
+                                                    ? step.pageTitle || step.pageUrl
+                                                    : t('domainResult.journeySourceOnPage') +
+                                                      ': ' +
+                                                      (step.triggerLabel || '')
+                                            }
                                         />
                                     </Box>
                                 )}
-                                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 1 }}>
-                                    <MsqdxTypography variant="caption" sx={{ fontWeight: 700, color: 'var(--color-text-muted-on-light)' }}>
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        justifyContent: 'space-between',
+                                        gap: 1,
+                                        mb: 1,
+                                    }}
+                                >
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ fontWeight: 700, color: 'var(--color-text-muted-on-light)' }}
+                                    >
                                         {t('domainResult.journeyStep')} {step.index + 1}
                                     </MsqdxTypography>
                                     {steps.length > 1 && (
-                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                        <MsqdxTypography
+                                            variant="caption"
+                                            sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                        >
                                             {activeIndex + 1} / {steps.length}
                                         </MsqdxTypography>
                                     )}
                                 </Box>
-                                <MsqdxTypography variant="body1" sx={{ fontWeight: 600, display: 'block', mb: 1.5 }} title={step.pageUrl}>
+                                <MsqdxTypography
+                                    variant="body1"
+                                    sx={{ fontWeight: 600, display: 'block', mb: 1.5 }}
+                                    title={step.pageUrl}
+                                >
                                     {step.pageTitle || shortUrl(step.pageUrl)}
                                 </MsqdxTypography>
 
                                 {i > 0 && (
-                                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid var(--color-neutral-100, #f5f5f5)' }}>
+                                    <Box
+                                        sx={{ mt: 2, pt: 2, borderTop: '1px solid var(--color-neutral-100, #f5f5f5)' }}
+                                    >
                                         {steps[i - 1]?.backtrackFromReason && (
-                                            <MsqdxTypography variant="body2" sx={{ fontStyle: 'italic', color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>
-                                                {t('domainResult.journeyBacktrackPrefix')} {steps[i - 1].backtrackFromReason}
+                                            <MsqdxTypography
+                                                variant="body2"
+                                                sx={{
+                                                    fontStyle: 'italic',
+                                                    color: 'var(--color-text-muted-on-light)',
+                                                    display: 'block',
+                                                    mb: 0.5,
+                                                }}
+                                            >
+                                                {t('domainResult.journeyBacktrackPrefix')}{' '}
+                                                {steps[i - 1].backtrackFromReason}
                                             </MsqdxTypography>
                                         )}
-                                        <MsqdxTypography variant="body2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                                        <MsqdxTypography
+                                            variant="body2"
+                                            sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}
+                                        >
                                             {t('domainResult.journeySourceOnPage')}
                                         </MsqdxTypography>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
                                             <ChevronDown size={16} style={{ transform: 'rotate(-90deg)' }} />
-                                            <MsqdxTypography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }} title={step.triggerLabel ?? ''}>
+                                            <MsqdxTypography
+                                                variant="body2"
+                                                sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+                                                title={step.triggerLabel ?? ''}
+                                            >
                                                 {step.triggerLabel || t('domainResult.journeySourceLink')}
                                             </MsqdxTypography>
                                         </Box>
                                         {step.navigationReason && (
-                                            <MsqdxTypography variant="body2" sx={{ fontStyle: 'italic', color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.5 }} title={step.navigationReason}>
+                                            <MsqdxTypography
+                                                variant="body2"
+                                                sx={{
+                                                    fontStyle: 'italic',
+                                                    color: 'var(--color-text-muted-on-light)',
+                                                    display: 'block',
+                                                    mt: 0.5,
+                                                }}
+                                                title={step.navigationReason}
+                                            >
                                                 {step.navigationReason}
                                             </MsqdxTypography>
                                         )}
-                                        {(step.regionAboveFold != null || step.regionFindability != null || step.regionSemanticType) ? (
+                                        {step.regionAboveFold != null ||
+                                        step.regionFindability != null ||
+                                        step.regionSemanticType ? (
                                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
-                                                {step.regionSemanticType && regionTypeLabel(step.regionSemanticType, t) && (
-                                                    <MsqdxChip size="small" label={regionTypeLabel(step.regionSemanticType, t)} sx={{ height: 22, fontSize: '0.75rem' }} variant="outlined" />
-                                                )}
+                                                {step.regionSemanticType &&
+                                                    regionTypeLabel(step.regionSemanticType, t) && (
+                                                        <MsqdxChip
+                                                            size="small"
+                                                            label={regionTypeLabel(step.regionSemanticType, t)}
+                                                            sx={{ height: 22, fontSize: '0.75rem' }}
+                                                            variant="outlined"
+                                                        />
+                                                    )}
                                                 {step.regionAboveFold != null && (
-                                                    <MsqdxChip size="small" label={step.regionAboveFold ? t('domainResult.journeyAboveFold') : t('domainResult.journeyBelowFold')} sx={{ height: 22, fontSize: '0.75rem' }} />
+                                                    <MsqdxChip
+                                                        size="small"
+                                                        variant="outlined"
+                                                        label={
+                                                            step.regionAboveFold
+                                                                ? t('domainResult.journeyAboveFold')
+                                                                : t('domainResult.journeyBelowFold')
+                                                        }
+                                                        sx={{ height: 22, fontSize: '0.75rem' }}
+                                                    />
                                                 )}
                                                 {findabilityLabel(step.regionFindability, t) && (
                                                     <MsqdxChip
                                                         size="small"
+                                                        variant="outlined"
                                                         label={findabilityLabel(step.regionFindability, t)}
                                                         sx={{
                                                             height: 22,
                                                             fontSize: '0.75rem',
-                                                            bgcolor: (step.regionFindability ?? 0) >= 0.7 ? 'var(--color-secondary-dx-green-tint)' : (step.regionFindability ?? 0) >= 0.4 ? 'var(--color-secondary-dx-yellow-tint)' : 'var(--color-secondary-dx-pink-tint)',
+                                                            bgcolor:
+                                                                (step.regionFindability ?? 0) >= 0.7
+                                                                    ? 'var(--color-secondary-dx-green-tint)'
+                                                                    : (step.regionFindability ?? 0) >= 0.4
+                                                                      ? 'var(--color-secondary-dx-yellow-tint)'
+                                                                      : 'var(--color-secondary-dx-pink-tint)',
                                                         }}
                                                     />
                                                 )}
                                             </Box>
                                         ) : step.triggerLabel ? (
-                                            <MsqdxTypography variant="caption" sx={{ fontStyle: 'italic', color: 'var(--color-text-muted-on-light)', mt: 0.5 }}>
+                                            <MsqdxTypography
+                                                variant="caption"
+                                                sx={{
+                                                    fontStyle: 'italic',
+                                                    color: 'var(--color-text-muted-on-light)',
+                                                    mt: 0.5,
+                                                }}
+                                            >
                                                 {t('domainResult.journeyNoRegionMatch')}
                                             </MsqdxTypography>
                                         ) : null}
@@ -290,9 +424,19 @@ export function JourneyFlowchart({
                                 )}
 
                                 {streaming && i === steps.length - 1 && (
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 2, color: 'var(--color-text-muted-on-light)' }}>
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 0.5,
+                                            mt: 2,
+                                            color: 'var(--color-text-muted-on-light)',
+                                        }}
+                                    >
                                         <CircularProgress size={18} sx={{ color: 'var(--color-theme-accent)' }} />
-                                        <MsqdxTypography variant="body2">{t('domainResult.journeyStreaming')}</MsqdxTypography>
+                                        <MsqdxTypography variant="body2">
+                                            {t('domainResult.journeyStreaming')}
+                                        </MsqdxTypography>
                                     </Box>
                                 )}
                             </Box>
@@ -324,10 +468,16 @@ export function JourneyFlowchart({
                                 width: 8,
                                 height: 8,
                                 borderRadius: '50%',
-                                bgcolor: i === activeIndex ? 'var(--color-theme-accent)' : 'var(--color-neutral-300, #bdbdbd)',
+                                bgcolor:
+                                    i === activeIndex
+                                        ? 'var(--color-theme-accent)'
+                                        : 'var(--color-neutral-300, #bdbdbd)',
                                 cursor: 'pointer',
                                 transition: 'transform 0.2s, background-color 0.2s',
-                                '&:hover': { bgcolor: i === activeIndex ? 'var(--color-theme-accent)' : 'var(--color-neutral-400)' },
+                                '&:hover': {
+                                    bgcolor:
+                                        i === activeIndex ? 'var(--color-theme-accent)' : 'var(--color-neutral-400)',
+                                },
                                 '&:focus-visible': { outline: '2px solid var(--color-theme-accent)', outlineOffset: 2 },
                             }}
                         />

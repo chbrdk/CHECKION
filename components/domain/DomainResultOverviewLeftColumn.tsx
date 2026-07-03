@@ -47,35 +47,49 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
     return (
         <Box sx={{ flex: '0 0 300px', minWidth: 0 }}>
             <Stack spacing={1.5}>
-            <MsqdxMoleculeCard
-                title={t('domainResult.domainScore')}
-                titleVariant="h6"
-                variant="flat"
-                borderRadius="1.5xl"
-                footerDivider={false}
-                headerActions={<InfoTooltip title={t('info.domainScore')} ariaLabel={t('common.info')} />}
-                sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
-            >
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 'var(--msqdx-spacing-sm)' }}>
+                <MsqdxMoleculeCard
+                    title={t('domainResult.domainScore')}
+                    titleVariant="h6"
+                    variant="flat"
+                    borderRadius="1.5xl"
+                    footerDivider={false}
+                    headerActions={<InfoTooltip title={t('info.domainScore')} ariaLabel={t('common.info')} />}
+                    sx={{ bgcolor: 'var(--color-card-bg)', ...MSQDX_INNER_CARD_BORDER_SX }}
+                >
                     <Box
                         sx={{
-                            position: 'relative',
-                            width: 100,
-                            height: 100,
-                            borderRadius: '50%',
-                            border: `6px solid ${score > 80 ? THEME_ACCENT_CSS : 'var(--color-secondary-dx-orange)'}`,
                             display: 'flex',
+                            flexDirection: 'column',
                             alignItems: 'center',
-                            justifyContent: 'center',
+                            py: 'var(--msqdx-spacing-sm)',
                         }}
                     >
-                        <MsqdxTypography variant="h3">{score}</MsqdxTypography>
+                        <Box
+                            sx={{
+                                position: 'relative',
+                                width: 100,
+                                height: 100,
+                                borderRadius: '50%',
+                                border: `6px solid ${score > 80 ? THEME_ACCENT_CSS : 'var(--color-secondary-dx-orange)'}`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <MsqdxTypography variant="h3">{score}</MsqdxTypography>
+                        </Box>
+                        <MsqdxTypography
+                            variant="body2"
+                            sx={{
+                                mt: 'var(--msqdx-spacing-sm)',
+                                fontSize: '0.8125rem',
+                                color: 'var(--color-text-muted-on-light)',
+                            }}
+                        >
+                            {totalPages} {t('domainResult.pagesScanned')}
+                        </MsqdxTypography>
                     </Box>
-                    <MsqdxTypography variant="body2" sx={{ mt: 'var(--msqdx-spacing-sm)', fontSize: '0.8125rem', color: 'var(--color-text-muted-on-light)' }}>
-                        {totalPages} {t('domainResult.pagesScanned')}
-                    </MsqdxTypography>
-                </Box>
-            </MsqdxMoleculeCard>
+                </MsqdxMoleculeCard>
 
                 <MsqdxMoleculeCard
                     title={t('domainResult.systemicIssues')}
@@ -109,19 +123,24 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                 </MsqdxMoleculeCard>
 
                 <Box>
-                <Link
-                    href={pathDomainSection(
-                        domainId,
-                        'page-topics',
-                        Object.keys(domainLinkQuery).length ? domainLinkQuery : undefined
-                    )}
-                    style={{ textDecoration: 'none', color: 'var(--color-theme-accent)', fontWeight: 600, fontSize: '0.8125rem' }}
-                >
-                    {t('domainResult.pageTopicsOverviewCta')}
-                </Link>
+                    <Link
+                        href={pathDomainSection(
+                            domainId,
+                            'page-topics',
+                            Object.keys(domainLinkQuery).length ? domainLinkQuery : undefined,
+                        )}
+                        style={{
+                            textDecoration: 'none',
+                            color: 'var(--color-theme-accent)',
+                            fontWeight: 600,
+                            fontSize: '0.8125rem',
+                        }}
+                    >
+                        {t('domainResult.pageTopicsOverviewCta')}
+                    </Link>
                 </Box>
 
-            {eeat && (
+                {eeat && (
                     <MsqdxMoleculeCard
                         title={t('domainResult.eeatTitle')}
                         titleVariant="h6"
@@ -133,78 +152,136 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                     >
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-sm)' }}>
                             <Box>
-                                <MsqdxTypography variant="subtitle2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}>
+                                <MsqdxTypography
+                                    variant="subtitle2"
+                                    sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}
+                                >
                                     {t('domainResult.eeatTrust')}
                                 </MsqdxTypography>
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xs)' }}>
                                     <MsqdxChip
                                         size="small"
-                                        label={t('domainResult.eeatImpressum', { count: eeat.trust.pagesWithImpressum, total: eeat.trust.totalPages })}
+                                        variant="outlined"
+                                        label={t('domainResult.eeatImpressum', {
+                                            count: eeat.trust.pagesWithImpressum,
+                                            total: eeat.trust.totalPages,
+                                        })}
                                         sx={eeat.trust.pagesWithImpressum > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
                                     />
                                     <MsqdxChip
                                         size="small"
-                                        label={t('domainResult.eeatContact', { count: eeat.trust.pagesWithContact, total: eeat.trust.totalPages })}
+                                        variant="outlined"
+                                        label={t('domainResult.eeatContact', {
+                                            count: eeat.trust.pagesWithContact,
+                                            total: eeat.trust.totalPages,
+                                        })}
                                         sx={eeat.trust.pagesWithContact > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
                                     />
                                     <MsqdxChip
                                         size="small"
-                                        label={t('domainResult.eeatPrivacy', { count: eeat.trust.pagesWithPrivacy, total: eeat.trust.totalPages })}
+                                        variant="outlined"
+                                        label={t('domainResult.eeatPrivacy', {
+                                            count: eeat.trust.pagesWithPrivacy,
+                                            total: eeat.trust.totalPages,
+                                        })}
                                         sx={eeat.trust.pagesWithPrivacy > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
                                     />
                                 </Box>
                             </Box>
                             <Box>
-                                <MsqdxTypography variant="subtitle2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}>
+                                <MsqdxTypography
+                                    variant="subtitle2"
+                                    sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}
+                                >
                                     {t('domainResult.eeatExperience')}
                                 </MsqdxTypography>
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xs)' }}>
                                     <MsqdxChip
                                         size="small"
-                                        label={t('domainResult.eeatAbout', { count: eeat.experience.pagesWithAbout, total: eeat.experience.totalPages })}
+                                        variant="outlined"
+                                        label={t('domainResult.eeatAbout', {
+                                            count: eeat.experience.pagesWithAbout,
+                                            total: eeat.experience.totalPages,
+                                        })}
                                         sx={eeat.experience.pagesWithAbout > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
                                     />
                                     <MsqdxChip
                                         size="small"
-                                        label={t('domainResult.eeatTeam', { count: eeat.experience.pagesWithTeam, total: eeat.experience.totalPages })}
+                                        variant="outlined"
+                                        label={t('domainResult.eeatTeam', {
+                                            count: eeat.experience.pagesWithTeam,
+                                            total: eeat.experience.totalPages,
+                                        })}
                                         sx={eeat.experience.pagesWithTeam > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
                                     />
                                     <MsqdxChip
                                         size="small"
+                                        variant="outlined"
                                         label={t('domainResult.eeatCaseStudy', {
                                             count: eeat.experience.pagesWithCaseStudyMention,
                                             total: eeat.experience.totalPages,
                                         })}
-                                        sx={eeat.experience.pagesWithCaseStudyMention > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
+                                        sx={
+                                            eeat.experience.pagesWithCaseStudyMention > 0
+                                                ? EEAT_POSITIVE_CHIP_SX
+                                                : undefined
+                                        }
                                     />
                                 </Box>
                             </Box>
                             <Box>
-                                <MsqdxTypography variant="subtitle2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}>
+                                <MsqdxTypography
+                                    variant="subtitle2"
+                                    sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}
+                                >
                                     {t('domainResult.eeatExpertise')}
                                 </MsqdxTypography>
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xs)', alignItems: 'center' }}>
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
+                                        gap: 'var(--msqdx-spacing-xs)',
+                                        alignItems: 'center',
+                                    }}
+                                >
                                     <MsqdxChip
                                         size="small"
-                                        label={t('domainResult.eeatAuthorBio', { count: eeat.expertise.pagesWithAuthorBio, total: eeat.expertise.totalPages })}
+                                        variant="outlined"
+                                        label={t('domainResult.eeatAuthorBio', {
+                                            count: eeat.expertise.pagesWithAuthorBio,
+                                            total: eeat.expertise.totalPages,
+                                        })}
                                         sx={eeat.expertise.pagesWithAuthorBio > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
                                     />
                                     <MsqdxChip
                                         size="small"
+                                        variant="outlined"
                                         label={t('domainResult.eeatArticleAuthor', {
                                             count: eeat.expertise.pagesWithArticleAuthor,
                                             total: eeat.expertise.totalPages,
                                         })}
-                                        sx={eeat.expertise.pagesWithArticleAuthor > 0 ? EEAT_POSITIVE_CHIP_SX : undefined}
+                                        sx={
+                                            eeat.expertise.pagesWithArticleAuthor > 0
+                                                ? EEAT_POSITIVE_CHIP_SX
+                                                : undefined
+                                        }
                                     />
-                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                        {t('domainResult.eeatAvgCitations', { avg: eeat.expertise.avgCitationsPerPage.toFixed(1) })}
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                    >
+                                        {t('domainResult.eeatAvgCitations', {
+                                            avg: eeat.expertise.avgCitationsPerPage.toFixed(1),
+                                        })}
                                     </MsqdxTypography>
                                 </Box>
                             </Box>
                             {eeat.authoritativeness !== undefined && eeat.authoritativeness && (
                                 <Box>
-                                    <MsqdxTypography variant="subtitle2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}>
+                                    <MsqdxTypography
+                                        variant="subtitle2"
+                                        sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}
+                                    >
                                         {t('domainResult.eeatAuthoritativeness')}
                                     </MsqdxTypography>
                                     <MsqdxTypography variant="body2">{eeat.authoritativeness}</MsqdxTypography>
@@ -212,7 +289,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                             )}
                         </Box>
                     </MsqdxMoleculeCard>
-            )}
+                )}
             </Stack>
         </Box>
     );

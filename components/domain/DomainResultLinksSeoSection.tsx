@@ -64,7 +64,13 @@ const KEYWORDS_CARD_STRETCH_SX = {
 } as const;
 
 /** SEO card + paginated API + virtual list — isolated so refetch does not re-render the Links card. */
-const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, domainId, seo, onOpenPageUrl }: SeoPanelProps) {
+const DomainResultSeoPanel = memo(function DomainResultSeoPanel({
+    t,
+    locale,
+    domainId,
+    seo,
+    onOpenPageUrl,
+}: SeoPanelProps) {
     const [seoPageIndex, setSeoPageIndex] = useState(0);
     const [seoSort, setSeoSort] = useState<'wordCount' | 'url'>('wordCount');
     const [seoDir, setSeoDir] = useState<'asc' | 'desc'>('desc');
@@ -93,7 +99,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                     sort: seoSort,
                     dir: seoDir,
                 }),
-                { credentials: 'same-origin' }
+                { credentials: 'same-origin' },
             );
             if (!res.ok) throw new Error('seo-pages failed');
             return res.json() as Promise<{ data?: PageSeoSummary[]; total?: number }>;
@@ -113,13 +119,10 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
         (row: PageSeoSummary, _index: number) => (
             <SeoDensityScrollRow row={row} locale={locale} onOpenPageUrl={onOpenPageUrl} t={t} />
         ),
-        [locale, onOpenPageUrl, t]
+        [locale, onOpenPageUrl, t],
     );
 
-    const paginationLabels = useMemo(
-        () => ({ prev: t('share.back'), next: t('share.next') }),
-        [t]
-    );
+    const paginationLabels = useMemo(() => ({ prev: t('share.back'), next: t('share.next') }), [t]);
 
     const crossPageKeywordItems = useMemo(() => seo.crossPageKeywords.slice(0, 25), [seo.crossPageKeywords]);
 
@@ -133,10 +136,11 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                     avg: kw.avgDensityPercent,
                 })}
                 size="small"
+                variant="outlined"
                 sx={{ fontSize: '0.7rem', height: 22 }}
             />
         ),
-        [t]
+        [t],
     );
 
     const kpiCell = (labelKey: string, value: string) => (
@@ -200,7 +204,10 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                     ))}
                 </Stack>
                 {moreMissingMeta > 0 && (
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.75, display: 'block' }}>
+                    <MsqdxTypography
+                        variant="caption"
+                        sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.75, display: 'block' }}
+                    >
                         {t('domainResult.missingMetaMoreUrls', {
                             count: moreMissingMeta,
                         })}
@@ -261,13 +268,21 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                 </MsqdxTypography>
                 {dupTitles.length > 0 && (
                     <Box sx={{ mb: 1.25 }}>
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}
+                        >
                             {t('domainResult.linksSeoDupTitlesSubtitle')}
                         </MsqdxTypography>
                         <Stack spacing={1}>
                             {dupTitles.slice(0, 8).map((g) => (
                                 <Box key={g.normalizedTitle}>
-                                    <MsqdxTypography variant="caption" sx={{ display: 'block', mb: 0.35, fontStyle: 'italic' }} noWrap title={g.normalizedTitle}>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ display: 'block', mb: 0.35, fontStyle: 'italic' }}
+                                        noWrap
+                                        title={g.normalizedTitle}
+                                    >
                                         {g.normalizedTitle.slice(0, 100)}
                                         {g.normalizedTitle.length > 100 ? '…' : ''}
                                     </MsqdxTypography>
@@ -279,13 +294,21 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                 )}
                 {dupMetas.length > 0 && (
                     <Box sx={{ mb: 1.25 }}>
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}
+                        >
                             {t('domainResult.linksSeoDupMetasSubtitle')}
                         </MsqdxTypography>
                         <Stack spacing={1}>
                             {dupMetas.slice(0, 6).map((g) => (
                                 <Box key={g.normalizedMeta}>
-                                    <MsqdxTypography variant="caption" sx={{ display: 'block', mb: 0.35, fontStyle: 'italic' }} noWrap title={g.normalizedMeta}>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ display: 'block', mb: 0.35, fontStyle: 'italic' }}
+                                        noWrap
+                                        title={g.normalizedMeta}
+                                    >
                                         {g.normalizedMeta.slice(0, 100)}
                                         {g.normalizedMeta.length > 100 ? '…' : ''}
                                     </MsqdxTypography>
@@ -297,7 +320,10 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                 )}
                 {canMis.length > 0 && (
                     <Box sx={{ mb: hrefConflict || hrefTargets.length > 1 ? 1.25 : 0 }}>
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}
+                        >
                             {t('domainResult.linksSeoCanonicalMismatchSubtitle')}
                         </MsqdxTypography>
                         <Stack spacing={0.5}>{canMis.slice(0, 12).map(urlRow)}</Stack>
@@ -308,7 +334,9 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                         <MsqdxTypography
                             variant="caption"
                             sx={{
-                                color: hrefConflict ? 'var(--color-secondary-dx-amber, #b45309)' : 'var(--color-text-muted-on-light)',
+                                color: hrefConflict
+                                    ? 'var(--color-secondary-dx-amber, #b45309)'
+                                    : 'var(--color-text-muted-on-light)',
                                 display: 'block',
                                 mb: 0.5,
                             }}
@@ -319,7 +347,13 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                         </MsqdxTypography>
                         <Stack direction="row" flexWrap="wrap" gap={0.5}>
                             {hrefTargets.map((u) => (
-                                <MsqdxChip key={u} label={u} size="small" sx={{ fontSize: '0.65rem', maxWidth: '100%' }} />
+                                <MsqdxChip
+                                    key={u}
+                                    label={u}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ fontSize: '0.65rem', maxWidth: '100%' }}
+                                />
                             ))}
                         </Stack>
                     </Box>
@@ -367,12 +401,15 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                                 }}
                             >
                                 {kpiCell('domainResult.linksSeoKpiWithTitle', `${seo.withTitle} / ${seo.totalPages}`)}
-                                {kpiCell('domainResult.linksSeoKpiWithMeta', `${seo.withMetaDescription} / ${seo.totalPages}`)}
+                                {kpiCell(
+                                    'domainResult.linksSeoKpiWithMeta',
+                                    `${seo.withMetaDescription} / ${seo.totalPages}`,
+                                )}
                                 {kpiCell('domainResult.linksSeoKpiWithH1', `${seo.withH1} / ${seo.totalPages}`)}
                                 {seo.totalWordsAcrossPages > 0
                                     ? kpiCell(
                                           'domainResult.linksSeoKpiTotalWords',
-                                          seo.totalWordsAcrossPages.toLocaleString(lc)
+                                          seo.totalWordsAcrossPages.toLocaleString(lc),
                                       )
                                     : null}
                             </Box>
@@ -455,9 +492,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({ t, locale, dom
                         }}
                     >
                         {seoRows.map((row, index) => (
-                            <React.Fragment key={row.url}>
-                                {renderSeoRow(row, index)}
-                            </React.Fragment>
+                            <React.Fragment key={row.url}>{renderSeoRow(row, index)}</React.Fragment>
                         ))}
                     </Box>
                 )}
@@ -482,7 +517,12 @@ type LinksPanelProps = {
 };
 
 /** Links aggregate card — no React Query; does not re-render when SEO pages fetch. */
-const DomainResultLinksPanel = memo(function DomainResultLinksPanel({ t, locale, links, onOpenPageUrl }: LinksPanelProps) {
+const DomainResultLinksPanel = memo(function DomainResultLinksPanel({
+    t,
+    locale,
+    links,
+    onOpenPageUrl,
+}: LinksPanelProps) {
     const lc = locale === 'en' ? 'en-US' : 'de-DE';
 
     const statCell = (label: string, value: string, summaryLine?: string, emphasizeBroken?: boolean) => (
@@ -503,7 +543,10 @@ const DomainResultLinksPanel = memo(function DomainResultLinksPanel({ t, locale,
                 {value}
             </MsqdxTypography>
             {summaryLine ? (
-                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.75, display: 'block' }}>
+                <MsqdxTypography
+                    variant="caption"
+                    sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.75, display: 'block' }}
+                >
                     {summaryLine}
                 </MsqdxTypography>
             ) : null}
@@ -532,7 +575,7 @@ const DomainResultLinksPanel = memo(function DomainResultLinksPanel({ t, locale,
                         t('domainResult.linksStatBrokenTitle'),
                         links.broken.length.toLocaleString(lc),
                         undefined,
-                        true
+                        true,
                     )}
                     {statCell(t('domainResult.linksStatUniqueTitle'), links.uniqueBrokenUrls.toLocaleString(lc))}
                     {statCell(
@@ -541,7 +584,7 @@ const DomainResultLinksPanel = memo(function DomainResultLinksPanel({ t, locale,
                         t('domainResult.linksStatSummaryLine', {
                             internal: links.internal,
                             external: links.external,
-                        })
+                        }),
                     )}
                 </Box>
             </MsqdxMoleculeCard>
@@ -576,6 +619,7 @@ const DomainResultLinksPanel = memo(function DomainResultLinksPanel({ t, locale,
                                 <MsqdxChip
                                     label={t('domainResult.linksBrokenCount', { count })}
                                     size="small"
+                                    variant="outlined"
                                     sx={{
                                         flexShrink: 0,
                                         height: 22,
@@ -643,7 +687,13 @@ function DomainResultLinksSeoSectionInner({
                             width: { xs: '100%', lg: twoCol ? 'auto' : '100%' },
                         }}
                     >
-                        <DomainResultSeoPanel t={t} locale={locale} domainId={domainId} seo={aggregated.seo!} onOpenPageUrl={onOpenPageUrl} />
+                        <DomainResultSeoPanel
+                            t={t}
+                            locale={locale}
+                            domainId={domainId}
+                            seo={aggregated.seo!}
+                            onOpenPageUrl={onOpenPageUrl}
+                        />
                     </Box>
                 ) : null}
                 {hasLinks ? (
@@ -654,7 +704,12 @@ function DomainResultLinksSeoSectionInner({
                             width: { xs: '100%', lg: twoCol ? 'auto' : '100%' },
                         }}
                     >
-                        <DomainResultLinksPanel t={t} locale={locale} links={aggregated.links!} onOpenPageUrl={onOpenPageUrl} />
+                        <DomainResultLinksPanel
+                            t={t}
+                            locale={locale}
+                            links={aggregated.links!}
+                            onOpenPageUrl={onOpenPageUrl}
+                        />
                     </Box>
                 ) : null}
             </Box>
@@ -664,7 +719,11 @@ function DomainResultLinksSeoSectionInner({
 
 export const DomainResultLinksSeoSection = memo(DomainResultLinksSeoSectionInner);
 
-function DomainResultLinksSeoEmptyInner({ t }: { t: (key: string, params?: Record<string, string | number>) => string }) {
+function DomainResultLinksSeoEmptyInner({
+    t,
+}: {
+    t: (key: string, params?: Record<string, string | number>) => string;
+}) {
     return (
         <MsqdxMoleculeCard
             title={t('domainResult.linksSeoEmptyCardTitle')}

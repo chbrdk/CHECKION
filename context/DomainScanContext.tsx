@@ -46,7 +46,7 @@ export type DomainScanChromeValue = {
     activeSection: DomainResultSectionSlug;
     domainLinkQuery: Record<string, string>;
     projectId: string | null;
-    setProjectId: React.Dispatch<React.SetStateAction<string | null>>;
+    setProjectId?: React.Dispatch<React.SetStateAction<string | null>>;
     fromProjectId: string | null;
     /** Null until first successful bundle; primitives/tags only (no aggregated graph). */
     shellHeader: DomainScanShellHeader | null;
@@ -63,7 +63,7 @@ export type DomainScanCoreValue = {
     setResult: React.Dispatch<React.SetStateAction<DomainSummaryApiResponse | null>>;
     loadError: string | null;
     projectId: string | null;
-    setProjectId: React.Dispatch<React.SetStateAction<string | null>>;
+    setProjectId?: React.Dispatch<React.SetStateAction<string | null>>;
     /** When `/domain/[id]?projectId=` is present: project context from URL (not necessarily equal to stored `projectId` until API sync). */
     fromProjectId: string | null;
     /** Merge into `pathDomainSection` third argument to keep `?projectId=` on tab links. */
@@ -145,23 +145,14 @@ export function useDomainScan(): DomainScanContextValue {
     return { ...useDomainScanCore(), ...useDomainScanSession() };
 }
 
-export function DomainScanProvider({
-    domainId,
-    children,
-}: {
-    domainId: string;
-    children: React.ReactNode;
-}) {
+export function DomainScanProvider({ domainId, children }: { domainId: string; children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const { t } = useI18n();
     const queryClient = useQueryClient();
 
-    const activeSection = useMemo(
-        () => getDomainSectionFromPathname(pathname, domainId),
-        [pathname, domainId]
-    );
+    const activeSection = useMemo(() => getDomainSectionFromPathname(pathname, domainId), [pathname, domainId]);
 
     const bundleQuery = useQuery({
         queryKey: BUNDLE_QUERY_KEY(domainId),
@@ -175,8 +166,8 @@ export function DomainScanProvider({
         },
         enabled: Boolean(domainId?.trim()),
         /** Aligns with CACHE_REVALIDATE_DOMAIN (seconds) and HTTP_CACHE_CONTROL_PRIVATE_DOMAIN_JSON max-age; invalidate via invalidateDomainScan. */
-        staleTime: 60_000,
-        gcTime: 5 * 60_000,
+        staleTime: 60000,
+        gcTime: 5 * 60000,
         refetchOnWindowFocus: false,
         structuralSharing: true,
         /** Keeps prior bundle visible during background refetch (same idea as slim-pages `keepPreviousData`). */
@@ -199,19 +190,19 @@ export function DomainScanProvider({
                 return next ?? prev;
             });
         },
-        [queryClient, domainId]
+        [queryClient, domainId],
     );
 
-    const [projectId, setProjectId] = useState<string | null>(null);
+    // const [projectId, setProjectId] = useState<string | null>(null);
     const fromProjectId = searchParams.get('projectId');
     const domainLinkQuery = useMemo(
         () => (fromProjectId ? { projectId: fromProjectId } : ({} as Record<string, string>)),
-        [fromProjectId]
+        [fromProjectId],
     );
 
-    useEffect(() => {
+    /* useEffect(() => {
         if (result?.projectId != null) setProjectId(result.projectId);
-    }, [result?.projectId]);
+    }, [result?.projectId]); */
 
     const [summarizing, setSummarizing] = useState(false);
     const [summarizeError, setSummarizeError] = useState<string | null>(null);
@@ -283,7 +274,7 @@ export function DomainScanProvider({
                 }
             })();
         },
-        [domainId, norm, pagesByNormUrl, pagesByUrl, router]
+        [domainId, norm, pagesByNormUrl, pagesByUrl, router],
     );
 
     const handleIssuePageClick = useCallback(
@@ -294,7 +285,7 @@ export function DomainScanProvider({
             }
             openPageScanUrl(url);
         },
-        [openPageScanUrl, router]
+        [openPageScanUrl, router],
     );
 
     const selectedGroupKey = searchParams.get('group');
@@ -312,7 +303,7 @@ export function DomainScanProvider({
             const base = pathDomainSection(domainId, 'list-details');
             router.replace(q ? `${base}?${q}` : base);
         },
-        [router, searchParams, domainId]
+        [router, searchParams, domainId],
     );
 
     const selectPage = useCallback(
@@ -323,7 +314,7 @@ export function DomainScanProvider({
             const base = pathDomainSection(domainId, 'list-details');
             router.replace(q ? `${base}?${q}` : base);
         },
-        [router, searchParams, domainId]
+        [router, searchParams, domainId],
     );
 
     const clearIssuesPageSelection = useCallback(() => {
@@ -358,7 +349,7 @@ export function DomainScanProvider({
             const base = pathDomainSection(domainId, 'list-details');
             router.replace(q ? `${base}?${q}` : base);
         },
-        [router, searchParams, domainId]
+        [router, searchParams, domainId],
     );
 
     const restoreJourneyId = searchParams.get('restoreJourney');
@@ -376,7 +367,7 @@ export function DomainScanProvider({
                     pathDomainSection(domainId, 'journey', {
                         ...domainLinkQuery,
                         restoreJourney: restoreJourneyId,
-                    })
+                    }),
                 );
             })
             .catch(() => {});
@@ -384,10 +375,10 @@ export function DomainScanProvider({
 
     const hasIssuesDeepLink = Boolean(
         searchParams.get('group') ||
-            searchParams.get('page') ||
-            searchParams.get('itype') ||
-            searchParams.get('wcag') ||
-            searchParams.get('q')
+        searchParams.get('page') ||
+        searchParams.get('itype') ||
+        searchParams.get('wcag') ||
+        searchParams.get('q'),
     );
 
     useEffect(() => {
@@ -413,7 +404,7 @@ export function DomainScanProvider({
             projectTags: [...(result.projectTags ?? [])],
             scanTags: [...(result.scanTags ?? [])],
         };
-    }, [result?.domain, result?.timestamp, result?.industry, projectTagsSig, scanTagsSig]);
+    }, [result]);
 
     const chromeValue = useMemo<DomainScanChromeValue>(
         () => ({
@@ -422,8 +413,8 @@ export function DomainScanProvider({
             domainId,
             activeSection,
             domainLinkQuery,
-            projectId,
-            setProjectId,
+            projectId: result?.projectId ?? null,
+            // setProjectId,
             fromProjectId,
             shellHeader,
         }),
@@ -433,11 +424,11 @@ export function DomainScanProvider({
             domainId,
             activeSection,
             domainLinkQuery,
-            projectId,
-            setProjectId,
+            result?.projectId,
+            // setProjectId,
             fromProjectId,
             shellHeader,
-        ]
+        ],
     );
 
     const coreValue = useMemo<DomainScanCoreValue>(
@@ -447,8 +438,8 @@ export function DomainScanProvider({
             result,
             setResult,
             loadError,
-            projectId,
-            setProjectId,
+            projectId: result?.projectId ?? null,
+            // setProjectId,
             fromProjectId,
             domainLinkQuery,
             totalSlimRows,
@@ -478,7 +469,6 @@ export function DomainScanProvider({
             result,
             setResult,
             loadError,
-            projectId,
             fromProjectId,
             domainLinkQuery,
             totalSlimRows,
@@ -501,7 +491,7 @@ export function DomainScanProvider({
             clearIssuesPageSelection,
             clearIssuesGroupSelection,
             setIssuesFilters,
-        ]
+        ],
     );
 
     const sessionValue = useMemo<DomainScanSessionValue>(
@@ -535,7 +525,7 @@ export function DomainScanProvider({
             journeySaving,
             journeySaved,
             journeySaveName,
-        ]
+        ],
     );
 
     return (

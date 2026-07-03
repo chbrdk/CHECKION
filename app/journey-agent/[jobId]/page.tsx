@@ -100,7 +100,11 @@ function StepResultSections({ resultText }: { resultText: string }) {
                     </MsqdxTypography>
                     <MsqdxTypography
                         variant="body2"
-                        sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: 'var(--color-text-muted-on-light)' }}
+                        sx={{
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word',
+                            color: 'var(--color-text-muted-on-light)',
+                        }}
                     >
                         {value.length > 800 ? value.slice(0, 800) + '…' : value}
                     </MsqdxTypography>
@@ -130,7 +134,10 @@ function JourneyVideoWithIntroLogo({ videoUrl }: { videoUrl: string }) {
 
     return (
         <Box sx={{ mt: 'var(--msqdx-spacing-md)', mb: 'var(--msqdx-spacing-md)' }}>
-            <MsqdxTypography variant="subtitle2" sx={{ mb: 'var(--msqdx-spacing-xs)', color: 'var(--color-text-on-light)' }}>
+            <MsqdxTypography
+                variant="subtitle2"
+                sx={{ mb: 'var(--msqdx-spacing-xs)', color: 'var(--color-text-on-light)' }}
+            >
                 Aufzeichnung
             </MsqdxTypography>
             <Box
@@ -190,14 +197,22 @@ function ReasoningBlock({ text }: { text: string }) {
     return (
         <Box component="div" sx={{ '& > * + *': { mt: 1 } }}>
             {blocks.map((block, idx) => {
-                const lines = block.split(/\n/).map((l) => l.trim()).filter(Boolean);
+                const lines = block
+                    .split(/\n/)
+                    .map((l) => l.trim())
+                    .filter(Boolean);
                 const isNumberedList = lines.length > 0 && /^\d+\.\s/.test(lines[0]);
                 const isBulletList = lines.length > 0 && /^[-*•]\s/.test(lines[0]);
                 if (isNumberedList || isBulletList) {
                     return (
                         <Box component="ul" key={idx} sx={{ m: 0, pl: 2.5, py: 0 }}>
                             {lines.map((line, i) => (
-                                <MsqdxTypography key={i} variant="body2" component="li" sx={{ mb: 0.25, color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography
+                                    key={i}
+                                    variant="body2"
+                                    component="li"
+                                    sx={{ mb: 0.25, color: 'var(--color-text-muted-on-light)' }}
+                                >
                                     {line.replace(/^(\d+\.|[-*•])\s*/, '')}
                                 </MsqdxTypography>
                             ))}
@@ -205,7 +220,15 @@ function ReasoningBlock({ text }: { text: string }) {
                     );
                 }
                 return (
-                    <MsqdxTypography key={idx} variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography
+                        key={idx}
+                        variant="body2"
+                        sx={{
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word',
+                            color: 'var(--color-text-muted-on-light)',
+                        }}
+                    >
                         {lines.join('\n')}
                     </MsqdxTypography>
                 );
@@ -244,9 +267,18 @@ function StepCard({
                 minWidth: { xs: '100%', md: 260 },
             }}
         >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', flexWrap: 'wrap', mb: 'var(--msqdx-spacing-xs)' }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--msqdx-spacing-xs)',
+                    flexWrap: 'wrap',
+                    mb: 'var(--msqdx-spacing-xs)',
+                }}
+            >
                 <MsqdxChip
                     size="small"
+                    variant="outlined"
                     label={actionLabel(step.action, t)}
                     sx={{
                         fontWeight: 600,
@@ -264,8 +296,15 @@ function StepCard({
                     </MsqdxTypography>
                 )}
             </Box>
-            <MsqdxTypography variant="body2" sx={{ fontWeight: 500, color: 'var(--color-text-on-light)', mb: 'var(--msqdx-spacing-xs)' }}>
-                {step.target && step.target !== '—' ? (step.target.length > 120 ? step.target.slice(0, 120) + '…' : step.target) : null}
+            <MsqdxTypography
+                variant="body2"
+                sx={{ fontWeight: 500, color: 'var(--color-text-on-light)', mb: 'var(--msqdx-spacing-xs)' }}
+            >
+                {step.target && step.target !== '—'
+                    ? step.target.length > 120
+                        ? step.target.slice(0, 120) + '…'
+                        : step.target
+                    : null}
             </MsqdxTypography>
             {step.reasoning && (
                 <Box sx={{ mb: 'var(--msqdx-spacing-sm)' }}>
@@ -314,7 +353,8 @@ export default function JourneyAgentStatusPage() {
     const { t } = useI18n();
     const theme = useTheme();
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
-    const jobId = typeof params.jobId === 'string' ? params.jobId : Array.isArray(params.jobId) ? params.jobId[0] : undefined;
+    const jobId =
+        typeof params.jobId === 'string' ? params.jobId : Array.isArray(params.jobId) ? params.jobId[0] : undefined;
 
     const [status, setStatus] = useState<Status>('loading');
     const [error, setError] = useState<string | null>(null);
@@ -332,7 +372,7 @@ export default function JourneyAgentStatusPage() {
     const cardsVisible = isDesktop ? STEP_CARDS_DESKTOP : STEP_CARDS_MOBILE;
     const visibleSteps = useMemo(
         () => steps.slice(activeStepIndex, activeStepIndex + cardsVisible),
-        [steps, activeStepIndex, cardsVisible]
+        [steps, activeStepIndex, cardsVisible],
     );
 
     const goToPrev = useCallback(() => {
@@ -341,9 +381,12 @@ export default function JourneyAgentStatusPage() {
     const goToNext = useCallback(() => {
         setActiveStepIndex((i) => Math.min(steps.length - 1, i + 1));
     }, [steps.length]);
-    const goTo = useCallback((index: number) => {
-        setActiveStepIndex((_) => Math.max(0, Math.min(index, steps.length - 1)));
-    }, [steps.length]);
+    const goTo = useCallback(
+        (index: number) => {
+            setActiveStepIndex((_) => Math.max(0, Math.min(index, steps.length - 1)));
+        },
+        [steps.length],
+    );
 
     useEffect(() => {
         if (!jobId) return;
@@ -431,7 +474,10 @@ export default function JourneyAgentStatusPage() {
 
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: VIDEO_MAX_WIDTH + 48, mx: 'auto' }}>
-            <MsqdxTypography variant="h5" sx={{ fontWeight: 600, mb: 'var(--msqdx-spacing-md)', color: 'var(--color-text-on-light)' }}>
+            <MsqdxTypography
+                variant="h5"
+                sx={{ fontWeight: 600, mb: 'var(--msqdx-spacing-md)', color: 'var(--color-text-on-light)' }}
+            >
                 {t('scan.journeyTab')} – {jobId.slice(0, 8)}…
             </MsqdxTypography>
 
@@ -453,7 +499,10 @@ export default function JourneyAgentStatusPage() {
                         </MsqdxTypography>
                     </Box>
                     <Box sx={{ mb: 'var(--msqdx-spacing-md)' }}>
-                        <MsqdxTypography variant="subtitle2" sx={{ mb: 'var(--msqdx-spacing-xs)', color: 'var(--color-text-on-light)' }}>
+                        <MsqdxTypography
+                            variant="subtitle2"
+                            sx={{ mb: 'var(--msqdx-spacing-xs)', color: 'var(--color-text-on-light)' }}
+                        >
                             Live-Ansicht
                         </MsqdxTypography>
                         <Box
@@ -532,16 +581,41 @@ export default function JourneyAgentStatusPage() {
                         }}
                         title={result.success ? t('scan.journeyStatusComplete') : t('scan.journeyStatusFinished')}
                         subtitle={
-                            [result.taskDescription && `${t('scan.journeyTaskLabel')}: ${result.taskDescription}`, result.siteDomain && `Site: ${result.siteDomain}`]
+                            [
+                                result.taskDescription && `${t('scan.journeyTaskLabel')}: ${result.taskDescription}`,
+                                result.siteDomain && `Site: ${result.siteDomain}`,
+                            ]
                                 .filter(Boolean)
                                 .join(' · ') || undefined
                         }
                         actions={
-                            <Box sx={{ display: 'flex', gap: 'var(--msqdx-spacing-xs)', flexWrap: 'wrap', alignItems: 'center' }}>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    gap: 'var(--msqdx-spacing-xs)',
+                                    flexWrap: 'wrap',
+                                    alignItems: 'center',
+                                }}
+                            >
                                 {jobId && (
                                     <>
-                                        <AddToProject resourceType="journey" resourceId={jobId} currentProjectId={projectId} onAssigned={() => fetch(apiScanJourneyAgent(jobId)).then((r) => r.json()).then((d: { projectId?: string | null }) => setProjectId(d.projectId ?? null))} />
-                                        <SharePanel resourceType="journey" resourceId={jobId} labelNamespace="domainResult" />
+                                        <AddToProject
+                                            resourceType="journey"
+                                            resourceId={jobId}
+                                            currentProjectId={projectId}
+                                            onAssigned={() =>
+                                                fetch(apiScanJourneyAgent(jobId))
+                                                    .then((r) => r.json())
+                                                    .then((d: { projectId?: string | null }) =>
+                                                        setProjectId(d.projectId ?? null),
+                                                    )
+                                            }
+                                        />
+                                        <SharePanel
+                                            resourceType="journey"
+                                            resourceId={jobId}
+                                            labelNamespace="domainResult"
+                                        />
                                     </>
                                 )}
                                 <MsqdxButton variant="outlined" size="small" onClick={() => router.push(PATH_SCAN)}>
@@ -551,9 +625,7 @@ export default function JourneyAgentStatusPage() {
                         }
                     />
 
-                    {result.videoUrl && (
-                        <JourneyVideoWithIntroLogo videoUrl={result.videoUrl} />
-                    )}
+                    {result.videoUrl && <JourneyVideoWithIntroLogo videoUrl={result.videoUrl} />}
 
                     {steps.length > 0 && (
                         <MsqdxMoleculeCard
@@ -567,7 +639,10 @@ export default function JourneyAgentStatusPage() {
                             title={`${t('scan.journeyStepsTitle')} (${steps.length})`}
                             headerActions={
                                 stepRangeLabel ? (
-                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                    >
                                         {stepRangeLabel}
                                     </MsqdxTypography>
                                 ) : undefined
@@ -614,7 +689,15 @@ export default function JourneyAgentStatusPage() {
                                 </IconButton>
                             </Box>
                             {steps.length > 1 && (
-                                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5, flexWrap: 'wrap', mt: 'var(--msqdx-spacing-sm)' }}>
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        gap: 0.5,
+                                        flexWrap: 'wrap',
+                                        mt: 'var(--msqdx-spacing-sm)',
+                                    }}
+                                >
                                     {steps.map((_, i) => (
                                         <Box
                                             key={i}
@@ -626,7 +709,10 @@ export default function JourneyAgentStatusPage() {
                                                 width: 8,
                                                 height: 8,
                                                 borderRadius: '50%',
-                                                bgcolor: i === activeStepIndex ? 'var(--color-theme-accent)' : 'var(--color-secondary-dx-grey-light-tint)',
+                                                bgcolor:
+                                                    i === activeStepIndex
+                                                        ? 'var(--color-theme-accent)'
+                                                        : 'var(--color-secondary-dx-grey-light-tint)',
                                                 cursor: 'pointer',
                                             }}
                                             aria-label={t('scan.journeyStepAria', { n: i + 1 })}
@@ -637,13 +723,23 @@ export default function JourneyAgentStatusPage() {
                         </MsqdxMoleculeCard>
                     )}
 
-                    <MsqdxButton variant="outlined" size="small" onClick={() => router.push(PATH_SCAN)} sx={{ mt: 'var(--msqdx-spacing-md)' }}>
+                    <MsqdxButton
+                        variant="outlined"
+                        size="small"
+                        onClick={() => router.push(PATH_SCAN)}
+                        sx={{ mt: 'var(--msqdx-spacing-md)' }}
+                    >
                         {t('scan.journeyNewJourney')}
                     </MsqdxButton>
                 </>
             )}
 
-            <MsqdxButton variant="text" size="small" onClick={() => router.push(PATH_HOME)} sx={{ mt: 'var(--msqdx-spacing-md)', color: 'var(--color-text-on-light)' }}>
+            <MsqdxButton
+                variant="text"
+                size="small"
+                onClick={() => router.push(PATH_HOME)}
+                sx={{ mt: 'var(--msqdx-spacing-md)', color: 'var(--color-text-on-light)' }}
+            >
                 {t('results.dashboard')}
             </MsqdxButton>
         </Box>

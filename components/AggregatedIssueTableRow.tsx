@@ -23,10 +23,14 @@ export type AggregatedIssueTableRowProps = {
     onPageClick?: (url: string) => void;
 };
 
-export const AggregatedIssueTableRow = memo(function AggregatedIssueTableRow({ issue, onPageClick }: AggregatedIssueTableRowProps) {
+export const AggregatedIssueTableRow = memo(function AggregatedIssueTableRow({
+    issue,
+    onPageClick,
+}: AggregatedIssueTableRowProps) {
     const { t } = useI18n();
     const config = SEVERITY_CONFIG[issue.type] ?? SEVERITY_CONFIG.notice;
-    const levelLabel = issue.wcagLevel === 'Unknown' ? '–' : issue.wcagLevel === 'APCA' ? 'APCA' : `Level ${issue.wcagLevel}`;
+    const levelLabel =
+        issue.wcagLevel === 'Unknown' ? '–' : issue.wcagLevel === 'APCA' ? 'APCA' : `Level ${issue.wcagLevel}`;
     const codeShort = issue.code.length > 48 ? issue.code.slice(0, 48) + '…' : issue.code;
     const firstUrl = issue.pageUrls?.[0];
     const openFirst = useCallback(() => {
@@ -51,6 +55,7 @@ export const AggregatedIssueTableRow = memo(function AggregatedIssueTableRow({ i
                 <MsqdxChip
                     label={config.label}
                     size="small"
+                    variant="outlined"
                     sx={{
                         backgroundColor: alpha(config.color, 0.12),
                         color: config.color,
@@ -71,9 +76,12 @@ export const AggregatedIssueTableRow = memo(function AggregatedIssueTableRow({ i
                     <MsqdxChip
                         label={levelLabel}
                         size="small"
+                        variant="outlined"
                         sx={{
                             backgroundColor:
-                                issue.wcagLevel === 'APCA' ? alpha(MSQDX_BRAND_PRIMARY.purple, 0.12) : alpha(MSQDX_STATUS.info.base, 0.12),
+                                issue.wcagLevel === 'APCA'
+                                    ? alpha(MSQDX_BRAND_PRIMARY.purple, 0.12)
+                                    : alpha(MSQDX_STATUS.info.base, 0.12),
                             color: issue.wcagLevel === 'APCA' ? MSQDX_BRAND_PRIMARY.purple : MSQDX_STATUS.info.base,
                             fontSize: '0.65rem',
                             height: 18,
@@ -82,16 +90,27 @@ export const AggregatedIssueTableRow = memo(function AggregatedIssueTableRow({ i
                     />
                 )}
                 {issue.wcagLevel === 'Unknown' && (
-                    <MsqdxTypography variant="caption" sx={{ color: MSQDX_THEME.light.text.tertiary, fontSize: '0.75rem' }}>
+                    <MsqdxTypography
+                        variant="caption"
+                        sx={{ color: MSQDX_THEME.light.text.tertiary, fontSize: '0.75rem' }}
+                    >
                         –
                     </MsqdxTypography>
                 )}
             </Box>
             <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                <MsqdxChip label={issue.runner} size="small" sx={{ fontSize: '0.65rem', height: 18, minHeight: 18 }} />
+                <MsqdxChip
+                    label={issue.runner}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontSize: '0.65rem', height: 18, minHeight: 18 }}
+                />
             </Box>
             <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                <MsqdxTypography variant="caption" sx={{ fontFamily: 'monospace', fontSize: '0.65rem', wordBreak: 'break-all' }}>
+                <MsqdxTypography
+                    variant="caption"
+                    sx={{ fontFamily: 'monospace', fontSize: '0.65rem', wordBreak: 'break-all' }}
+                >
                     {codeShort}
                 </MsqdxTypography>
             </Box>

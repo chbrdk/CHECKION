@@ -58,16 +58,30 @@ export function ContentFreshnessCard({ data }: { data: ContentFreshness }) {
             sx={{ bgcolor: 'var(--color-card-bg)', height: '100%' }}
         >
             <Box sx={{ display: 'grid', gap: 'var(--msqdx-spacing-sm)' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: 1,
+                    }}
+                >
                     <MsqdxTypography
                         variant="body2"
-                        sx={{ color: 'var(--color-text-on-light)', display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)' }}
+                        sx={{
+                            color: 'var(--color-text-on-light)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 'var(--msqdx-spacing-xs)',
+                        }}
                     >
                         <CalendarClock size={16} /> {t('results.contentFreshnessConfidenceLabel')}
                     </MsqdxTypography>
                     <MsqdxChip
                         label={t(confidenceLabelKey(data.confidence))}
                         size="small"
+                        variant="outlined"
                         sx={{
                             bgcolor: alpha(confidenceColor(data.confidence), 0.12),
                             color: confidenceColor(data.confidence),
@@ -86,14 +100,29 @@ export function ContentFreshnessCard({ data }: { data: ContentFreshness }) {
 
                 {hasBest && (
                     <>
-                        <Box sx={{ p: 'var(--msqdx-spacing-sm)', borderRadius: 1, bgcolor: 'var(--color-secondary-dx-grey-light-tint)' }}>
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>
+                        <Box
+                            sx={{
+                                p: 'var(--msqdx-spacing-sm)',
+                                borderRadius: 1,
+                                bgcolor: 'var(--color-secondary-dx-grey-light-tint)',
+                            }}
+                        >
+                            <MsqdxTypography
+                                variant="caption"
+                                sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}
+                            >
                                 {t('results.contentFreshnessBestSource')}
                             </MsqdxTypography>
-                            <MsqdxTypography variant="body2" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}>
+                            <MsqdxTypography
+                                variant="body2"
+                                sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}
+                            >
                                 {t(sourceLabelKey(data.bestAsOfSource!))}
                             </MsqdxTypography>
-                            <MsqdxTypography variant="caption" sx={{ fontFamily: 'monospace', color: 'var(--color-text-on-light)', mt: 0.5 }}>
+                            <MsqdxTypography
+                                variant="caption"
+                                sx={{ fontFamily: 'monospace', color: 'var(--color-text-on-light)', mt: 0.5 }}
+                            >
                                 {new Date(data.bestAsOfIso!).toLocaleString()}
                             </MsqdxTypography>
                         </Box>
@@ -111,7 +140,12 @@ export function ContentFreshnessCard({ data }: { data: ContentFreshness }) {
                             <MsqdxTypography
                                 key={note}
                                 variant="caption"
-                                sx={{ color: MSQDX_STATUS.warning.base, display: 'flex', alignItems: 'flex-start', gap: 0.5 }}
+                                sx={{
+                                    color: MSQDX_STATUS.warning.base,
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: 0.5,
+                                }}
                             >
                                 <Info size={14} style={{ flexShrink: 0, marginTop: 2 }} />
                                 {note === 'html_long_cache'
@@ -124,7 +158,10 @@ export function ContentFreshnessCard({ data }: { data: ContentFreshness }) {
 
                 {data.signals.length > 0 && (
                     <Box>
-                        <MsqdxTypography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-text-on-light)', mb: 0.5 }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ fontWeight: 600, color: 'var(--color-text-on-light)', mb: 0.5 }}
+                        >
                             {t('results.contentFreshnessSignalsTitle')}
                         </MsqdxTypography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -139,10 +176,16 @@ export function ContentFreshnessCard({ data }: { data: ContentFreshness }) {
                                         flexWrap: 'wrap',
                                     }}
                                 >
-                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                    >
                                         {t(sourceLabelKey(s.source))}
                                     </MsqdxTypography>
-                                    <MsqdxTypography variant="caption" sx={{ fontFamily: 'monospace', color: 'var(--color-text-on-light)' }}>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ fontFamily: 'monospace', color: 'var(--color-text-on-light)' }}
+                                    >
                                         {new Date(s.valueIso).toLocaleDateString()}
                                     </MsqdxTypography>
                                 </Box>

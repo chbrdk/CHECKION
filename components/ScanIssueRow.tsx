@@ -1,13 +1,7 @@
 import React, { memo } from 'react';
 import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
-import {
-    MSQDX_SPACING,
-    MSQDX_THEME,
-    MSQDX_BRAND_PRIMARY,
-    MSQDX_STATUS,
-    MSQDX_NEUTRAL,
-} from '@msqdx/tokens';
+import { MSQDX_SPACING, MSQDX_THEME, MSQDX_BRAND_PRIMARY, MSQDX_STATUS, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { Issue } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
 
@@ -32,10 +26,11 @@ export const ScanIssueRow = memo(({ issue, globalRowIndex, registerRef }: ScanIs
     const config = SEVERITY_CONFIG[issue.type] ?? SEVERITY_CONFIG.notice;
     const handleRef = React.useCallback(
         (el: HTMLDivElement | null) => registerRef(globalRowIndex, el),
-        [globalRowIndex, registerRef]
+        [globalRowIndex, registerRef],
     );
 
-    const levelLabel = issue.wcagLevel === 'Unknown' ? '–' : issue.wcagLevel === 'APCA' ? 'APCA' : `Level ${issue.wcagLevel}`;
+    const levelLabel =
+        issue.wcagLevel === 'Unknown' ? '–' : issue.wcagLevel === 'APCA' ? 'APCA' : `Level ${issue.wcagLevel}`;
     const codeShort = issue.code.length > 48 ? issue.code.slice(0, 48) + '…' : issue.code;
     const hasDetails = Boolean(issue.selector || issue.context || issue.helpUrl);
 
@@ -64,11 +59,16 @@ export const ScanIssueRow = memo(({ issue, globalRowIndex, registerRef }: ScanIs
             }}
         >
             {/* Row 1: data cells */}
-            <Box component="div" role="cell" sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', gap: 1, borderRight: tableBorder }}>
+            <Box
+                component="div"
+                role="cell"
+                sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', gap: 1, borderRight: tableBorder }}
+            >
                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: config.color, flexShrink: 0 }} />
                 <MsqdxChip
                     label={config.label}
                     size="small"
+                    variant="outlined"
                     sx={{
                         backgroundColor: alpha(config.color, 0.12),
                         color: config.color,
@@ -78,18 +78,33 @@ export const ScanIssueRow = memo(({ issue, globalRowIndex, registerRef }: ScanIs
                     }}
                 />
             </Box>
-            <Box component="div" role="cell" sx={{ px: 1.5, py: 1, minWidth: 0, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                <MsqdxTypography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.4, color: MSQDX_THEME.light.text.primary }}>
+            <Box
+                component="div"
+                role="cell"
+                sx={{ px: 1.5, py: 1, minWidth: 0, display: 'flex', alignItems: 'center', borderRight: tableBorder }}
+            >
+                <MsqdxTypography
+                    variant="body2"
+                    sx={{ fontWeight: 500, lineHeight: 1.4, color: MSQDX_THEME.light.text.primary }}
+                >
                     {issue.message}
                 </MsqdxTypography>
             </Box>
-            <Box component="div" role="cell" sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+            <Box
+                component="div"
+                role="cell"
+                sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', borderRight: tableBorder }}
+            >
                 {issue.wcagLevel !== 'Unknown' && (
                     <MsqdxChip
                         label={levelLabel}
                         size="small"
+                        variant="outlined"
                         sx={{
-                            backgroundColor: issue.wcagLevel === 'APCA' ? alpha(MSQDX_BRAND_PRIMARY.purple, 0.12) : alpha(MSQDX_STATUS.info.base, 0.12),
+                            backgroundColor:
+                                issue.wcagLevel === 'APCA'
+                                    ? alpha(MSQDX_BRAND_PRIMARY.purple, 0.12)
+                                    : alpha(MSQDX_STATUS.info.base, 0.12),
                             color: issue.wcagLevel === 'APCA' ? MSQDX_BRAND_PRIMARY.purple : MSQDX_STATUS.info.base,
                             fontSize: '0.7rem',
                             height: 22,
@@ -97,13 +112,20 @@ export const ScanIssueRow = memo(({ issue, globalRowIndex, registerRef }: ScanIs
                     />
                 )}
                 {issue.wcagLevel === 'Unknown' && (
-                    <MsqdxTypography variant="caption" sx={{ color: MSQDX_THEME.light.text.tertiary }}>–</MsqdxTypography>
+                    <MsqdxTypography variant="caption" sx={{ color: MSQDX_THEME.light.text.tertiary }}>
+                        –
+                    </MsqdxTypography>
                 )}
             </Box>
-            <Box component="div" role="cell" sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
+            <Box
+                component="div"
+                role="cell"
+                sx={{ px: 1.5, py: 1, display: 'flex', alignItems: 'center', borderRight: tableBorder }}
+            >
                 <MsqdxChip
                     label={issue.runner}
                     size="small"
+                    variant="outlined"
                     sx={{
                         backgroundColor: alpha(MSQDX_NEUTRAL[400], 0.12),
                         color: MSQDX_THEME.light.text.secondary,
@@ -112,8 +134,21 @@ export const ScanIssueRow = memo(({ issue, globalRowIndex, registerRef }: ScanIs
                     }}
                 />
             </Box>
-            <Box component="div" role="cell" sx={{ px: 1.5, py: 1, minWidth: 0, display: 'flex', alignItems: 'center', borderRight: tableBorder }}>
-                <MsqdxTypography variant="caption" component="span" sx={{ fontFamily: 'monospace', fontSize: '0.7rem', color: MSQDX_THEME.light.text.secondary, wordBreak: 'break-all' }}>
+            <Box
+                component="div"
+                role="cell"
+                sx={{ px: 1.5, py: 1, minWidth: 0, display: 'flex', alignItems: 'center', borderRight: tableBorder }}
+            >
+                <MsqdxTypography
+                    variant="caption"
+                    component="span"
+                    sx={{
+                        fontFamily: 'monospace',
+                        fontSize: '0.7rem',
+                        color: MSQDX_THEME.light.text.secondary,
+                        wordBreak: 'break-all',
+                    }}
+                >
                     {codeShort}
                 </MsqdxTypography>
             </Box>
@@ -155,20 +190,67 @@ export const ScanIssueRow = memo(({ issue, globalRowIndex, registerRef }: ScanIs
                     >
                         {issue.selector && (
                             <Box>
-                                <MsqdxTypography variant="caption" sx={{ color: MSQDX_THEME.light.text.tertiary, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+                                <MsqdxTypography
+                                    variant="caption"
+                                    sx={{
+                                        color: MSQDX_THEME.light.text.tertiary,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.08em',
+                                        fontWeight: 600,
+                                    }}
+                                >
                                     CSS Selector
                                 </MsqdxTypography>
-                                <Box component="code" sx={{ display: 'block', mt: 0.5, p: 1, borderRadius: 1, backgroundColor: MSQDX_NEUTRAL[100], color: MSQDX_THEME.light.text.primary, fontSize: '0.7rem', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', border: `1px solid ${MSQDX_NEUTRAL[200]}` }}>
+                                <Box
+                                    component="code"
+                                    sx={{
+                                        display: 'block',
+                                        mt: 0.5,
+                                        p: 1,
+                                        borderRadius: 1,
+                                        backgroundColor: MSQDX_NEUTRAL[100],
+                                        color: MSQDX_THEME.light.text.primary,
+                                        fontSize: '0.7rem',
+                                        overflowX: 'auto',
+                                        whiteSpace: 'pre-wrap',
+                                        wordBreak: 'break-all',
+                                        border: `1px solid ${MSQDX_NEUTRAL[200]}`,
+                                    }}
+                                >
                                     {issue.selector}
                                 </Box>
                             </Box>
                         )}
                         {issue.context && (
                             <Box>
-                                <MsqdxTypography variant="caption" sx={{ color: MSQDX_THEME.light.text.tertiary, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+                                <MsqdxTypography
+                                    variant="caption"
+                                    sx={{
+                                        color: MSQDX_THEME.light.text.tertiary,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.08em',
+                                        fontWeight: 600,
+                                    }}
+                                >
                                     HTML Context
                                 </MsqdxTypography>
-                                <Box component="pre" sx={{ mt: 0.5, p: 1, borderRadius: 1, backgroundColor: MSQDX_NEUTRAL[100], color: MSQDX_THEME.light.text.primary, fontSize: '0.7rem', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: 180, overflowY: 'auto', border: `1px solid ${MSQDX_NEUTRAL[200]}` }}>
+                                <Box
+                                    component="pre"
+                                    sx={{
+                                        mt: 0.5,
+                                        p: 1,
+                                        borderRadius: 1,
+                                        backgroundColor: MSQDX_NEUTRAL[100],
+                                        color: MSQDX_THEME.light.text.primary,
+                                        fontSize: '0.7rem',
+                                        overflowX: 'auto',
+                                        whiteSpace: 'pre-wrap',
+                                        wordBreak: 'break-all',
+                                        maxHeight: 180,
+                                        overflowY: 'auto',
+                                        border: `1px solid ${MSQDX_NEUTRAL[200]}`,
+                                    }}
+                                >
                                     {issue.context}
                                 </Box>
                             </Box>
@@ -193,7 +275,11 @@ export const ScanIssueRow = memo(({ issue, globalRowIndex, registerRef }: ScanIs
                     </Box>
                 </Box>
             ) : (
-                <Box component="div" role="cell" sx={{ px: 1, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Box
+                    component="div"
+                    role="cell"
+                    sx={{ px: 1, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
                     <span aria-hidden>–</span>
                 </Box>
             )}

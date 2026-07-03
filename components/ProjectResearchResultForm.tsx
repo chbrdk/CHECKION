@@ -88,6 +88,7 @@ export function ProjectResearchResultForm({
                             label={item}
                             onDelete={() => onRemoveTargetGroup(item)}
                             size="small"
+                            variant="outlined"
                         />
                     ))}
                 </Box>
@@ -99,7 +100,12 @@ export function ProjectResearchResultForm({
                         onChange={onAddTargetGroupChange}
                         sx={researchInputSx}
                     />
-                    <MsqdxButton variant="outlined" size="small" onClick={onAddTargetGroupClick} disabled={!addTargetGroup.trim()}>
+                    <MsqdxButton
+                        variant="outlined"
+                        size="small"
+                        onClick={onAddTargetGroupClick}
+                        disabled={!addTargetGroup.trim()}
+                    >
                         {t('projects.researchAdd')}
                     </MsqdxButton>
                 </Box>
@@ -108,7 +114,12 @@ export function ProjectResearchResultForm({
                 <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
                     {t('projects.researchValueProposition')}
                 </MsqdxTypography>
-                <textarea value={valueProp} onChange={onValuePropositionChange} rows={2} style={researchTextareaStyle} />
+                <textarea
+                    value={valueProp}
+                    onChange={onValuePropositionChange}
+                    rows={2}
+                    style={researchTextareaStyle}
+                />
             </Box>
             <Box>
                 <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ mb: 0.5 }}>
@@ -135,10 +146,20 @@ export function ProjectResearchResultForm({
                         onChange={onAddKeywordChange}
                         sx={researchInputSx}
                     />
-                    <MsqdxButton variant="outlined" size="small" onClick={onAddKeywordClick} disabled={!addKeyword.trim()}>
+                    <MsqdxButton
+                        variant="outlined"
+                        size="small"
+                        onClick={onAddKeywordClick}
+                        disabled={!addKeyword.trim()}
+                    >
                         {t('projects.researchAdd')}
                     </MsqdxButton>
-                    <MsqdxButton variant="contained" size="small" onClick={onApplyKeywords} disabled={selectedKeywords.size === 0}>
+                    <MsqdxButton
+                        variant="contained"
+                        size="small"
+                        onClick={onApplyKeywords}
+                        disabled={selectedKeywords.size === 0}
+                    >
                         {t('projects.researchApplyKeywords')} ({selectedKeywords.size})
                     </MsqdxButton>
                 </Box>
@@ -149,7 +170,13 @@ export function ProjectResearchResultForm({
                 </MsqdxTypography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 0.5 }}>
                     {(researchResult.geoQueries ?? []).map((q) => (
-                        <MsqdxChip key={q} label={q} onDelete={() => onRemoveGeoQuery(q)} size="small" />
+                        <MsqdxChip
+                            key={q}
+                            label={q}
+                            onDelete={() => onRemoveGeoQuery(q)}
+                            size="small"
+                            variant="outlined"
+                        />
                     ))}
                 </Box>
                 <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -160,7 +187,12 @@ export function ProjectResearchResultForm({
                         onChange={onAddGeoQueryChange}
                         sx={researchInputSx}
                     />
-                    <MsqdxButton variant="outlined" size="small" onClick={onAddGeoQueryClick} disabled={!addGeoQuery.trim()}>
+                    <MsqdxButton
+                        variant="outlined"
+                        size="small"
+                        onClick={onAddGeoQueryClick}
+                        disabled={!addGeoQuery.trim()}
+                    >
                         {t('projects.researchAdd')}
                     </MsqdxButton>
                     <MsqdxButton variant="contained" size="small" onClick={onApplyGeoQueries}>
@@ -174,7 +206,13 @@ export function ProjectResearchResultForm({
                 </MsqdxTypography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 0.5 }}>
                     {(researchResult.competitors ?? []).map((c) => (
-                        <MsqdxChip key={c} label={c} onDelete={() => onRemoveCompetitor(c)} size="small" />
+                        <MsqdxChip
+                            key={c}
+                            label={c}
+                            onDelete={() => onRemoveCompetitor(c)}
+                            size="small"
+                            variant="outlined"
+                        />
                     ))}
                 </Box>
                 <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -185,7 +223,12 @@ export function ProjectResearchResultForm({
                         onChange={onAddCompetitorChange}
                         sx={researchInputSx}
                     />
-                    <MsqdxButton variant="outlined" size="small" onClick={onAddCompetitorClick} disabled={!addCompetitor.trim()}>
+                    <MsqdxButton
+                        variant="outlined"
+                        size="small"
+                        onClick={onAddCompetitorClick}
+                        disabled={!addCompetitor.trim()}
+                    >
                         {t('projects.researchAdd')}
                     </MsqdxButton>
                     <MsqdxButton variant="contained" size="small" onClick={onApplyCompetitors}>

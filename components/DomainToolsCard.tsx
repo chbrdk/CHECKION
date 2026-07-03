@@ -38,10 +38,10 @@ export function DomainToolsCard({ domainUrl }: { domainUrl: string }) {
             const json = await res.json();
             if (!res.ok) throw new Error(json.error ?? 'Request failed');
 
-            setData((prev) => ({ ...prev ?? {}, [id]: json.data ?? json }));
+            setData((prev) => ({ ...(prev ?? {}), [id]: json.data ?? json }));
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Unknown error');
-            setData((prev) => ({ ...prev ?? {}, [id]: null }));
+            setData((prev) => ({ ...(prev ?? {}), [id]: null }));
         } finally {
             setLoading(null);
         }
@@ -93,13 +93,23 @@ export function DomainToolsCard({ domainUrl }: { domainUrl: string }) {
 
             {data?.ssl != null && (
                 <Box sx={{ p: 1.5, mb: 1, border: tableBorder, borderRadius: 1 }}>
-                    <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>SSL Labs</MsqdxTypography>
+                    <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>
+                        SSL Labs
+                    </MsqdxTypography>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
                         {(data.ssl as { grade?: string }).grade && (
-                            <MsqdxChip label={`Grade: ${(data.ssl as { grade?: string }).grade}`} size="small" />
+                            <MsqdxChip
+                                label={`Grade: ${(data.ssl as { grade?: string }).grade}`}
+                                size="small"
+                                variant="outlined"
+                            />
                         )}
                         {(data.ssl as { status?: string }).status && (
-                            <MsqdxChip label={(data.ssl as { status?: string }).status} size="small" variant="outlined" />
+                            <MsqdxChip
+                                label={(data.ssl as { status?: string }).status}
+                                size="small"
+                                variant="outlined"
+                            />
                         )}
                     </Box>
                 </Box>
@@ -107,29 +117,53 @@ export function DomainToolsCard({ domainUrl }: { domainUrl: string }) {
 
             {data?.pagespeed != null && (
                 <Box sx={{ p: 1.5, mb: 1, border: tableBorder, borderRadius: 1 }}>
-                    <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>PageSpeed</MsqdxTypography>
+                    <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>
+                        PageSpeed
+                    </MsqdxTypography>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
-                        <MsqdxChip label={`Performance: ${(data.pagespeed as { performance?: number }).performance ?? '–'}`} size="small" />
-                        <MsqdxChip label={`Accessibility: ${(data.pagespeed as { accessibility?: number }).accessibility ?? '–'}`} size="small" />
-                        <MsqdxChip label={`SEO: ${(data.pagespeed as { seo?: number }).seo ?? '–'}`} size="small" />
+                        <MsqdxChip
+                            label={`Performance: ${(data.pagespeed as { performance?: number }).performance ?? '–'}`}
+                            size="small"
+                            variant="outlined"
+                        />
+                        <MsqdxChip
+                            label={`Accessibility: ${(data.pagespeed as { accessibility?: number }).accessibility ?? '–'}`}
+                            size="small"
+                            variant="outlined"
+                        />
+                        <MsqdxChip
+                            label={`SEO: ${(data.pagespeed as { seo?: number }).seo ?? '–'}`}
+                            size="small"
+                            variant="outlined"
+                        />
                     </Box>
                 </Box>
             )}
 
             {data?.wayback != null && (
                 <Box sx={{ p: 1.5, mb: 1, border: tableBorder, borderRadius: 1 }}>
-                    <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>Wayback</MsqdxTypography>
+                    <MsqdxTypography variant="caption" sx={{ fontWeight: 600 }}>
+                        Wayback
+                    </MsqdxTypography>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
                         {(data.wayback as { available?: boolean }).available && (
-                            <MsqdxChip label="Archiviert" size="small" sx={{ bgcolor: alpha(MSQDX_BRAND_PRIMARY.green, 0.12) }} />
+                            <MsqdxChip
+                                label="Archiviert"
+                                size="small"
+                                variant="outlined"
+                                sx={{ bgcolor: alpha(MSQDX_BRAND_PRIMARY.green, 0.12) }}
+                            />
                         )}
                         {(data.wayback as { firstSnapshotTimestamp?: string }).firstSnapshotTimestamp && (
-                            <MsqdxChip label={`Erste Erwähnung: ${(data.wayback as { firstSnapshotTimestamp?: string }).firstSnapshotTimestamp}`} size="small" variant="outlined" />
+                            <MsqdxChip
+                                label={`Erste Erwähnung: ${(data.wayback as { firstSnapshotTimestamp?: string }).firstSnapshotTimestamp}`}
+                                size="small"
+                                variant="outlined"
+                            />
                         )}
                     </Box>
                 </Box>
             )}
-
         </MsqdxMoleculeCard>
     );
 }

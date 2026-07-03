@@ -55,14 +55,35 @@ function DomainResultListDetailsSectionInner(props: DomainResultListDetailsSecti
                 headerActions={<InfoTooltip title={t('info.issuesList')} ariaLabel={t('common.info')} />}
                 subtitle={`Paged (DB) · aggregiert über ${totalPageCount} Seite(n)`}
                 variant="flat"
-                sx={{ bgcolor: 'var(--color-card-bg)', display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}
+                sx={{
+                    bgcolor: 'var(--color-card-bg)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minHeight: 0,
+                    minWidth: 0,
+                }}
                 borderRadius="lg"
             >
                 {issueStats && (
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2, flexShrink: 0 }}>
-                        <MsqdxChip label={`Errors: ${issueStats.errors}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.error.base, 0.12), color: MSQDX_STATUS.error.base }} />
-                        <MsqdxChip label={`Warnings: ${issueStats.warnings}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12), color: MSQDX_STATUS.warning.base }} />
-                        <MsqdxChip label={`Notices: ${issueStats.notices}`} size="small" sx={{ bgcolor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base }} />
+                        <MsqdxChip
+                            label={`Errors: ${issueStats.errors}`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ bgcolor: alpha(MSQDX_STATUS.error.base, 0.12), color: MSQDX_STATUS.error.base }}
+                        />
+                        <MsqdxChip
+                            label={`Warnings: ${issueStats.warnings}`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ bgcolor: alpha(MSQDX_STATUS.warning.base, 0.12), color: MSQDX_STATUS.warning.base }}
+                        />
+                        <MsqdxChip
+                            label={`Notices: ${issueStats.notices}`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ bgcolor: alpha(MSQDX_STATUS.info.base, 0.12), color: MSQDX_STATUS.info.base }}
+                        />
                     </Box>
                 )}
                 {domainId && (
