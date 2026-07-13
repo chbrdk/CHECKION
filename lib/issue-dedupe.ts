@@ -20,26 +20,26 @@ export function normalizeSelector(selector: string): string {
  * Used so axe and htmlcs findings on the same element map to the same rule group.
  */
 const HTMLCS_SNIFFER_TO_AXE: Record<string, string> = {
-    H37: 'image-alt',       // img alt
+    H37: 'image-alt', // img alt
     H36: 'input-image-alt', // input type=image alt
     H35: 'input-image-alt',
-    G94: 'button-name',     // button/link accessible name
-    H64: 'frame-title',     // frame title
-    F24: 'bypass',          // skip link / bypass blocks
-    G138: 'color-contrast', // color contrast (approx)
-    H32: 'label',           // label for input
+    G94: 'button-name', // button/link accessible name
+    H64: 'frame-title', // frame title
+    F24: 'bypass', // skip link / bypass blocks
+    G145: 'color-contrast', // color contrast
+    H32: 'label', // label for input
     H93: 'label',
     G18: 'color-contrast',
-    H57: 'document-title',  // document title
+    H57: 'document-title', // document title
     H71: 'document-title',
     H73: 'document-title',
     H78: 'document-title',
     H79: 'document-title',
     H81: 'document-title',
-    H2: 'link-name',        // link text
+    H2: 'link-name', // link text
     F84: 'link-name',
     H44: 'label',
-    H65: 'html-has-lang',   // html lang
+    H65: 'html-has-lang', // html lang
     H62: 'html-lang-valid',
     H91: 'aria-valid-attr',
     ARIA: 'aria-required-attr',
@@ -52,7 +52,8 @@ const HTMLCS_SNIFFER_TO_AXE: Record<string, string> = {
 export function getRuleGroup(issue: Issue): string {
     if (issue.runner === 'axe') return issue.code;
     // HTML CodeSniffer: code is like "WCAG2AA.Principle1.Guideline1_1.1_1_1.H37"
-    const lastSegment = issue.code.split('.').pop() ?? issue.code;
+    const lastSegment =
+        issue.code.split('.').find((val) => (val.match(/^[A-Z]{1}\d+$|ARIA/) ? true : false)) ?? issue.code;
     const axeEquivalent = HTMLCS_SNIFFER_TO_AXE[lastSegment];
     return axeEquivalent ?? issue.code;
 }
@@ -62,8 +63,7 @@ export function getRuleGroup(issue: Issue): string {
  * Prefer the issue with a known WCAG level (usually htmlcs), then first in list.
  */
 export function deduplicateIssues(issues: Issue[]): Issue[] {
-    const groupKey = (issue: Issue) =>
-        `${normalizeSelector(issue.selector)}::${getRuleGroup(issue)}`;
+    const groupKey = (issue: Issue) => `${normalizeSelector(issue.selector)}::${getRuleGroup(issue)}`;
     const byKey = new Map<string, Issue[]>();
     for (const issue of issues) {
         const key = groupKey(issue);
