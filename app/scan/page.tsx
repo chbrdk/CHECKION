@@ -15,12 +15,7 @@ import {
     MsqdxTabs,
 } from '@msqdx/react';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import {
-    MSQDX_SPACING,
-    MSQDX_THEME,
-    MSQDX_BRAND_PRIMARY,
-    MSQDX_STATUS,
-} from '@msqdx/tokens';
+import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
 import type { ScanResult, WcagStandard, Runner } from '@/lib/types';
 import type { SelectChangeEvent } from '@mui/material';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -90,8 +85,12 @@ export default function ScanPage() {
     const [scanMode, setScanMode] = useState<'single' | 'deep' | 'journey' | 'geoEeat'>('single');
     const [journeyEnabled, setJourneyEnabled] = useState(false);
     const [task, setTask] = useState('');
-    const [journeyHistory, setJourneyHistory] = useState<Array<{ id: string; url: string; task: string; status: string; createdAt: string }>>([]);
-    const [geoEeatHistory, setGeoEeatHistory] = useState<Array<{ id: string; url: string; status: string; createdAt: string }>>([]);
+    const [journeyHistory, setJourneyHistory] = useState<
+        Array<{ id: string; url: string; task: string; status: string; createdAt: string }>
+    >([]);
+    const [geoEeatHistory, setGeoEeatHistory] = useState<
+        Array<{ id: string; url: string; status: string; createdAt: string }>
+    >([]);
     const [geoEeatFormMode, setGeoEeatFormMode] = useState<'quick' | 'full'>('full');
     const [geoEeatQuickQuestion, setGeoEeatQuickQuestion] = useState('');
     const [geoEeatQuickCompetitor, setGeoEeatQuickCompetitor] = useState('');
@@ -126,7 +125,7 @@ export default function ScanPage() {
     useEffect(() => {
         const nextProjectId = resolveLaunchProjectId(
             projects.map((project) => project.id),
-            { currentProjectId: selectedProjectId, launchProjectId }
+            { currentProjectId: selectedProjectId, launchProjectId },
         );
         if (nextProjectId && nextProjectId !== selectedProjectId) {
             setSelectedProjectId(nextProjectId);
@@ -152,9 +151,11 @@ export default function ScanPage() {
     useEffect(() => {
         if (scanMode !== 'journey') return;
         fetch(apiScanJourneyAgentHistory({ limit: 15 }))
-            .then((res) => res.ok ? res.json() : { runs: [] })
-            .then((data: { runs?: Array<{ id: string; url: string; task: string; status: string; createdAt: string }> }) =>
-                setJourneyHistory(data.runs ?? [])
+            .then((res) => (res.ok ? res.json() : { runs: [] }))
+            .then(
+                (data: {
+                    runs?: Array<{ id: string; url: string; task: string; status: string; createdAt: string }>;
+                }) => setJourneyHistory(data.runs ?? []),
             )
             .catch(() => setJourneyHistory([]));
     }, [scanMode]);
@@ -164,7 +165,7 @@ export default function ScanPage() {
         fetch(apiScanGeoEeatHistory({ limit: 15 }))
             .then((res) => (res.ok ? res.json() : { runs: [] }))
             .then((data: { runs?: Array<{ id: string; url: string; status: string; createdAt: string }> }) =>
-                setGeoEeatHistory(data.runs ?? [])
+                setGeoEeatHistory(data.runs ?? []),
             )
             .catch(() => setGeoEeatHistory([]));
     }, [scanMode]);
@@ -224,10 +225,24 @@ export default function ScanPage() {
                     router.push(pathGeoEeat(jobId, { focus: 'competitive' }));
                     return;
                 } else if (geoEeatCompetitive) {
-                    const body: { url: string; runCompetitive?: boolean; competitors?: string[]; queries?: string[]; projectId?: string | null } = { url: startUrl! };
+                    const body: {
+                        url: string;
+                        runCompetitive?: boolean;
+                        competitors?: string[];
+                        queries?: string[];
+                        projectId?: string | null;
+                    } = { url: startUrl! };
                     body.runCompetitive = true;
-                    body.competitors = geoEeatCompetitors.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
-                    body.queries = geoEeatQueries.trim().split(/\n/).map((s) => s.trim()).filter(Boolean);
+                    body.competitors = geoEeatCompetitors
+                        .trim()
+                        .split(/\n/)
+                        .map((s) => s.trim())
+                        .filter(Boolean);
+                    body.queries = geoEeatQueries
+                        .trim()
+                        .split(/\n/)
+                        .map((s) => s.trim())
+                        .filter(Boolean);
                     if (selectedProjectId) body.projectId = selectedProjectId;
                     const res = await fetchWithSessionCookies(apiScanGeoEeatCreate, {
                         method: 'POST',
@@ -249,7 +264,10 @@ export default function ScanPage() {
                 const res = await fetchWithSessionCookies(apiScanGeoEeatCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: startUrl!, ...(selectedProjectId ? { projectId: selectedProjectId } : {}) }),
+                    body: JSON.stringify({
+                        url: startUrl!,
+                        ...(selectedProjectId ? { projectId: selectedProjectId } : {}),
+                    }),
                 });
                 const data = await readJsonSafe<{ success?: boolean; jobId?: string; error?: string }>(res);
                 if (!res.ok || !data?.success) {
@@ -270,9 +288,15 @@ export default function ScanPage() {
                 const res = await fetchWithSessionCookies(apiScanJourneyAgentCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: startUrl!, task: task.trim(), ...(selectedProjectId && { projectId: selectedProjectId }) }),
+                    body: JSON.stringify({
+                        url: startUrl!,
+                        task: task.trim(),
+                        ...(selectedProjectId && { projectId: selectedProjectId }),
+                    }),
                 });
-                const data = await readJsonSafe<{ success?: boolean; jobId?: string; error?: string; hint?: string }>(res);
+                const data = await readJsonSafe<{ success?: boolean; jobId?: string; error?: string; hint?: string }>(
+                    res,
+                );
                 if (res.status === 501) {
                     setError(data?.hint || data?.error || t('scan.journeyNotConfigured'));
                     setScanning(false);
@@ -402,14 +426,14 @@ export default function ScanPage() {
                         maxPages: deepScanMaxPages,
                         ...(scanId ? { scanId } : {}),
                         ...(selectedProjectId ? { projectId: selectedProjectId } : {}),
-                    })
+                    }),
                 );
                 setScanning(false);
             }
-
         } catch (err) {
             setError(t('scan.networkError'));
             singlePageScan.close();
+            console.error('[CHECKION] ScanPage handleScan unexpected error:', err);
             setScanning(false);
         }
     };
@@ -418,19 +442,20 @@ export default function ScanPage() {
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }}>
             {/* Header */}
             <Box sx={{ mb: MSQDX_SPACING.scale.md }}>
-                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: MSQDX_SPACING.scale.xs }}>
-                    <MsqdxTypography
-                        variant="h4"
-                        sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}
-                    >
+                <Box
+                    sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 'var(--msqdx-spacing-xs)',
+                        mb: MSQDX_SPACING.scale.xs,
+                    }}
+                >
+                    <MsqdxTypography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
                         {t('scan.title')}
                     </MsqdxTypography>
                     <InfoTooltip title={t('info.scanPage')} ariaLabel={t('common.info')} />
                 </Box>
-                <MsqdxTypography
-                    variant="body2"
-                    sx={{ color: 'var(--color-text-muted-on-light)' }}
-                >
+                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                     {t('scan.subtitle')}
                 </MsqdxTypography>
             </Box>
@@ -461,12 +486,24 @@ export default function ScanPage() {
                         loading={scanning}
                         sx={{ minWidth: 150 }}
                     >
-                        {scanning ? t('scan.scanningCta') : scanMode === 'journey' ? t('scan.startJourneyCta') : scanMode === 'geoEeat' ? t('scan.geoEeatStartCta') : t('scan.startCta')}
+                        {scanning
+                            ? t('scan.scanningCta')
+                            : scanMode === 'journey'
+                              ? t('scan.startJourneyCta')
+                              : scanMode === 'geoEeat'
+                                ? t('scan.geoEeatStartCta')
+                                : t('scan.startCta')}
                     </MsqdxButton>
                 }
             >
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr auto auto' }, gap: 'var(--msqdx-spacing-md)', alignItems: 'start' }}>
-
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', md: '1fr auto auto' },
+                        gap: 'var(--msqdx-spacing-md)',
+                        alignItems: 'start',
+                    }}
+                >
                     {/* Scan Mode Selection */}
                     <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' }, mb: 1 }}>
                         <MsqdxTabs
@@ -479,7 +516,10 @@ export default function ScanPage() {
                                 { value: 'geoEeat', label: t('scan.geoEeatTab') },
                             ]}
                         />
-                        <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1, color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ display: 'block', mt: 1, color: 'var(--color-text-muted-on-light)' }}
+                        >
                             {scanMode === 'single'
                                 ? t('scan.singleHint')
                                 : scanMode === 'deep'
@@ -497,7 +537,15 @@ export default function ScanPage() {
                         <Box sx={{ flex: 1 }}>
                             <MsqdxFormField
                                 label={t('scan.urlLabel')}
-                                placeholder={scanMode === 'single' ? t('scan.urlPlaceholderSingle') : scanMode === 'deep' ? t('scan.urlPlaceholderDeep') : scanMode === 'geoEeat' ? t('scan.urlPlaceholderSingle') : 'https://example.com'}
+                                placeholder={
+                                    scanMode === 'single'
+                                        ? t('scan.urlPlaceholderSingle')
+                                        : scanMode === 'deep'
+                                          ? t('scan.urlPlaceholderDeep')
+                                          : scanMode === 'geoEeat'
+                                            ? t('scan.urlPlaceholderSingle')
+                                            : 'https://example.com'
+                                }
                                 value={url}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)}
                                 onBlur={() => {
@@ -521,12 +569,20 @@ export default function ScanPage() {
                                     label={t('scan.targetRegionLabel')}
                                     placeholder={t('scan.targetRegionPlaceholder')}
                                     value={targetRegion}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTargetRegion(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        setTargetRegion(e.target.value)
+                                    }
                                     disabled={scanning}
                                     fullWidth
                                 />
                             </Box>
-                            <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' }, opacity: scanning ? 0.6 : 1, pointerEvents: scanning ? 'none' : 'auto' }}>
+                            <Box
+                                sx={{
+                                    gridColumn: { xs: '1 / -1', md: '1 / -1' },
+                                    opacity: scanning ? 0.6 : 1,
+                                    pointerEvents: scanning ? 'none' : 'auto',
+                                }}
+                            >
                                 <MsqdxCheckboxField
                                     label={t('scan.quickScanLabel')}
                                     options={[{ value: 'on', label: t('scan.quickScanOption') }]}
@@ -568,23 +624,30 @@ export default function ScanPage() {
                             />
                             {geoEeatFormMode === 'quick' ? (
                                 <>
-                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                    >
                                         {t('scan.geoEeatQuickHint')}
                                     </MsqdxTypography>
                                     <MsqdxFormField
                                         label={t('scan.geoEeatQuickQuestionLabel')}
                                         placeholder={t('scan.geoEeatQuickQuestionPlaceholder')}
                                         value={geoEeatQuickQuestion}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeoEeatQuickQuestion(e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                            setGeoEeatQuickQuestion(e.target.value)
+                                        }
                                         disabled={scanning}
                                         fullWidth
-                                        inputProps={{ maxLength: GEO_EEAT_QUICK_QUERY_MAX }}
+                                        slotProps={{ htmlInput: { maxLength: GEO_EEAT_QUICK_QUERY_MAX } }}
                                     />
                                     <MsqdxFormField
                                         label={t('scan.geoEeatQuickCompetitorLabel')}
                                         placeholder={t('scan.geoEeatQuickCompetitorPlaceholder')}
                                         value={geoEeatQuickCompetitor}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeoEeatQuickCompetitor(e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                            setGeoEeatQuickCompetitor(e.target.value)
+                                        }
                                         disabled={scanning}
                                         fullWidth
                                     />
@@ -595,11 +658,15 @@ export default function ScanPage() {
                                         label={t('scan.geoEeatCompetitiveLabel')}
                                         options={[{ value: 'on', label: t('scan.geoEeatCompetitiveCheckbox') }]}
                                         value={geoEeatCompetitive ? ['on'] : []}
-                                        onChange={(val) => setGeoEeatCompetitive(Array.isArray(val) && val.includes('on'))}
+                                        onChange={(val) =>
+                                            setGeoEeatCompetitive(Array.isArray(val) && val.includes('on'))
+                                        }
                                     />
                                     {geoEeatCompetitive && (
                                         <>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                            <Box
+                                                sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}
+                                            >
                                                 <MsqdxButton
                                                     variant="outlined"
                                                     size="small"
@@ -615,35 +682,53 @@ export default function ScanPage() {
                                                         const controller = new AbortController();
                                                         const timeoutId = setTimeout(() => controller.abort(), 60000);
                                                         try {
-                                                            const res = await fetchWithSessionCookies(apiScanGeoEeatSuggestQueries, {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({ url: suggestUrl }),
-                                                                signal: controller.signal,
-                                                            });
+                                                            const res = await fetchWithSessionCookies(
+                                                                apiScanGeoEeatSuggestQueries,
+                                                                {
+                                                                    method: 'POST',
+                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({ url: suggestUrl }),
+                                                                    signal: controller.signal,
+                                                                },
+                                                            );
                                                             clearTimeout(timeoutId);
                                                             const text = await res.text();
-                                                            let data: { error?: string; competitors?: string[]; queries?: string[] } = {};
+                                                            let data: {
+                                                                error?: string;
+                                                                competitors?: string[];
+                                                                queries?: string[];
+                                                            } = {};
                                                             if (text.trim()) {
                                                                 try {
                                                                     data = JSON.parse(text) as typeof data;
                                                                 } catch {
-                                                                    setGeoEeatSuggestError(t('scan.geoEeatSuggestError'));
+                                                                    setGeoEeatSuggestError(
+                                                                        t('scan.geoEeatSuggestError'),
+                                                                    );
                                                                     return;
                                                                 }
                                                             }
                                                             if (!res.ok) {
-                                                                setGeoEeatSuggestError(data.error || t('scan.geoEeatSuggestError'));
+                                                                setGeoEeatSuggestError(
+                                                                    data.error || t('scan.geoEeatSuggestError'),
+                                                                );
                                                                 return;
                                                             }
-                                                            const comp = Array.isArray(data.competitors) ? data.competitors : [];
+                                                            const comp = Array.isArray(data.competitors)
+                                                                ? data.competitors
+                                                                : [];
                                                             const q = Array.isArray(data.queries) ? data.queries : [];
                                                             setGeoEeatCompetitors(comp.join('\n'));
                                                             setGeoEeatQueries(q.join('\n'));
                                                             if (comp.length === 0 && q.length === 0) {
                                                                 setGeoEeatSuggestMessage(t('scan.geoEeatSuggestEmpty'));
                                                             } else {
-                                                                setGeoEeatSuggestMessage(t('scan.geoEeatSuggestSuccess', { competitors: comp.length, queries: q.length }));
+                                                                setGeoEeatSuggestMessage(
+                                                                    t('scan.geoEeatSuggestSuccess', {
+                                                                        competitors: comp.length,
+                                                                        queries: q.length,
+                                                                    }),
+                                                                );
                                                             }
                                                         } catch (err) {
                                                             clearTimeout(timeoutId);
@@ -657,7 +742,9 @@ export default function ScanPage() {
                                                         }
                                                     }}
                                                 >
-                                                    {geoEeatSuggesting ? t('scan.geoEeatSuggestLoading') : t('scan.geoEeatSuggestCta')}
+                                                    {geoEeatSuggesting
+                                                        ? t('scan.geoEeatSuggestLoading')
+                                                        : t('scan.geoEeatSuggestCta')}
                                                 </MsqdxButton>
                                                 {(geoEeatSuggestError || geoEeatSuggestMessage) && (
                                                     <Box
@@ -668,13 +755,20 @@ export default function ScanPage() {
                                                             borderRadius: 1,
                                                             backgroundColor: geoEeatSuggestError
                                                                 ? alpha(MSQDX_STATUS.error.base, 0.1)
-                                                                : alpha(MSQDX_STATUS.success?.base ?? MSQDX_BRAND_PRIMARY, 0.08),
+                                                                : alpha(
+                                                                      MSQDX_STATUS.success?.base ?? MSQDX_BRAND_PRIMARY,
+                                                                      0.08,
+                                                                  ),
                                                             border: `1px solid ${geoEeatSuggestError ? alpha(MSQDX_STATUS.error.base, 0.25) : alpha(MSQDX_STATUS.success?.base ?? MSQDX_BRAND_PRIMARY, 0.2)}`,
                                                         }}
                                                     >
                                                         <MsqdxTypography
                                                             variant="body2"
-                                                            sx={{ color: geoEeatSuggestError ? MSQDX_STATUS.error.light : 'var(--color-text-secondary)' }}
+                                                            sx={{
+                                                                color: geoEeatSuggestError
+                                                                    ? MSQDX_STATUS.error.light
+                                                                    : 'var(--color-text-secondary)',
+                                                            }}
                                                         >
                                                             {geoEeatSuggestError ?? geoEeatSuggestMessage}
                                                         </MsqdxTypography>
@@ -685,7 +779,9 @@ export default function ScanPage() {
                                                 label={t('scan.geoEeatCompetitorsLabel')}
                                                 placeholder={t('scan.geoEeatCompetitorsPlaceholder')}
                                                 value={geoEeatCompetitors}
-                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeoEeatCompetitors(e.target.value)}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                                    setGeoEeatCompetitors(e.target.value)
+                                                }
                                                 disabled={scanning}
                                                 fullWidth
                                                 multiline
@@ -695,7 +791,9 @@ export default function ScanPage() {
                                                 label={t('scan.geoEeatQueriesLabel')}
                                                 placeholder={t('scan.geoEeatQueriesPlaceholder')}
                                                 value={geoEeatQueries}
-                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeoEeatQueries(e.target.value)}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                                    setGeoEeatQueries(e.target.value)
+                                                }
                                                 disabled={scanning}
                                                 fullWidth
                                                 multiline
@@ -709,25 +807,51 @@ export default function ScanPage() {
                     )}
 
                     {/* WCAG Standard (Only for Single Page currently) */}
-                    <Box sx={{ minWidth: 200, opacity: scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat' ? 0.5 : 1, pointerEvents: scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat' ? 'none' : 'auto' }}>
+                    <Box
+                        sx={{
+                            minWidth: 200,
+                            opacity: scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat' ? 0.5 : 1,
+                            pointerEvents:
+                                scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat'
+                                    ? 'none'
+                                    : 'auto',
+                        }}
+                    >
                         <MsqdxSelect
                             label={t('scan.standardLabel')}
                             value={standard}
                             onChange={(e: SelectChangeEvent<unknown>) => setStandard(e.target.value as WcagStandard)}
                             options={STANDARDS}
-                            disabled={scanning || scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat'}
+                            disabled={
+                                scanning || scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat'
+                            }
                             fullWidth
                         />
                     </Box>
 
                     {/* Runners (Only for Single Page currently) */}
-                    <Box sx={{ minWidth: 200, pt: 0.5, opacity: scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat' ? 0.5 : 1, pointerEvents: scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat' ? 'none' : 'auto' }}>
+                    <Box
+                        sx={{
+                            minWidth: 200,
+                            pt: 0.5,
+                            opacity: scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat' ? 0.5 : 1,
+                            pointerEvents:
+                                scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat'
+                                    ? 'none'
+                                    : 'auto',
+                        }}
+                    >
                         <MsqdxCheckboxField
                             label={t('scan.enginesLabel')}
-                            options={RUNNERS.map(r => ({ value: r.value, label: r.label, disabled: scanning || scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat' }))}
+                            options={RUNNERS.map((r) => ({
+                                value: r.value,
+                                label: r.label,
+                                disabled:
+                                    scanning || scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat',
+                            }))}
                             value={selectedRunners}
                             onChange={(val) => setSelectedRunners(val as Runner[])}
-                        // row -- Vertical might be better in this layout if we have multiple
+                            // row -- Vertical might be better in this layout if we have multiple
                         />
                     </Box>
 
@@ -747,14 +871,18 @@ export default function ScanPage() {
                         <MsqdxSelect
                             label={t('projects.optionalProject')}
                             value={selectedProjectId ?? ''}
-                            onChange={(e: SelectChangeEvent<unknown>) => setSelectedProjectId((e.target.value as string) || null)}
-                            options={[{ value: '', label: '—' }, ...projects.map((p) => ({ value: p.id, label: p.name }))]}
+                            onChange={(e: SelectChangeEvent<unknown>) =>
+                                setSelectedProjectId((e.target.value as string) || null)
+                            }
+                            options={[
+                                { value: '', label: '—' },
+                                ...projects.map((p) => ({ value: p.id, label: p.name })),
+                            ]}
                             disabled={scanning}
                             fullWidth
                         />
                     </Box>
                 </Box>
-
 
                 {/* Error - Full width below */}
                 {error && (
@@ -774,12 +902,28 @@ export default function ScanPage() {
                 )}
 
                 {scanMode === 'journey' && (
-                    <Box sx={{ mt: 'var(--msqdx-spacing-md)', pt: 'var(--msqdx-spacing-md)', borderTop: '1px solid var(--color-border)' }}>
+                    <Box
+                        sx={{
+                            mt: 'var(--msqdx-spacing-md)',
+                            pt: 'var(--msqdx-spacing-md)',
+                            borderTop: '1px solid var(--color-border)',
+                        }}
+                    >
                         <MsqdxTypography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
                             {t('scan.journeyHistoryTitle')}
                         </MsqdxTypography>
                         {journeyHistory.length > 0 ? (
-                            <Box component="ul" sx={{ m: 0, p: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Box
+                                component="ul"
+                                sx={{
+                                    m: 0,
+                                    p: 0,
+                                    listStyle: 'none',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 0.5,
+                                }}
+                            >
                                 {journeyHistory.map((run) => (
                                     <Box
                                         key={run.id}
@@ -800,7 +944,12 @@ export default function ScanPage() {
                                                 {run.task.length > 60 ? run.task.slice(0, 60) + '…' : run.task}
                                             </MsqdxTypography>
                                             <MsqdxTypography variant="caption" color="text.secondary">
-                                                {run.url} · {run.status === 'complete' ? t('scan.journeyStatusComplete') : run.status === 'error' ? t('scan.journeyStatusError') : t('scan.journeyStatusRunning')}
+                                                {run.url} ·{' '}
+                                                {run.status === 'complete'
+                                                    ? t('scan.journeyStatusComplete')
+                                                    : run.status === 'error'
+                                                      ? t('scan.journeyStatusError')
+                                                      : t('scan.journeyStatusRunning')}
                                             </MsqdxTypography>
                                         </Box>
                                         <Link href={pathJourneyAgent(run.id)} style={{ textDecoration: 'none' }}>
@@ -820,12 +969,28 @@ export default function ScanPage() {
                 )}
 
                 {scanMode === 'geoEeat' && (
-                    <Box sx={{ mt: 'var(--msqdx-spacing-md)', pt: 'var(--msqdx-spacing-md)', borderTop: '1px solid var(--color-border)' }}>
+                    <Box
+                        sx={{
+                            mt: 'var(--msqdx-spacing-md)',
+                            pt: 'var(--msqdx-spacing-md)',
+                            borderTop: '1px solid var(--color-border)',
+                        }}
+                    >
                         <MsqdxTypography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
                             {t('scan.geoEeatHistoryTitle')}
                         </MsqdxTypography>
                         {geoEeatHistory.length > 0 ? (
-                            <Box component="ul" sx={{ m: 0, p: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Box
+                                component="ul"
+                                sx={{
+                                    m: 0,
+                                    p: 0,
+                                    listStyle: 'none',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 0.5,
+                                }}
+                            >
                                 {geoEeatHistory.map((run) => (
                                     <Box
                                         key={run.id}
@@ -846,7 +1011,13 @@ export default function ScanPage() {
                                                 {run.url.length > 60 ? run.url.slice(0, 60) + '…' : run.url}
                                             </MsqdxTypography>
                                             <MsqdxTypography variant="caption" color="text.secondary">
-                                                {run.status === 'complete' ? t('geoEeat.statusComplete') : run.status === 'error' ? t('geoEeat.statusError') : run.status === 'running' ? t('geoEeat.statusRunning') : run.status}
+                                                {run.status === 'complete'
+                                                    ? t('geoEeat.statusComplete')
+                                                    : run.status === 'error'
+                                                      ? t('geoEeat.statusError')
+                                                      : run.status === 'running'
+                                                        ? t('geoEeat.statusRunning')
+                                                        : run.status}
                                             </MsqdxTypography>
                                         </Box>
                                         <Link href={pathGeoEeat(run.id)} style={{ textDecoration: 'none' }}>
@@ -871,13 +1042,16 @@ export default function ScanPage() {
                     <CircularProgress size={28} sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
                     <MsqdxTypography
                         variant="caption"
-                        sx={{ color: 'var(--color-text-muted-on-light)', mt: 'var(--msqdx-spacing-xs)', display: 'block' }}
+                        sx={{
+                            color: 'var(--color-text-muted-on-light)',
+                            mt: 'var(--msqdx-spacing-xs)',
+                            display: 'block',
+                        }}
                     >
                         {t('scan.analyzing')}
                     </MsqdxTypography>
                 </Box>
             )}
-
         </Box>
     );
 }
