@@ -16,7 +16,7 @@ export type SidebarProps = {
     onClose?: () => void;
 };
 
-export function Sidebar({ open = true, onClose = () => {} }: SidebarProps) {
+export function Sidebar({ open = false, onClose = () => {} }: SidebarProps) {
     const pathname = usePathname();
     const { t } = useI18n();
 
@@ -25,11 +25,11 @@ export function Sidebar({ open = true, onClose = () => {} }: SidebarProps) {
         { label: t('nav.newScan'), path: PATH_SCAN, icon: 'search' },
         { label: t('nav.deepScans'), path: PATH_DEEP_SCANS, icon: 'dataset' },
         { label: t('nav.projects'), path: PATH_PROJECTS, icon: 'folder' },
-        { label: t('nav.developers'), path: PATH_DEVELOPERS, icon: 'code' },
+        { label: t('nav.developers'), path: PATH_DEVELOPERS, icon: 'settings' },
     ];
 
     const EXTERNAL_ITEMS: AdminNavItem[] = [
-        { label: t('nav.settings'), path: PATH_SETTINGS, icon: 'settings' },
+        { label: t('nav.settings'), path: PATH_SETTINGS, icon: 'AccountCircleOutlined' },
     ];
 
     return (

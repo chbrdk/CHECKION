@@ -24,9 +24,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     const theme = useTheme();
     /** Matches MsqdxAdminNav drawer: overlay + menu control below `lg`. */
     const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
-    const [mobileNavOpen, setMobileNavOpen] = useState(true);
-    const isAuthPage = AUTH_PATHS.some(p => pathname === p || pathname?.startsWith(p + '/'));
-    const isSharePage = SHARE_PATHS.some(p => pathname === p || pathname?.startsWith(p + '/'));
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
+    const isAuthPage = AUTH_PATHS.some((p) => pathname === p || pathname?.startsWith(p + '/'));
+    const isSharePage = SHARE_PATHS.some((p) => pathname === p || pathname?.startsWith(p + '/'));
 
     if (isAuthPage) {
         return <>{children}</>;
@@ -143,7 +143,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                         zIndex: 100_003,
                         backgroundColor: THEME_ACCENT_WITH_FALLBACK.backgroundColor,
                         color: 'var(--color-theme-accent-contrast, #fff)',
-                        '&:hover': { backgroundColor: THEME_ACCENT_WITH_FALLBACK.backgroundColor, filter: 'brightness(1.1)' },
+                        '&:hover': {
+                            backgroundColor: THEME_ACCENT_WITH_FALLBACK.backgroundColor,
+                            filter: 'brightness(1.1)',
+                        },
                     }}
                 >
                     <MsqdxIcon name="menu" customSize={28} />
