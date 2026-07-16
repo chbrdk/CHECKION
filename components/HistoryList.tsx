@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Box, CircularProgress } from '@mui/material';
-import { MsqdxTypography, MsqdxButton, MsqdxChip } from '@msqdx/react';
+import { MsqdxTypography, MsqdxButton, MsqdxChip, MsqdxFormField } from '@msqdx/react';
 import { MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
 import { Trash2 } from 'lucide-react';
 import type { StandaloneScanSummary } from '@/lib/types';
@@ -189,94 +189,125 @@ export function DomainScanRow({
     );
 }
 
-interface HistoryListProps {
+interface HistoryListProps<T> {
     loading: boolean;
-    itemCount: number;
+    items: T[];
+    renderItem: (item: T) => React.ReactNode;
+    filterFn: (item: T, query: string) => boolean;
     emptyMessage: string;
     emptyActionLabel: string;
     onEmptyAction: () => void;
-    children: React.ReactNode;
+    hasSearch?: boolean;
 }
 
 /**
- * Wrapper for scan history: same ul/li structure as domain "Scanned Pages" and results.
- * Keeps list items in the DOM during loading (spinner only when no data yet) to avoid flicker on refetch/Strict Mode.
+ * Wrapper for scan history with built-in client-side filtering.
+ * Filter activates after 2 characters are typed.
  */
-export function HistoryList({
+export function HistoryList<T>({
     loading,
-    itemCount,
+    items,
+    renderItem,
+    filterFn,
     emptyMessage,
     emptyActionLabel,
     onEmptyAction,
-    children,
-}: HistoryListProps) {
-    const showEmpty = !loading && itemCount === 0;
-    const showSpinnerOnly = loading && itemCount === 0;
-    const showChildren = itemCount > 0;
+    hasSearch = true,
+}: HistoryListProps<T>) {
+    const { t } = useI18n();
+    const [filterQuery, setFilterQuery] = useState('');
+
+    const filteredItems = useMemo(() => {
+        if (!hasSearch || filterQuery.length < 2) return items;
+        const q = filterQuery.toLowerCase();
+        return items.filter((item) => filterFn(item, q));
+    }, [items, filterQuery, hasSearch, filterFn]);
+
+    const showEmpty = !loading && filteredItems.length === 0;
+    const showSpinnerOnly = loading && items.length === 0;
+    const showChildren = filteredItems.length > 0;
 
     return (
-        <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
-            {showSpinnerOnly && (
-                <Box
-                    component="li"
-                    sx={{
-                        ...listItemSx,
-                        cursor: 'default',
-                        justifyContent: 'center',
-                        gap: 'var(--msqdx-spacing-sm)',
-                    }}
-                >
-                    <CircularProgress size={20} sx={{ color: 'var(--color-theme-accent)' }} />
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                        Laden…
-                    </MsqdxTypography>
+        <>
+            {hasSearch && (
+                <Box sx={{ mb: 'var(--msqdx-spacing-md)' }}>
+                    <MsqdxFormField
+                        label={t('dashboard.searchLabel')}
+                        placeholder={t('dashboard.searchPlaceholder')}
+                        value={filterQuery}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFilterQuery(e.target.value)}
+                        sx={{
+                            width: '33%',
+                            '& input[type="text"]': { fontSize: 'var(--msqdx-font-size-base) !important' },
+                        }}
+                    />
                 </Box>
             )}
-            {showEmpty && (
-                <Box
-                    component="li"
-                    sx={{
-                        ...listItemSx,
-                        cursor: 'default',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        textAlign: 'center',
-                        py: 'var(--msqdx-spacing-lg)',
-                    }}
-                >
-                    <MsqdxTypography
-                        variant="body2"
-                        sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-sm)' }}
+            <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
+                {showSpinnerOnly && (
+                    <Box
+                        component="li"
+                        sx={{
+                            ...listItemSx,
+                            cursor: 'default',
+                            justifyContent: 'center',
+                            gap: 'var(--msqdx-spacing-sm)',
+                        }}
                     >
-                        {emptyMessage}
-                    </MsqdxTypography>
-                    <MsqdxButton variant="outlined" brandColor="green" size="small" onClick={onEmptyAction}>
-                        {emptyActionLabel}
-                    </MsqdxButton>
-                </Box>
-            )}
-            {showChildren && (
-                <>
-                    {loading && (
-                        <Box
-                            component="li"
-                            sx={{
-                                ...listItemSx,
-                                cursor: 'default',
-                                justifyContent: 'center',
-                                gap: 'var(--msqdx-spacing-sm)',
-                                py: 'var(--msqdx-spacing-xs)',
-                            }}
+                        <CircularProgress size={20} sx={{ color: 'var(--color-theme-accent)' }} />
+                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            Laden…
+                        </MsqdxTypography>
+                    </Box>
+                )}
+                {showEmpty && (
+                    <Box
+                        component="li"
+                        sx={{
+                            ...listItemSx,
+                            cursor: 'default',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            textAlign: 'center',
+                            py: 'var(--msqdx-spacing-lg)',
+                        }}
+                    >
+                        <MsqdxTypography
+                            variant="body2"
+                            sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-sm)' }}
                         >
-                            <CircularProgress size={16} sx={{ color: 'var(--color-theme-accent)' }} />
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                Aktualisiere…
-                            </MsqdxTypography>
-                        </Box>
-                    )}
-                    {children}
-                </>
-            )}
-        </Box>
+                            {filterQuery.length >= 2 ? t('dashboard.noFilterResults') : emptyMessage}
+                        </MsqdxTypography>
+                        {filterQuery.length < 2 && (
+                            <MsqdxButton variant="outlined" brandColor="green" size="small" onClick={onEmptyAction}>
+                                {emptyActionLabel}
+                            </MsqdxButton>
+                        )}
+                    </Box>
+                )}
+                {showChildren && (
+                    <>
+                        {loading && (
+                            <Box
+                                component="li"
+                                sx={{
+                                    ...listItemSx,
+                                    cursor: 'default',
+                                    justifyContent: 'center',
+                                    gap: 'var(--msqdx-spacing-sm)',
+                                    py: 'var(--msqdx-spacing-xs)',
+                                }}
+                            >
+                                <CircularProgress size={16} sx={{ color: 'var(--color-theme-accent)' }} />
+                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                    Aktualisiere…
+                                </MsqdxTypography>
+                            </Box>
+                        )}
+                        {filteredItems.map(renderItem)}
+                    </>
+                )}
+            </Box>
+        </>
     );
 }

@@ -63,12 +63,12 @@
         "scannedPages": "Gescannte Seiten ({count})"
     },
     "nav": {
-        "dashboard": "Armaturenbrett",
-        "newScan": "Neuer Scan",
-        "history": "Historie",
+        "dashboard": "Dashboard",
+        "newScan": "New Scan",
+        "history": "History",
         "deepScans": "Domain-Scans",
         "projects": "Projekte",
-        "developers": "Werkzeugeinstellungen",
+        "developers": "Settings",
         "settings": "Einstellungen"
     },
     "projects": {
@@ -633,8 +633,9 @@
         "searchLabel": "Suche",
         "searchPlaceholder": "Suche in Scans, Seiten, Issues…",
         "searchButton": "Suchen",
-        "searchResultsTitle": "Suchergebnisse",
+        "newScanTittle": "Einen neuen Scan starten",
         "searchNoResults": "Keine Treffer für „{query}“. Suchbegriff ändern oder Scans anlegen.",
+        "noFilterResults": "Keine Einträge entsprechen dem Filter.",
         "searchNoResultsEmpty": "Gib einen Suchbegriff ein.",
         "searchLoading": "Suche…",
         "searchType_single": "Single",
