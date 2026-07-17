@@ -5,11 +5,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxCard, MsqdxMoleculeCard, MsqdxIcon } from '@msqdx/react';
-import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
+import { MSQDX_COLORS, MSQDX_STATUS } from '@msqdx/tokens';
 import type { StandaloneScanSummary } from '@/lib/types';
 import { HistoryList, SingleScanRow, DomainScanRow, type DomainScanSummary } from '@/components/HistoryList';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import { InfoTooltip } from '@/components/InfoTooltip';
 import {
     DASHBOARD_SCANS_PAGE_SIZE,
     DASHBOARD_JOURNEYS_PAGE_SIZE,
@@ -189,10 +188,10 @@ export default function DashboardPage() {
                     mb: 'var(--msqdx-spacing-md)',
                 }}
             >
-                <StatCard label={t('dashboard.stats.scans')} value={totalScans} color="green" />
-                <StatCard label={t('dashboard.stats.errors')} value={totalErrors} color="pink" />
-                <StatCard label={t('dashboard.stats.warnings')} value={totalWarnings} color="yellow" />
-                <StatCard label={t('dashboard.stats.notices')} value={totalNotices} color="purple" />
+                <StatCard label={t('dashboard.stats.scans')} value={totalScans} color="success" />
+                <StatCard label={t('dashboard.stats.errors')} value={totalErrors} color="error" />
+                <StatCard label={t('dashboard.stats.warnings')} value={totalWarnings} color="warning" />
+                <StatCard label={t('dashboard.stats.notices')} value={totalNotices} color="info" />
             </Box>
 
             <Box
@@ -206,6 +205,7 @@ export default function DashboardPage() {
                 <Box sx={{ gridColumn: '1 / -1' }}>
                     <MsqdxMoleculeCard
                         title={t('dashboard.historyTitle')}
+                        subtitle={t('info.scanHistory')}
                         variant="flat"
                         borderRadius="lg"
                         footerDivider={false}
@@ -240,9 +240,9 @@ export default function DashboardPage() {
 
                     <MsqdxMoleculeCard
                         title={t('dashboard.domainHistoryTitle')}
+                        subtitle={t('info.domainHistory')}
                         headerActions={
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                                <InfoTooltip title={t('info.domainHistory')} ariaLabel={t('common.info')} />
                                 <Link href={PATH_DEEP_SCANS} style={{ color: 'inherit', fontSize: '0.875rem' }}>
                                     {t('dashboard.viewAllDeepScans')}
                                 </Link>
@@ -375,24 +375,20 @@ function StatCard({
 }: {
     label: string;
     value: number;
-    color: 'green' | 'pink' | 'yellow' | 'purple';
+    color: keyof (typeof MSQDX_COLORS)['status'];
 }) {
-    // Map color to tokens purely for the value text color if needed, but MsqdxCard handles the border branding
-    let valueColor = MSQDX_BRAND_PRIMARY[color] || MSQDX_BRAND_PRIMARY.green;
-    if (color === 'purple') valueColor = MSQDX_BRAND_PRIMARY.purple || '#9c27b0'; // Fallback if token structure differs
-
-    // Actually looking at tokens.ts, MSQDX_BRAND_PRIMARY usually has main colors.
+    // Actually looking at tokens.ts.
     // Let's use specific colors for value text.
 
-    const colors: Record<string, string> = {
-        green: MSQDX_BRAND_PRIMARY.green,
-        pink: MSQDX_BRAND_PRIMARY.pink,
-        yellow: '#ff0000',
-        purple: MSQDX_BRAND_PRIMARY.purple,
+    const statusColors: Record<string, string> = {
+        success: MSQDX_STATUS.success.base,
+        error: MSQDX_STATUS.error.dark,
+        warning: MSQDX_STATUS.warning.light,
+        info: MSQDX_COLORS.brand.purple,
     };
 
     return (
-        <MsqdxCard brandColor={color} hoverable sx={{ bgcolor: 'var(--color-card-bg)' }}>
+        <MsqdxCard hoverable sx={{ bgcolor: 'var(--color-card-bg)', borderColor: statusColors[color] }}>
             <MsqdxTypography
                 variant="caption"
                 sx={{
@@ -411,7 +407,7 @@ function StatCard({
                 variant="h3"
                 sx={{
                     fontWeight: 700,
-                    color: colors[color],
+                    color: statusColors[color],
                     letterSpacing: '-0.03em',
                 }}
             >

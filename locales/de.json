@@ -64,12 +64,12 @@
     },
     "nav": {
         "dashboard": "Dashboard",
-        "newScan": "New Scan",
-        "history": "History",
+        "newScan": "Neuer Scan",
+        "history": "Historie",
         "deepScans": "Domain-Scans",
         "projects": "Projekte",
-        "developers": "Settings",
-        "settings": "Einstellungen"
+        "developers": "Einstellungen",
+        "settings": "Profil"
     },
     "projects": {
         "title": "Projekte",

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Box, CircularProgress } from '@mui/material';
+import { alpha, Box, CircularProgress } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxChip, MsqdxFormField } from '@msqdx/react';
-import { MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_STATUS } from '@msqdx/tokens';
 import { Trash2 } from 'lucide-react';
 import type { StandaloneScanSummary } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -77,22 +77,19 @@ export function SingleScanRow({
                     {scan.url}
                 </MsqdxTypography>
                 <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                    <span suppressHydrationWarning>{new Date(scan.timestamp).toLocaleString('de-DE')}</span> ·{' '}
-                    {scan.stats.errors} Errors
+                    <span suppressHydrationWarning>{new Date(scan.timestamp).toLocaleString('de-DE')}</span>
                 </MsqdxTypography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)' }}>
                 <MsqdxChip
+                    color="error"
                     label={scan.stats.errors > 0 ? String(scan.stats.errors) : '0'}
                     size="small"
                     variant="outlined"
                     sx={{
-                        backgroundColor:
-                            scan.stats.errors > 0
-                                ? 'var(--color-secondary-dx-pink-tint)'
-                                : 'var(--color-secondary-dx-green-tint)',
-                        color: scan.stats.errors > 0 ? MSQDX_STATUS.error.base : MSQDX_BRAND_PRIMARY.green,
+                        backgroundColor: `${alpha(MSQDX_STATUS.error.light, 0.08)}`,
                         fontWeight: 700,
+                        '& span.MuiChip-label': { color: MSQDX_STATUS.error.dark, fontSize: '0.875rem' },
                     }}
                 />
                 {onDelete && (
@@ -171,7 +168,24 @@ export function DomainScanRow({
                     label={item.status === 'complete' ? String(item.score) : item.status}
                     size="small"
                     variant="outlined"
-                    brandColor={item.status === 'complete' ? (item.score > 80 ? 'green' : 'orange') : undefined}
+                    color={item.status === 'complete' ? (item.score > 80 ? 'success' : 'warning') : 'info'}
+                    sx={{
+                        backgroundColor:
+                            item.status === 'complete'
+                                ? item.score > 80
+                                    ? `${alpha(MSQDX_STATUS.success.light, 0.08)}`
+                                    : `${alpha(MSQDX_STATUS.warning.light, 0.08)}`
+                                : `${alpha(MSQDX_STATUS.info.light, 0.08)}`,
+                        '& span.MuiChip-label': {
+                            fontSize: '0.875rem',
+                            color:
+                                item.status === 'complete'
+                                    ? item.score > 80
+                                        ? MSQDX_STATUS.success.dark
+                                        : MSQDX_STATUS.warning.dark
+                                    : MSQDX_STATUS.info.dark,
+                        },
+                    }}
                 />
                 {onDelete && (
                     <MsqdxButton
