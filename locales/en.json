@@ -512,7 +512,7 @@
         "configTitle": "Scan configuration",
         "urlLabel": "Target URL",
         "urlPlaceholderSingle": "https://example.com/page",
-        "targetRegionLabel": "Target region (optional)",
+        "targetRegionLabel": "Target region",
         "targetRegionPlaceholder": "e.g. DE, EU – checks if server location matches",
         "urlPlaceholderDeep": "https://example.com",
         "standardLabel": "Standard",
@@ -612,6 +612,7 @@
             "notices": "Notices"
         },
         "historyTitle": "Scan history",
+        "scoreChipLabel": "Score",
         "domainHistoryTitle": "Deep scan history (Domain)",
         "emptyMessage": "No scans performed yet.",
         "emptyCta": "Start first scan",

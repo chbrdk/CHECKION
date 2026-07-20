@@ -441,19 +441,18 @@ export default function ScanPage() {
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }}>
             {/* Header */}
-            <Box sx={{ mb: MSQDX_SPACING.scale.md }}>
+            <Box sx={{ mb: `${MSQDX_SPACING.scale.xxl}px` }}>
                 <Box
                     sx={{
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: 'var(--msqdx-spacing-xs)',
-                        mb: MSQDX_SPACING.scale.xs,
+                        mb: `${MSQDX_SPACING.scale.xs}px`,
                     }}
                 >
                     <MsqdxTypography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
                         {t('scan.title')}
                     </MsqdxTypography>
-                    <InfoTooltip title={t('info.scanPage')} ariaLabel={t('common.info')} />
                 </Box>
                 <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
                     {t('scan.subtitle')}
@@ -537,6 +536,7 @@ export default function ScanPage() {
                         <Box sx={{ flex: 1 }}>
                             <MsqdxFormField
                                 label={t('scan.urlLabel')}
+                                required
                                 placeholder={
                                     scanMode === 'single'
                                         ? t('scan.urlPlaceholderSingle')

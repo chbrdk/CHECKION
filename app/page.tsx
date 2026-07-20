@@ -162,7 +162,6 @@ export default function DashboardPage() {
             </Box>
 
             <MsqdxMoleculeCard
-                // title={t('dashboard.newScanTitle')}
                 variant="flat"
                 borderRadius="lg"
                 footerDivider={false}

@@ -19,6 +19,12 @@ export type DomainScanSummary = {
     lineageVersion?: number;
 };
 
+interface StyledScoreChips {
+    label: string;
+    color: 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
+    sx: Record<string, string | number | boolean | object | undefined>;
+}
+
 const listItemSx = {
     cursor: 'pointer',
     '&:hover': { bgcolor: 'var(--color-theme-accent-tint)' },
@@ -31,6 +37,28 @@ const listItemSx = {
     justifyContent: 'space-between',
     gap: 'var(--msqdx-spacing-sm)',
 } as const;
+
+const styledScoreChips = (score: number, status?: string): StyledScoreChips => ({
+    label: status && status !== 'complete' ? status : String(score),
+    color: status && status !== 'complete' ? 'info' : score > 80 ? 'success' : 'warning',
+    sx: {
+        backgroundColor:
+            status && status !== 'complete'
+                ? `${alpha(MSQDX_STATUS.info.light, 0.08)}`
+                : score > 80
+                  ? `${alpha(MSQDX_STATUS.success.light, 0.08)}`
+                  : `${alpha(MSQDX_STATUS.warning.light, 0.08)}`,
+        '& span.MuiChip-label': {
+            fontSize: '0.875rem',
+            color:
+                status && status !== 'complete'
+                    ? MSQDX_STATUS.info.dark
+                    : score > 80
+                      ? MSQDX_STATUS.success.dark
+                      : MSQDX_STATUS.warning.dark,
+        },
+    },
+});
 
 /** Single-URL scan row (same list style as domain "Scanned Pages" / results). */
 export function SingleScanRow({
@@ -81,16 +109,13 @@ export function SingleScanRow({
                 </MsqdxTypography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)' }}>
+                <MsqdxTypography variant="body1">{`${t('dashboard.scoreChipLabel')}:`}</MsqdxTypography>
                 <MsqdxChip
-                    color="error"
-                    label={scan.stats.errors > 0 ? String(scan.stats.errors) : '0'}
+                    color={styledScoreChips(scan.score).color}
+                    label={scan.score}
                     size="small"
                     variant="outlined"
-                    sx={{
-                        backgroundColor: `${alpha(MSQDX_STATUS.error.light, 0.08)}`,
-                        fontWeight: 700,
-                        '& span.MuiChip-label': { color: MSQDX_STATUS.error.dark, fontSize: '0.875rem' },
-                    }}
+                    sx={styledScoreChips(scan.score).sx}
                 />
                 {onDelete && (
                     <MsqdxButton
@@ -129,6 +154,7 @@ export function DomainScanRow({
             onClick();
         }
     };
+    console.log('Item:', item);
     return (
         <Box
             component="li"
@@ -164,28 +190,15 @@ export function DomainScanRow({
                 </MsqdxTypography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)' }}>
+                {item.status === 'complete' && (
+                    <MsqdxTypography variant="body1">{`${t('dashboard.scoreChipLabel')}:`}</MsqdxTypography>
+                )}
                 <MsqdxChip
-                    label={item.status === 'complete' ? String(item.score) : item.status}
+                    label={styledScoreChips(item.score, item.status).label}
                     size="small"
                     variant="outlined"
-                    color={item.status === 'complete' ? (item.score > 80 ? 'success' : 'warning') : 'info'}
-                    sx={{
-                        backgroundColor:
-                            item.status === 'complete'
-                                ? item.score > 80
-                                    ? `${alpha(MSQDX_STATUS.success.light, 0.08)}`
-                                    : `${alpha(MSQDX_STATUS.warning.light, 0.08)}`
-                                : `${alpha(MSQDX_STATUS.info.light, 0.08)}`,
-                        '& span.MuiChip-label': {
-                            fontSize: '0.875rem',
-                            color:
-                                item.status === 'complete'
-                                    ? item.score > 80
-                                        ? MSQDX_STATUS.success.dark
-                                        : MSQDX_STATUS.warning.dark
-                                    : MSQDX_STATUS.info.dark,
-                        },
-                    }}
+                    color={styledScoreChips(item.score, item.status).color}
+                    sx={styledScoreChips(item.score, item.status).sx}
                 />
                 {onDelete && (
                     <MsqdxButton
