@@ -600,13 +600,17 @@ export async function listScans(userId: string): Promise<ScanResult[]> {
     return rows.map((r) => r.result as unknown as ScanResult);
 }
 
-/** Rows that are not domain-crawl pages: `group_id` null or not a `domain_scans.id`. One list row per multi-device batch (`desktop` only when `group_id` set). */
+/** Rows that are not domain-crawl pages: `group_id` null or not a `domain_scans.id`. One list row per multi-device batch (first device alphabetically: desktop > mobile > tablet). */
 function standaloneScanBaseWhere(userId: string, projectId?: string | null): SQL {
     const notDomainCrawlPage = or(
         isNull(scans.groupId),
         sql`NOT EXISTS (SELECT 1 FROM ${domainScans} WHERE ${domainScans.id} = ${scans.groupId})`,
     )!;
-    const oneDevicePerBatch = or(isNull(scans.groupId), eq(scans.device, 'desktop'))!;
+    // Pick one representative row per group: the device that sorts first alphabetically (desktop > mobile > tablet)
+    const oneDevicePerBatch = or(
+        isNull(scans.groupId),
+        sql`${scans.device} = (SELECT MIN(device) FROM scans s2 WHERE s2.group_id = ${scans.groupId})`,
+    )!;
     if (projectId === undefined) {
         return and(eq(scans.userId, userId), notDomainCrawlPage, oneDevicePerBatch)!;
     }
@@ -621,7 +625,11 @@ function standaloneScanSharedProjectWhere(projectIds: string[], options?: { indu
         isNull(scans.groupId),
         sql`NOT EXISTS (SELECT 1 FROM ${domainScans} WHERE ${domainScans.id} = ${scans.groupId})`,
     )!;
-    const oneDevicePerBatch = or(isNull(scans.groupId), eq(scans.device, 'desktop'))!;
+    // Pick one representative row per group: the device that sorts first alphabetically (desktop > mobile > tablet)
+    const oneDevicePerBatch = or(
+        isNull(scans.groupId),
+        sql`${scans.device} = (SELECT MIN(device) FROM scans s2 WHERE s2.group_id = ${scans.groupId})`,
+    )!;
     let cond = and(inArray(scans.projectId, projectIds), notDomainCrawlPage, oneDevicePerBatch)!;
     const ind = normalizeIndustry(options?.industry ?? undefined);
     if (ind) {

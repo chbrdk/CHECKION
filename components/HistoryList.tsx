@@ -81,6 +81,7 @@ export function SingleScanRow({
             onClick();
         }
     };
+
     return (
         <Box
             component="li"
@@ -109,6 +110,11 @@ export function SingleScanRow({
                 </MsqdxTypography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)' }}>
+                {/* {scan.viewports ? (
+                    scan.viewports.map((vp, i) => <MsqdxChip key={i} color="info" label={vp} />)
+                ) : (
+                    <MsqdxChip color="info" label={scan.device} />
+                )} */}
                 <MsqdxTypography variant="body1">{`${t('dashboard.scoreChipLabel')}:`}</MsqdxTypography>
                 <MsqdxChip
                     color={styledScoreChips(scan.score).color}
@@ -154,7 +160,6 @@ export function DomainScanRow({
             onClick();
         }
     };
-    console.log('Item:', item);
     return (
         <Box
             component="li"

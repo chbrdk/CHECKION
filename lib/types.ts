@@ -290,6 +290,7 @@ export type StandaloneScanSummary = {
     industry: string | null;
     /** Present when session row stores POST /api/scan `targetRegion`. */
     targetRegion?: string | null;
+    viewports?: Device[]; // Optional: other devices in the same groupId (for standalone scans)
 };
 
 export type ScanResult = {
@@ -366,7 +367,7 @@ export type ScanResult = {
     reusedUnchanged?: boolean;
     /** SHA-256 slice of normalized title + h1 + body excerpt for diff when headers are absent. */
     contentFingerprint?: string;
-}
+};
 
 /** Raw hints from the page (JSON-LD + Open Graph) before server-side scoring. */
 export interface ContentFreshnessHints {
@@ -474,7 +475,14 @@ export interface SeoAudit {
 
 /** AI-recommended Schema.org types for GEO */
 export const GEO_RECOMMENDED_SCHEMA_TYPES = [
-    'Article', 'FAQPage', 'HowTo', 'Organization', 'Person', 'WebPage', 'NewsArticle', 'WebSite'
+    'Article',
+    'FAQPage',
+    'HowTo',
+    'Organization',
+    'Person',
+    'WebPage',
+    'NewsArticle',
+    'WebSite',
 ] as const;
 
 /** GEO dimension scores (0–100): findability vs. content reusability for AI/citations. */
@@ -695,14 +703,7 @@ export interface LinkResult {
     internal: boolean;
 }
 
-export type DomainScanStatus =
-    | 'queued'
-    | 'scanning'
-    | 'cancelling'
-    | 'paused'
-    | 'complete'
-    | 'error'
-    | 'cancelled';
+export type DomainScanStatus = 'queued' | 'scanning' | 'cancelling' | 'paused' | 'complete' | 'error' | 'cancelled';
 
 /** POST /api/scan/domain/[id]/control body.action */
 export type DomainScanControlAction = 'pause' | 'resume' | 'cancel';
@@ -748,25 +749,25 @@ export type DomainScanResult = {
     aggregated?: DomainAggregated;
     graph: {
         nodes: Array<{
-            id: string,
-            url: string,
-            score: number,
+            id: string;
+            url: string;
+            score: number;
             /** URL path depth: 0 = home, 1 = /segment, 2 = /seg1/seg2, etc. */
-            depth: number,
-            status: 'ok' | 'error',
+            depth: number;
+            status: 'ok' | 'error';
             /** Page title from document title (SEO) when available */
-            title?: string | null
-        }>,
+            title?: string | null;
+        }>;
         links: Array<{
-            source: string,
-            target: string
-        }>
+            source: string;
+            target: string;
+        }>;
     };
     systemicIssues: Array<{
-        issueId: string,
-        title: string,
-        count: number,
-        pages: string[]
+        issueId: string;
+        title: string;
+        count: number;
+        pages: string[];
     }>;
     /** E-E-A-T aggregate (from deep scan only). */
     eeat?: EeatDomainAggregate;
@@ -800,7 +801,19 @@ export interface StructureNode {
 }
 
 /** Semantic type for a page region (heuristic from heading/label). */
-export type PageIndexRegionType = 'pricing' | 'faq' | 'contact' | 'hero' | 'product' | 'team' | 'about' | 'nav' | 'footer' | 'main' | 'aside' | 'unknown';
+export type PageIndexRegionType =
+    | 'pricing'
+    | 'faq'
+    | 'contact'
+    | 'hero'
+    | 'product'
+    | 'team'
+    | 'about'
+    | 'nav'
+    | 'footer'
+    | 'main'
+    | 'aside'
+    | 'unknown';
 
 /** Single region in the page index: one landmark or heading from structureMap with findability and optional semantic label. */
 export interface PageIndexRegion {

@@ -13,6 +13,7 @@ import {
     MsqdxSelect,
     MsqdxCheckboxField,
     MsqdxTabs,
+    MsqdxIcon,
 } from '@msqdx/react';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
@@ -78,7 +79,7 @@ export default function ScanPage() {
     const [standard, setStandard] = useState<WcagStandard>('WCAG2AA');
     const [selectedRunners, setSelectedRunners] = useState<Runner[]>(['axe', 'htmlcs']);
     const [targetRegion, setTargetRegion] = useState('');
-    const [quickScan, setQuickScan] = useState(false);
+    const [devices, setDevices] = useState<string[]>(['desktop', 'tablet', 'mobile']);
     const [scanning, setScanning] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -326,7 +327,7 @@ export default function ScanPage() {
                         runners: selectedRunners,
                         ...(targetRegion.trim() && { targetRegion: targetRegion.trim() }),
                         ...(selectedProjectId && { projectId: selectedProjectId }),
-                        ...(quickScan ? { quickScan: true } : {}),
+                        ...(devices && { devices }),
                     }),
                 });
 
@@ -462,7 +463,6 @@ export default function ScanPage() {
             {/* Main Scan Card */}
             <MsqdxMoleculeCard
                 title={t('scan.configTitle')}
-                headerActions={<InfoTooltip title={t('info.scanConfig')} ariaLabel={t('common.info')} />}
                 variant="flat"
                 borderRadius="lg"
                 footerDivider={false}
@@ -480,7 +480,8 @@ export default function ScanPage() {
                             (scanMode === 'journey' && !task.trim()) ||
                             (scanMode === 'geoEeat' &&
                                 geoEeatFormMode === 'quick' &&
-                                (!geoEeatQuickQuestion.trim() || !geoEeatQuickCompetitor.trim()))
+                                (!geoEeatQuickQuestion.trim() || !geoEeatQuickCompetitor.trim())) ||
+                            (scanMode === 'single' && (selectedRunners.length === 0 || devices.length === 0))
                         }
                         loading={scanning}
                         sx={{ minWidth: 150 }}
@@ -498,7 +499,7 @@ export default function ScanPage() {
                 <Box
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', md: '1fr auto auto' },
+                        gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
                         gap: 'var(--msqdx-spacing-md)',
                         alignItems: 'start',
                     }}
@@ -533,7 +534,7 @@ export default function ScanPage() {
 
                     {/* URL Input - Not required for GEO competitive-only */}
                     {!(scanMode === 'geoEeat' && geoEeatFormMode === 'quick') && (
-                        <Box sx={{ flex: 1 }}>
+                        <Box sx={{ flex: 1, gridColumn: '1 / -2' }}>
                             <MsqdxFormField
                                 label={t('scan.urlLabel')}
                                 required
@@ -556,7 +557,6 @@ export default function ScanPage() {
                                 disabled={scanning}
                                 onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleScan()}
                                 autoFocus
-                                fullWidth
                             />
                         </Box>
                     )}
@@ -564,7 +564,7 @@ export default function ScanPage() {
                     {/* Target Region (optional, single scan only) */}
                     {scanMode === 'single' && (
                         <>
-                            <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / -1' } }}>
+                            <Box sx={{ gridColumn: { xs: '1 / -1', md: '1 / 2' } }}>
                                 <MsqdxFormField
                                     label={t('scan.targetRegionLabel')}
                                     placeholder={t('scan.targetRegionPlaceholder')}
@@ -573,7 +573,6 @@ export default function ScanPage() {
                                         setTargetRegion(e.target.value)
                                     }
                                     disabled={scanning}
-                                    fullWidth
                                 />
                             </Box>
                             <Box
@@ -585,9 +584,19 @@ export default function ScanPage() {
                             >
                                 <MsqdxCheckboxField
                                     label={t('scan.quickScanLabel')}
-                                    options={[{ value: 'on', label: t('scan.quickScanOption') }]}
-                                    value={quickScan ? ['on'] : []}
-                                    onChange={(val) => setQuickScan(Array.isArray(val) && val.includes('on'))}
+                                    options={[
+                                        { value: 'desktop', label: t('scan.quickScanOptions.desktop') },
+                                        { value: 'tablet', label: t('scan.quickScanOptions.tablet') },
+                                        { value: 'mobile', label: t('scan.quickScanOptions.mobile') },
+                                    ]}
+                                    value={devices}
+                                    onChange={(val) => setDevices(val as string[])}
+                                    required
+                                    sx={{
+                                        /* flexDirection: 'row', */ gap: 3,
+                                        '& .MuiTypography-root': { paddingLeft: 0 },
+                                    }}
+                                    row
                                 />
                             </Box>
                         </>
@@ -807,32 +816,33 @@ export default function ScanPage() {
                     )}
 
                     {/* WCAG Standard (Only for Single Page currently) */}
-                    <Box
-                        sx={{
-                            minWidth: 200,
-                            opacity: scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat' ? 0.5 : 1,
-                            pointerEvents:
-                                scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat'
-                                    ? 'none'
-                                    : 'auto',
-                        }}
-                    >
-                        <MsqdxSelect
-                            label={t('scan.standardLabel')}
-                            value={standard}
-                            onChange={(e: SelectChangeEvent<unknown>) => setStandard(e.target.value as WcagStandard)}
-                            options={STANDARDS}
-                            disabled={
-                                scanning || scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat'
-                            }
-                            fullWidth
-                        />
-                    </Box>
+                    {scanMode !== 'deep' && scanMode !== 'geoEeat' && (
+                        <Box
+                            sx={{
+                                minWidth: 200,
+                            }}
+                        >
+                            <MsqdxSelect
+                                required
+                                label={t('scan.standardLabel')}
+                                value={standard}
+                                onChange={(e: SelectChangeEvent<unknown>) =>
+                                    setStandard(e.target.value as WcagStandard)
+                                }
+                                options={STANDARDS}
+                                disabled={scanning || scanMode === 'journey'}
+                                fullWidth
+                                helperText={t('scan.standardLevelHelp')}
+                            />
+                        </Box>
+                    )}
 
                     {/* Runners (Only for Single Page currently) */}
                     <Box
                         sx={{
                             minWidth: 200,
+                            width: 'fit-content',
+                            justifySelf: scanMode === 'single' || scanMode === 'deep' ? 'center' : undefined,
                             pt: 0.5,
                             opacity: scanMode === 'deep' || scanMode === 'journey' || scanMode === 'geoEeat' ? 0.5 : 1,
                             pointerEvents:
@@ -851,7 +861,8 @@ export default function ScanPage() {
                             }))}
                             value={selectedRunners}
                             onChange={(val) => setSelectedRunners(val as Runner[])}
-                            // row -- Vertical might be better in this layout if we have multiple
+                            sx={{ columnGap: 3, '& .MuiTypography-root': { paddingLeft: 0 } }}
+                            row
                         />
                     </Box>
 

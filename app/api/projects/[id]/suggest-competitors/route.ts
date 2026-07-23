@@ -25,10 +25,7 @@ Erforderliche Struktur:
   "queries": ["Anfrage 1", "Anfrage 2", ...]
 }`;
 
-export async function POST(
-    request: NextRequest,
-    context: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     const user = await getRequestUser(request);
     if (!user) return apiError('Unauthorized', API_STATUS.UNAUTHORIZED);
 
@@ -52,7 +49,10 @@ export async function POST(
         url = project.domain.includes('://') ? project.domain : `https://${project.domain}`;
     }
     if (!url) {
-        return apiError('Project has no domain. Set project domain or send { "url": "https://..." } in the body.', API_STATUS.BAD_REQUEST);
+        return apiError(
+            'Project has no domain. Set project domain or send { "url": "https://..." } in the body.',
+            API_STATUS.BAD_REQUEST,
+        );
     }
     try {
         new URL(url.startsWith('http') ? url : `https://${url}`);
@@ -74,7 +74,10 @@ export async function POST(
             model: SUGGEST_MODEL,
             messages: [
                 { role: 'system', content: SYSTEM_PROMPT },
-                { role: 'user', content: `Website-URL: ${url}\nDomain: ${domain}\nProjektname: ${project.name}\nSchlage 5 Wettbewerber und 10 typische LLM-Suchanfragen für dieses Unternehmen vor. Antworte nur mit JSON. Alle Texte auf Deutsch.` },
+                {
+                    role: 'user',
+                    content: `Website-URL: ${url}\nDomain: ${domain}\nProjektname: ${project.name}\nSchlage 5 Wettbewerber und 10 typische LLM-Suchanfragen für dieses Unternehmen vor. Antworte nur mit JSON. Alle Texte auf Deutsch.`,
+                },
             ],
         });
 
@@ -95,7 +98,9 @@ export async function POST(
                     idempotencyKey: `suggest-project:${projectId}:${Date.now()}`,
                 });
             }
-        } catch { /* never affect response */ }
+        } catch {
+            /* never affect response */
+        }
 
         let competitors: string[];
         let queries: string[];
