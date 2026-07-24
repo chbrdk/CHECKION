@@ -13,9 +13,7 @@ import {
     MsqdxSelect,
     MsqdxCheckboxField,
     MsqdxTabs,
-    MsqdxIcon,
 } from '@msqdx/react';
-import { InfoTooltip } from '@/components/InfoTooltip';
 import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
 import type { ScanResult, WcagStandard, Runner } from '@/lib/types';
 import type { SelectChangeEvent } from '@mui/material';
@@ -466,10 +464,10 @@ export default function ScanPage() {
                 variant="flat"
                 borderRadius="lg"
                 footerDivider={false}
-                className="scanCard"
+                // className="scanCard"
                 sx={{
                     bgcolor: 'var(--color-card-bg)',
-                    '& .MuiBox-root.scanCard:has(> .MuiButtonBase-root)': {
+                    '& .MuiBox-root:has(> .scanCta)': {
                         marginLeft: 0,
                         marginTop: `${MSQDX_SPACING.gap.xxl}px`,
                     },
@@ -480,6 +478,7 @@ export default function ScanPage() {
                         brandColor="green"
                         size="medium"
                         onClick={handleScan}
+                        className="scanCta"
                         disabled={
                             ((scanMode !== 'geoEeat' || geoEeatFormMode !== 'quick') && !url.trim()) ||
                             scanning ||
@@ -523,7 +522,7 @@ export default function ScanPage() {
                                 { value: 'geoEeat', label: t('scan.geoEeatTab') },
                             ]}
                         />
-                        {/* <MsqdxTypography
+                        <MsqdxTypography
                             variant="caption"
                             sx={{ display: 'block', mt: 1, color: 'var(--color-text-muted-on-light)' }}
                         >
@@ -533,10 +532,8 @@ export default function ScanPage() {
                                   ? t('scan.deepHint')
                                   : scanMode === 'journey'
                                     ? t('scan.journeyHint')
-                                    : geoEeatFormMode === 'quick'
-                                      ? t('scan.geoEeatQuickHint')
-                                      : t('scan.geoEeatHint')}
-                        </MsqdxTypography> */}
+                                    : null}
+                        </MsqdxTypography>
                     </Box>
 
                     {/* URL Input - Not required for GEO competitive-only */}
