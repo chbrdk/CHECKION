@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Box, Collapse } from '@mui/material';
 import { MsqdxTypography, MsqdxMoleculeCard, MsqdxChip, MsqdxButton } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import type { DomainScanDiffResult } from '@/lib/domain-scan-diff';
 import { pathDomain } from '@/lib/constants';
@@ -73,7 +74,7 @@ function DomainDiffBlock({
                     {domain}
                     {isOwn ? ` (${t('projects.ownDomainScanLabel')})` : ''}
                 </MsqdxTypography>
-                <MsqdxTypography variant="caption" sx={{ display: 'block', color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="caption" sx={{ display: 'block', color: `${MSQDX_NEUTRAL['700']}` }}>
                     {t('projects.competitorChanges.firstScan')}
                 </MsqdxTypography>
             </Box>
@@ -118,7 +119,7 @@ function DomainDiffBlock({
                                     variant="caption"
                                     sx={{
                                         display: 'block',
-                                        color: 'var(--color-text-muted-on-light)',
+                                        color: `${MSQDX_NEUTRAL['700']}`,
                                         wordBreak: 'break-all',
                                     }}
                                 >
@@ -138,7 +139,7 @@ function DomainDiffBlock({
                                     variant="caption"
                                     sx={{
                                         display: 'block',
-                                        color: 'var(--color-text-muted-on-light)',
+                                        color: `${MSQDX_NEUTRAL['700']}`,
                                         wordBreak: 'break-all',
                                     }}
                                 >
@@ -198,13 +199,13 @@ export function CompetitorChangesPanel({
             {loading ? (
                 <MsqdxTypography variant="body2">{t('common.loading')}</MsqdxTypography>
             ) : !hasComparable && !hasOwn ? (
-                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                     {t('projects.competitorChanges.empty')}
                 </MsqdxTypography>
             ) : (
                 <Box>
                     {!anyActivity && hasComparable ? (
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1 }}>
+                        <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 1 }}>
                             {t('projects.competitorChanges.allUnchanged')}
                         </MsqdxTypography>
                     ) : null}

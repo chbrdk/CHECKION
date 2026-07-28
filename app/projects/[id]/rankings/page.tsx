@@ -11,6 +11,7 @@ import {
     MsqdxFormField,
     MsqdxChip,
     MsqdxIconButton,
+    MSQDX_NEUTRAL,
 } from '@msqdx/react';
 import { Trash2 } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -50,7 +51,12 @@ interface RankKeywordItem {
 }
 
 function normalizeRankDomain(domain: string): string {
-    return domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+    return domain
+        .trim()
+        .toLowerCase()
+        .replace(/^https?:\/\//, '')
+        .replace(/^www\./, '')
+        .replace(/\/$/, '');
 }
 
 interface RankingSummaryData {
@@ -63,8 +69,13 @@ interface RankingSummaryData {
 export default function ProjectRankingsPage() {
     const params = useParams();
     const { t } = useI18n();
-    const id = typeof params.id === 'string' ? params.id : params.id?.[0] ?? null;
-    const [project, setProject] = useState<{ id: string; name: string; domain: string | null; competitors?: string[] } | null>(null);
+    const id = typeof params.id === 'string' ? params.id : (params.id?.[0] ?? null);
+    const [project, setProject] = useState<{
+        id: string;
+        name: string;
+        domain: string | null;
+        competitors?: string[];
+    } | null>(null);
     const [loading, setLoading] = useState(true);
     const [rankKeywords, setRankKeywords] = useState<RankKeywordItem[]>([]);
     const [addKeywordOpen, setAddKeywordOpen] = useState(false);
@@ -137,11 +148,7 @@ export default function ProjectRankingsPage() {
 
     const handleAddKeyword = useCallback(async () => {
         if (!id || !trackDomain || !addKeywordKeyword.trim()) return;
-        const markets = addKeywordMultiMarket
-            ? addKeywordMarkets
-            : addKeywordMarket
-              ? [addKeywordMarket]
-              : [];
+        const markets = addKeywordMultiMarket ? addKeywordMarkets : addKeywordMarket ? [addKeywordMarket] : [];
         if (markets.length === 0) return;
 
         setAddKeywordSubmitting(true);
@@ -262,7 +269,7 @@ export default function ProjectRankingsPage() {
                 sx={{ mb: 0.5, ...msqdxChipThemeAccentSx(selectedSuggestedKeywords.has(kw)) }}
             />
         ),
-        [handleToggleSuggestedKeyword, selectedSuggestedKeywords]
+        [handleToggleSuggestedKeyword, selectedSuggestedKeywords],
     );
 
     const handleAddSelectedKeywords = useCallback(async () => {
@@ -339,18 +346,24 @@ export default function ProjectRankingsPage() {
         }
     }, [id, loadProject, loadKeywords, loadRankingSummary, t]);
 
-    const handleDeleteKeyword = useCallback(async (keywordId: string) => {
-        if (!id) return;
-        try {
-            const res = await fetch(apiRankTrackingKeyword(keywordId), { method: 'DELETE', credentials: 'same-origin' });
-            if (res.ok) {
-                loadProject();
-                setRankKeywords((prev) => prev.filter((k) => k.id !== keywordId));
+    const handleDeleteKeyword = useCallback(
+        async (keywordId: string) => {
+            if (!id) return;
+            try {
+                const res = await fetch(apiRankTrackingKeyword(keywordId), {
+                    method: 'DELETE',
+                    credentials: 'same-origin',
+                });
+                if (res.ok) {
+                    loadProject();
+                    setRankKeywords((prev) => prev.filter((k) => k.id !== keywordId));
+                }
+            } catch {
+                // ignore
             }
-        } catch {
-            // ignore
-        }
-    }, [id, loadProject]);
+        },
+        [id, loadProject],
+    );
 
     if (!id) {
         return (
@@ -381,7 +394,10 @@ export default function ProjectRankingsPage() {
                 >
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'baseline' }}>
                         <Box>
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                            <MsqdxTypography
+                                variant="caption"
+                                sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}
+                            >
                                 {t('projects.ourScore')}
                             </MsqdxTypography>
                             <MsqdxTypography
@@ -401,20 +417,28 @@ export default function ProjectRankingsPage() {
                                 {rankingSummary?.score != null ? `${rankingSummary.score}/100` : '—'}
                             </MsqdxTypography>
                         </Box>
-                        {rankingSummary?.competitorScores && Object.keys(rankingSummary.competitorScores).length > 0 && (
-                            <>
-                                {Object.entries(rankingSummary.competitorScores).map(([domain, score]) => (
-                                    <Box key={domain}>
-                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
-                                            {domain}
-                                        </MsqdxTypography>
-                                        <MsqdxTypography variant="h4" weight="bold" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                            {score}/100
-                                        </MsqdxTypography>
-                                    </Box>
-                                ))}
-                            </>
-                        )}
+                        {rankingSummary?.competitorScores &&
+                            Object.keys(rankingSummary.competitorScores).length > 0 && (
+                                <>
+                                    {Object.entries(rankingSummary.competitorScores).map(([domain, score]) => (
+                                        <Box key={domain}>
+                                            <MsqdxTypography
+                                                variant="caption"
+                                                sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}
+                                            >
+                                                {domain}
+                                            </MsqdxTypography>
+                                            <MsqdxTypography
+                                                variant="h4"
+                                                weight="bold"
+                                                sx={{ color: `${MSQDX_NEUTRAL['700']}` }}
+                                            >
+                                                {score}/100
+                                            </MsqdxTypography>
+                                        </Box>
+                                    ))}
+                                </>
+                            )}
                     </Box>
                 </MsqdxMoleculeCard>
 
@@ -442,7 +466,12 @@ export default function ProjectRankingsPage() {
                             >
                                 {suggestKeywordsLoading ? t('common.loading') : t('projects.suggestKeywordsWithAi')}
                             </MsqdxButton>
-                            <MsqdxButton variant="outlined" size="small" onClick={handleRefreshRankings} disabled={refreshLoading}>
+                            <MsqdxButton
+                                variant="outlined"
+                                size="small"
+                                onClick={handleRefreshRankings}
+                                disabled={refreshLoading}
+                            >
                                 {refreshLoading ? t('common.loading') : t('projects.refreshRankings')}
                             </MsqdxButton>
                         </Box>
@@ -450,7 +479,10 @@ export default function ProjectRankingsPage() {
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
                 >
                     {suggestKeywordsError && (
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: 'var(--color-status-error)', display: 'block', mb: 1 }}
+                        >
                             {suggestKeywordsError}
                         </MsqdxTypography>
                     )}
@@ -460,7 +492,11 @@ export default function ProjectRankingsPage() {
                                 {t('projects.suggestedKeywords')}
                             </MsqdxTypography>
                             <Box sx={{ mb: 1 }}>
-                                <VirtualChipList items={suggestedKeywords} getItemKey={(kw) => kw} renderChip={renderSuggestedKeywordChip} />
+                                <VirtualChipList
+                                    items={suggestedKeywords}
+                                    getItemKey={(kw) => kw}
+                                    renderChip={renderSuggestedKeywordChip}
+                                />
                             </Box>
                             <Box sx={{ mb: 1.5 }}>
                                 <SerpMarketSelect
@@ -506,7 +542,7 @@ export default function ProjectRankingsPage() {
                     )}
                     {rankKeywords.length === 0 && suggestedKeywords.length === 0 ? (
                         <Box sx={{ py: 4, textAlign: 'center' }}>
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 2 }}>
                                 {t('projects.emptyRankings')}
                             </MsqdxTypography>
                             <MsqdxButton
@@ -537,7 +573,11 @@ export default function ProjectRankingsPage() {
                                     <Box
                                         sx={{
                                             display: 'grid',
-                                            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: `repeat(${Math.min(group.variants.length, 4)}, 1fr)` },
+                                            gridTemplateColumns: {
+                                                xs: '1fr',
+                                                sm: 'repeat(2, 1fr)',
+                                                md: `repeat(${Math.min(group.variants.length, 4)}, 1fr)`,
+                                            },
                                             gap: 1,
                                             mb: 2,
                                         }}
@@ -551,16 +591,28 @@ export default function ProjectRankingsPage() {
                                                     border: '1px solid var(--color-border-subtle, #eee)',
                                                 }}
                                             >
-                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                                <MsqdxTypography
+                                                    variant="caption"
+                                                    sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}
+                                                >
                                                     {v.country && v.language
-                                                        ? marketLabelForKeyword(v.country, v.language, SERP_MAIN_MARKETS)
+                                                        ? marketLabelForKeyword(
+                                                              v.country,
+                                                              v.language,
+                                                              SERP_MAIN_MARKETS,
+                                                          )
                                                         : ''}
                                                 </MsqdxTypography>
-                                                <MsqdxTypography variant="body2" weight="semibold" sx={{ wordBreak: 'break-word' }}>
+                                                <MsqdxTypography
+                                                    variant="body2"
+                                                    weight="semibold"
+                                                    sx={{ wordBreak: 'break-word' }}
+                                                >
                                                     {v.keyword}
                                                 </MsqdxTypography>
                                                 <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
-                                                    {t('projects.lastPosition')}: {v.lastPosition != null ? v.lastPosition : '—'}
+                                                    {t('projects.lastPosition')}:{' '}
+                                                    {v.lastPosition != null ? v.lastPosition : '—'}
                                                 </MsqdxTypography>
                                                 <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
                                                     <MsqdxButton
@@ -591,7 +643,11 @@ export default function ProjectRankingsPage() {
                                                 keywordId: v.id,
                                                 seriesLabel:
                                                     v.country && v.language
-                                                        ? marketLabelForKeyword(v.country, v.language, SERP_MAIN_MARKETS)
+                                                        ? marketLabelForKeyword(
+                                                              v.country,
+                                                              v.language,
+                                                              SERP_MAIN_MARKETS,
+                                                          )
                                                         : v.keyword,
                                             }))}
                                             t={t}
@@ -604,7 +660,12 @@ export default function ProjectRankingsPage() {
                         <Box
                             sx={{
                                 display: 'grid',
-                                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(3, 1fr)' },
+                                gridTemplateColumns: {
+                                    xs: '1fr',
+                                    sm: 'repeat(2, 1fr)',
+                                    md: 'repeat(3, 1fr)',
+                                    lg: 'repeat(3, 1fr)',
+                                },
                                 gap: 2,
                             }}
                         >
@@ -623,8 +684,25 @@ export default function ProjectRankingsPage() {
                                         minHeight: 320,
                                     }}
                                 >
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
-                                        <MsqdxTypography variant="subtitle2" weight="semibold" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'flex-start',
+                                            gap: 1,
+                                            mb: 1,
+                                        }}
+                                    >
+                                        <MsqdxTypography
+                                            variant="subtitle2"
+                                            weight="semibold"
+                                            sx={{
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                                minWidth: 0,
+                                            }}
+                                        >
                                             {k.keyword}
                                         </MsqdxTypography>
                                         <MsqdxIconButton
@@ -647,17 +725,26 @@ export default function ProjectRankingsPage() {
                                             <Trash2 size={16} strokeWidth={2} />
                                         </MsqdxIconButton>
                                     </Box>
-                                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 1 }}
+                                    >
                                         {k.country && k.language ? `${k.country}/${k.language} · ` : ''}
                                         {t('projects.lastPosition')}: {k.lastPosition != null ? k.lastPosition : '—'}
-                                        {k.lastCompetitorPositions && Object.keys(k.lastCompetitorPositions).length > 0 && (
-                                            <> · {Object.entries(k.lastCompetitorPositions)
-                                                .filter(([, pos]) => pos != null)
-                                                .map(([dom, pos]) => `${dom}: ${pos}`)
-                                                .join(' · ')}
-                                            </>
-                                        )}
-                                        {' · '}{t('projects.lastUpdate')}: {k.lastRecordedAt ? new Date(k.lastRecordedAt).toLocaleDateString() : '—'}
+                                        {k.lastCompetitorPositions &&
+                                            Object.keys(k.lastCompetitorPositions).length > 0 && (
+                                                <>
+                                                    {' '}
+                                                    ·{' '}
+                                                    {Object.entries(k.lastCompetitorPositions)
+                                                        .filter(([, pos]) => pos != null)
+                                                        .map(([dom, pos]) => `${dom}: ${pos}`)
+                                                        .join(' · ')}
+                                                </>
+                                            )}
+                                        {' · '}
+                                        {t('projects.lastUpdate')}:{' '}
+                                        {k.lastRecordedAt ? new Date(k.lastRecordedAt).toLocaleDateString() : '—'}
                                     </MsqdxTypography>
                                     <Box sx={{ mb: 1.5 }}>
                                         <MsqdxButton
@@ -673,7 +760,9 @@ export default function ProjectRankingsPage() {
                                     </Box>
                                     {k.lastSerpLeaderDomain && (
                                         <Box sx={{ mb: 1.5 }}>
-                                            {k.lastPosition === 1 && normalizeRankDomain(k.domain) === normalizeRankDomain(k.lastSerpLeaderDomain) ? (
+                                            {k.lastPosition === 1 &&
+                                            normalizeRankDomain(k.domain) ===
+                                                normalizeRankDomain(k.lastSerpLeaderDomain) ? (
                                                 <MsqdxChip
                                                     label={t('projects.serpLeaderYou')}
                                                     size="small"
@@ -682,15 +771,26 @@ export default function ProjectRankingsPage() {
                                                     sx={{ maxWidth: '100%' }}
                                                 />
                                             ) : (
-                                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                                                <MsqdxTypography
+                                                    variant="caption"
+                                                    sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}
+                                                >
                                                     {t('projects.serpLeader')}:{' '}
                                                     {k.lastSerpLeaderUrl ? (
                                                         <Box
                                                             component="a"
-                                                            href={k.lastSerpLeaderUrl.startsWith('http') ? k.lastSerpLeaderUrl : `https://${k.lastSerpLeaderUrl}`}
+                                                            href={
+                                                                k.lastSerpLeaderUrl.startsWith('http')
+                                                                    ? k.lastSerpLeaderUrl
+                                                                    : `https://${k.lastSerpLeaderUrl}`
+                                                            }
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            sx={{ color: 'inherit', fontWeight: 600, textDecoration: 'underline' }}
+                                                            sx={{
+                                                                color: 'inherit',
+                                                                fontWeight: 600,
+                                                                textDecoration: 'underline',
+                                                            }}
                                                         >
                                                             {k.lastSerpLeaderDomain}
                                                         </Box>
@@ -731,12 +831,18 @@ export default function ProjectRankingsPage() {
                 projectId={id}
             />
 
-            <Dialog open={addKeywordOpen} onClose={() => setAddKeywordOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 'var(--msqdx-spacing-md, 8px)' } }}>
+            <Dialog
+                open={addKeywordOpen}
+                onClose={() => setAddKeywordOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{ sx: { borderRadius: 'var(--msqdx-spacing-md, 8px)' } }}
+            >
                 <DialogTitle sx={{ fontWeight: 600 }}>{t('projects.addKeyword')}</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 320, pt: 0.5 }}>
                         {trackDomain ? (
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                 {t('projects.rankTrackingDomainHint').replace('{{domain}}', trackDomain)}
                                 {project?.name ? ` · ${project.name}` : ''}
                             </MsqdxTypography>

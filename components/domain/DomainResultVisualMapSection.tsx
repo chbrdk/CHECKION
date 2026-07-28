@@ -3,6 +3,7 @@
 import React, { memo } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { MsqdxTypography } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { useQuery } from '@tanstack/react-query';
 import { apiScanDomainGraph } from '@/lib/constants';
 import type { DomainScanResult } from '@/lib/types';
@@ -30,7 +31,7 @@ function DomainResultVisualMapSectionInner({ t, domainId }: DomainResultVisualMa
 
     return (
         <Box>
-            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1 }}>
+            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 1 }}>
                 {t('domainResult.visualMapDescription')}
             </MsqdxTypography>
             {isPending && (

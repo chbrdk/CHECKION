@@ -359,7 +359,7 @@ export default function ShareLandingPage() {
                     <MsqdxTypography
                         variant="body2"
                         sx={{
-                            color: 'var(--color-text-muted-on-light)',
+                            color: `${MSQDX_NEUTRAL['700']}px`,
                             mb: 'var(--msqdx-spacing-lg)',
                             textAlign: 'center',
                         }}
@@ -402,7 +402,7 @@ export default function ShareLandingPage() {
             suppressHydrationWarning
         >
             <Box sx={{ mb: 3, textAlign: 'center' }}>
-                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}px` }}>
                     {t('share.sharedResultsCaption')}
                 </MsqdxTypography>
             </Box>
@@ -1757,7 +1757,7 @@ function ShareJourneyContent({ data, accessToken }: { data: ShareJourneyData; ac
                         {t('share.recording')}
                     </MsqdxTypography>
                     <Box sx={{ width: '100%', maxWidth: 960, borderRadius: 1, overflow: 'hidden', bgcolor: '#000' }}>
-                        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                        {}
                         <video controls playsInline style={{ width: '100%', display: 'block' }} src={videoUrl}>
                             {t('share.videoUnavailable')}
                         </video>
@@ -2543,14 +2543,14 @@ function ShareSingleContent({
                             {generative.technical.schemaCoverage?.length > 0 && (
                                 <MsqdxTypography
                                     variant="caption"
-                                    sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}
+                                    sx={{ color: `${MSQDX_NEUTRAL['700']}px`, display: 'block' }}
                                 >
                                     Schema: {generative.technical.schemaCoverage.slice(0, 5).join(', ')}
                                     {generative.technical.schemaCoverage.length > 5 ? ' …' : ''}
                                 </MsqdxTypography>
                             )}
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 0.5 }}>
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}px` }}>
                                     FAQ: {generative.content.faqCount} · Tabellen: {generative.content.tableCount} ·
                                     Autor: {generative.expertise.hasAuthorBio ? 'Ja' : 'Nein'} · Zitate:{' '}
                                     {generative.expertise.hasExpertCitations ? 'Ja' : 'Nein'}
@@ -2574,7 +2574,7 @@ function ShareSingleContent({
                                 <MsqdxChip size="small" variant="outlined" label={`lang=${geo.languages.htmlLang}`} />
                             )}
                             {(geo.languages.hreflangs?.length ?? 0) > 0 && (
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}px` }}>
                                     {geo.languages.hreflangs.length} hreflang(s)
                                 </MsqdxTypography>
                             )}
@@ -2606,7 +2606,7 @@ function ShareSingleContent({
                         ))}
                     </Box>
                     {issueCount > 50 && (
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}px` }}>
                             … und {issueCount - 50} weitere
                         </MsqdxTypography>
                     )}

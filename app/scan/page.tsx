@@ -14,7 +14,7 @@ import {
     MsqdxCheckboxField,
     MsqdxTabs,
 } from '@msqdx/react';
-import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_STATUS, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { ScanResult, WcagStandard, Runner } from '@/lib/types';
 import type { SelectChangeEvent } from '@mui/material';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -453,7 +453,7 @@ export default function ScanPage() {
                         {t('scan.title')}
                     </MsqdxTypography>
                 </Box>
-                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                     {t('scan.subtitle')}
                 </MsqdxTypography>
             </Box>
@@ -524,7 +524,7 @@ export default function ScanPage() {
                         />
                         <MsqdxTypography
                             variant="caption"
-                            sx={{ display: 'block', mt: 1, color: 'var(--color-text-muted-on-light)' }}
+                            sx={{ display: 'block', mt: 1, color: `${MSQDX_NEUTRAL['700']}` }}
                         >
                             {scanMode === 'single'
                                 ? t('scan.singleHint')
@@ -637,10 +637,7 @@ export default function ScanPage() {
                             />
                             {geoEeatFormMode === 'quick' ? (
                                 <>
-                                    <MsqdxTypography
-                                        variant="caption"
-                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
-                                    >
+                                    <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                         {t('scan.geoEeatQuickHint')}
                                     </MsqdxTypography>
                                     <MsqdxFormField
@@ -669,10 +666,7 @@ export default function ScanPage() {
                                 </>
                             ) : (
                                 <>
-                                    <MsqdxTypography
-                                        variant="caption"
-                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
-                                    >
+                                    <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                         {t('scan.geoEeatHint')}
                                     </MsqdxTypography>
                                     <Box
@@ -1057,7 +1051,7 @@ export default function ScanPage() {
                     <MsqdxTypography
                         variant="caption"
                         sx={{
-                            color: 'var(--color-text-muted-on-light)',
+                            color: `${MSQDX_NEUTRAL['700']}`,
                             mt: 'var(--msqdx-spacing-xs)',
                             display: 'block',
                         }}

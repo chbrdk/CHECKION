@@ -3,6 +3,7 @@
 import React, { memo, useCallback } from 'react';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { ExternalLink } from 'lucide-react';
 import type { PageSeoSummary } from '@/lib/domain-aggregation';
 
@@ -55,11 +56,7 @@ export const SeoDensityScrollRow = memo(function SeoDensityScrollRow({
                     {t('domainResult.seoWordCount', { count: row.wordCount.toLocaleString(lc) })}
                 </MsqdxTypography>
                 {row.topKeywordCount > 0 && (
-                    <MsqdxTypography
-                        variant="caption"
-                        component="span"
-                        sx={{ color: 'var(--color-text-muted-on-light)' }}
-                    >
+                    <MsqdxTypography variant="caption" component="span" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                         {t('domainResult.seoTopKeywords', { count: row.topKeywordCount })}
                     </MsqdxTypography>
                 )}

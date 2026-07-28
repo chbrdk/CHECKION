@@ -76,7 +76,7 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                                     <MsqdxTypography
                                         variant="caption"
                                         sx={{
-                                            color: 'var(--color-text-muted-on-light)',
+                                            color: `${MSQDX_NEUTRAL['700']}`,
                                             display: 'block',
                                             maxWidth: '300px',
                                             overflow: 'hidden',
@@ -118,7 +118,7 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                         <MsqdxTypography variant="subtitle2" sx={{ color: MSQDX_STATUS.success.dark }}>
                             No broken links found
                         </MsqdxTypography>
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                             Verified first 25 links.
                         </MsqdxTypography>
                     </Box>
@@ -143,7 +143,7 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                     <MsqdxTypography
                         variant="caption"
                         sx={{
-                            color: 'var(--color-text-muted-on-light)',
+                            color: `${MSQDX_NEUTRAL['700']}`,
                             display: 'block',
                             mb: 'var(--msqdx-spacing-xs)',
                         }}
@@ -181,7 +181,7 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                                 <MsqdxTypography
                                     variant="caption"
                                     sx={{
-                                        color: 'var(--color-text-muted-on-light)',
+                                        color: `${MSQDX_NEUTRAL['700']}`,
                                         display: 'block',
                                         maxWidth: '300px',
                                         overflow: 'hidden',
@@ -243,7 +243,7 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                                 <MsqdxTypography
                                     variant="caption"
                                     sx={{
-                                        color: 'var(--color-text-muted-on-light)',
+                                        color: `${MSQDX_NEUTRAL['700']}`,
                                         display: 'block',
                                         maxWidth: '300px',
                                         overflow: 'hidden',
@@ -257,7 +257,7 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                         ))}
                         {links.pdfLinks.length > 8 && (
                             <Box sx={{ p: 'var(--msqdx-spacing-sm)' }}>
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                     + {links.pdfLinks.length - 8} weitere PDFs
                                 </MsqdxTypography>
                             </Box>
@@ -286,7 +286,7 @@ function StatItem({ label, value, icon }: { label: string; value: number; icon: 
                     justifyContent: 'center',
                     gap: 1,
                     mb: 0.5,
-                    color: 'var(--color-text-muted-on-light)',
+                    color: `${MSQDX_NEUTRAL['700']}`,
                 }}
             >
                 {icon}

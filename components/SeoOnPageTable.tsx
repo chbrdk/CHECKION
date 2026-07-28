@@ -383,7 +383,7 @@ function SeoOnPageTableInner({
     if (rows.length === 0) {
         return (
             <Box sx={{ textAlign: 'center', py: 3 }}>
-                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                     {t('projects.seo.tableEmpty')}
                 </MsqdxTypography>
             </Box>
@@ -517,10 +517,7 @@ function SeoOnPageTableInner({
                         py: 0.25,
                     }}
                 >
-                    <MsqdxTypography
-                        variant="caption"
-                        sx={{ color: 'var(--color-text-muted-on-light)', fontSize: '0.7rem' }}
-                    >
+                    <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, fontSize: '0.7rem' }}>
                         {t('share.pageOfTotal', {
                             current: String(safePage),
                             total: String(totalPages),

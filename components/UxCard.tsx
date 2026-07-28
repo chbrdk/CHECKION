@@ -35,20 +35,20 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                 <MsqdxChip
                     label={`Score: ${ux.score}/100`}
                     color={ux.score >= 80 ? 'success' : ux.score >= 50 ? 'warning' : 'error'}
-                    size="small"
+                    size="large"
                     variant="outlined"
                 />
             }
         >
             <Box sx={{ width: '100%' }}>
-                {/* First column: Score block (CLS, Readability, Mobile & Tap Targets) */}
-                <Stack spacing={1.5} sx={{ mb: 2 }}>
+                {/* Score block (CLS, Readability, Mobile & Tap Targets) */}
+                <Stack spacing={3} sx={{ mb: 2 }}>
                     {/* Visual Stability (CLS) */}
                     <Box>
                         <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
                             <MsqdxIcon name="Monitor" size="sm" />
-                            <MsqdxTypography variant="body2" color="textSecondary">
-                                Visual Stability (CLS)
+                            <MsqdxTypography variant="body2" color={MSQDX_NEUTRAL[600]}>
+                                {t('results.UXScan.CLSLabel')}
                             </MsqdxTypography>
                             <MsqdxTooltip title="Cumulative Layout Shift measures how much the page content shifts unexpectedly. Lower is better. Goal: < 0.1">
                                 <MsqdxTypography
@@ -82,13 +82,13 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                     <Box>
                         <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
                             <Type size={16} />
-                            <MsqdxTypography variant="body2" color="textSecondary">
-                                Content Readability
+                            <MsqdxTypography variant="body2" color={MSQDX_NEUTRAL[600]}>
+                                {t('results.UXScan.contentReadabilityLabel')}
                             </MsqdxTypography>
                         </Stack>
-                        <Stack direction="row" alignItems="center" justifyContent="space-between">
+                        <Stack direction="row" alignItems="center" spacing={2}>
                             <MsqdxChip label={ux.readability.grade} color="default" size="small" variant="outlined" />
-                            <MsqdxTypography variant="caption" color="textSecondary">
+                            <MsqdxTypography variant="caption" color={MSQDX_NEUTRAL[900]}>
                                 Flesch-Kincaid: {ux.readability.score}
                             </MsqdxTypography>
                         </Stack>
@@ -98,7 +98,7 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                         <Box>
                             <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
                                 <Clock size={16} />
-                                <MsqdxTypography variant="body2" color="textSecondary">
+                                <MsqdxTypography variant="body2" color={MSQDX_NEUTRAL[600]}>
                                     {t('results.dwellEstimateTitle')}
                                 </MsqdxTypography>
                                 <MsqdxTooltip title={ux.dwellEstimate.summaryDe}>
@@ -117,7 +117,7 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                 >
                                     {formatDwellSeconds(ux.dwellEstimate.secondsMedian, dwellLocale)}
                                 </MsqdxTypography>
-                                <MsqdxTypography variant="caption" color="textSecondary">
+                                <MsqdxTypography variant="caption" color={MSQDX_NEUTRAL[600]}>
                                     (
                                     {formatDwellRange(
                                         ux.dwellEstimate.secondsMin,
@@ -141,7 +141,7 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                             </Stack>
                             <MsqdxTypography
                                 variant="caption"
-                                sx={{ display: 'block', mt: 0.5, color: 'text.secondary', lineHeight: 1.4 }}
+                                sx={{ display: 'block', mt: 0.5, color: `${MSQDX_NEUTRAL[500]}`, lineHeight: 1.4 }}
                             >
                                 {t('results.dwellEstimateHint')}
                             </MsqdxTypography>
@@ -226,11 +226,11 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                 </MsqdxTypography>
                                 {ux.hasSkipLink ? (
                                     <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.success.base }}>
-                                        Vorhanden {ux.skipLinkHref ? `(${ux.skipLinkHref})` : ''}
+                                        {`${t('results.UXScan.skiplink.true')} ${ux.skipLinkHref ? ux.skipLinkHref : ''}`}
                                     </MsqdxTypography>
                                 ) : (
-                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                                        Fehlt – Empfohlen für Tastatur-/Screenreader-Nutzung.
+                                    <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
+                                        {t('results.UXScan.skipLink.false')}
                                     </MsqdxTypography>
                                 )}
                             </Box>,
@@ -248,7 +248,7 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                 >
                                     Resource Hints
                                 </MsqdxTypography>
-                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                     preload: {ux.resourceHints.preload.length}, preconnect:{' '}
                                     {ux.resourceHints.preconnect.length}
                                 </MsqdxTypography>
@@ -273,8 +273,8 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                     }}
                                 >
                                     {ux.reducedMotionInCss
-                                        ? 'CSS berücksichtigt prefers-reduced-motion'
-                                        : 'Kein @media (prefers-reduced-motion) gefunden'}
+                                        ? `${t('results.UXScan.cssReducedMotion.true')}`
+                                        : `${t('results.UXScan.cssReducedMotion.false')}`}
                                 </MsqdxTypography>
                             </Box>,
                         );
@@ -289,7 +289,7 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                     Focus Visible
                                 </MsqdxTypography>
                                 <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.warning.base }}>
-                                    {ux.focusVisibleFailCount} fokussierbare Elemente ohne sichtbaren Fokus-Stil
+                                    {`${ux.focusVisibleFailCount} ${t('results.UXScan.focusableElements')}`}
                                 </MsqdxTypography>
                             </Box>,
                         );
@@ -352,18 +352,18 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                 </MsqdxTypography>
                                 <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.warning.base }}>
                                     {(ux.mediaAccessibility.videosMissingCaptionTrack ?? 0) > 0 &&
-                                        `${ux.mediaAccessibility.videosMissingCaptionTrack} Video(s) ohne Caption-Track`}
+                                        `${ux.mediaAccessibility.videosMissingCaptionTrack} Video(s) ${t('without')} Caption-Track`}
                                     {(ux.mediaAccessibility.videosMissingCaptionTrack ?? 0) > 0 &&
                                         (ux.mediaAccessibility.videosWithoutCaptions > 0 ||
                                             ux.mediaAccessibility.audiosWithoutTranscript > 0) &&
                                         ' · '}
                                     {ux.mediaAccessibility.videosWithoutCaptions > 0 &&
-                                        `${ux.mediaAccessibility.videosWithoutCaptions} Video(s) ohne Captions`}
+                                        `${ux.mediaAccessibility.videosWithoutCaptions} Video(s) ${t('without')} Captions`}
                                     {ux.mediaAccessibility.videosWithoutCaptions > 0 &&
                                         ux.mediaAccessibility.audiosWithoutTranscript > 0 &&
                                         ', '}
                                     {ux.mediaAccessibility.audiosWithoutTranscript > 0 &&
-                                        `${ux.mediaAccessibility.audiosWithoutTranscript} Audio(s) ohne Transcript`}
+                                        `${ux.mediaAccessibility.audiosWithoutTranscript} Audio(s) ${t('without')} Transcript`}
                                 </MsqdxTypography>
                             </Box>,
                         );
@@ -375,7 +375,7 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                     variant="caption"
                                     sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}
                                 >
-                                    Überschriften
+                                    {t('results.UXScan.headings')}
                                 </MsqdxTypography>
                                 <MsqdxTypography
                                     variant="body2"
@@ -383,11 +383,14 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                         color: ux.headingHierarchy.hasSingleH1
                                             ? MSQDX_STATUS.success.base
                                             : MSQDX_STATUS.warning.base,
+                                        textTransform: 'capitalize',
                                     }}
                                 >
-                                    {ux.headingHierarchy.hasSingleH1 ? 'Eine H1' : `H1: ${ux.headingHierarchy.h1Count}`}
+                                    {ux.headingHierarchy.hasSingleH1
+                                        ? `${t('one')} H1`
+                                        : `H1: ${ux.headingHierarchy.h1Count}`}
                                     {ux.headingHierarchy.skippedLevels.length > 0 &&
-                                        ` · Übersprungen: ${ux.headingHierarchy.skippedLevels.map((s) => `H${s.from}→H${s.to}`).join(', ')}`}
+                                        ` · ${t('skipped')}: ${ux.headingHierarchy.skippedLevels.map((s) => `H${s.from}→H${s.to}`).join(', ')}`}
                                 </MsqdxTypography>
                             </Box>,
                         );
@@ -404,18 +407,19 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                     variant="caption"
                                     sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}
                                 >
-                                    Bilder
+                                    {t('results.UXScan.images')}
                                 </MsqdxTypography>
-                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                     {ux.imageIssues.missingDimensions > 0 &&
-                                        `${ux.imageIssues.missingDimensions} ohne width/height`}
+                                        `${ux.imageIssues.missingDimensions} ${t('without')} width/height`}
                                     {ux.imageIssues.missingDimensions > 0 &&
                                         (ux.imageIssues.missingLazy > 0 || ux.imageIssues.missingSrcset > 0) &&
                                         ', '}
                                     {ux.imageIssues.missingLazy > 0 &&
-                                        `${ux.imageIssues.missingLazy} ohne loading=lazy`}
+                                        `${ux.imageIssues.missingLazy} ${t('without')} loading=lazy`}
                                     {ux.imageIssues.missingLazy > 0 && ux.imageIssues.missingSrcset > 0 && ', '}
-                                    {ux.imageIssues.missingSrcset > 0 && `${ux.imageIssues.missingSrcset} ohne srcset`}
+                                    {ux.imageIssues.missingSrcset > 0 &&
+                                        `${ux.imageIssues.missingSrcset} ${t('without')} srcset`}
                                 </MsqdxTypography>
                             </Box>,
                         );
@@ -437,7 +441,9 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                             : MSQDX_STATUS.success.base,
                                     }}
                                 >
-                                    {ux.metaRefreshPresent ? 'Vorhanden (nicht empfohlen)' : 'Nicht vorhanden'}
+                                    {ux.metaRefreshPresent
+                                        ? t('results.UXScan.metaRefresh.true')
+                                        : t('results.UXScan.metaRefresh.false')}
                                 </MsqdxTypography>
                             </Box>,
                         );
@@ -452,11 +458,11 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                     variant="caption"
                                     sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}
                                 >
-                                    Schriftarten
+                                    {t('results.UXScan.fonts')}
                                 </MsqdxTypography>
                                 <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.warning.base }}>
                                     {ux.fontDisplayIssues.withoutFontDisplay > 0 &&
-                                        `${ux.fontDisplayIssues.withoutFontDisplay} @font-face ohne font-display`}
+                                        `${ux.fontDisplayIssues.withoutFontDisplay} @font-face ${t('without')} font-display`}
                                     {ux.fontDisplayIssues.withoutFontDisplay > 0 &&
                                         ux.fontDisplayIssues.blockCount > 0 &&
                                         ', '}

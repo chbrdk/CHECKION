@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { Box, CircularProgress, Divider, Stack } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { ArrowLeft } from 'lucide-react';
 import { SharePanel } from '@/components/SharePanel';
 import { AddToProject } from '@/components/AddToProject';
@@ -53,7 +54,7 @@ export function DomainResultShell({ children }: { children: React.ReactNode }) {
                 >
                     <MsqdxTypography
                         variant="h5"
-                        sx={{ color: 'var(--color-text-muted-on-light)', textAlign: 'center', maxWidth: 480 }}
+                        sx={{ color: `${MSQDX_NEUTRAL['700']}`, textAlign: 'center', maxWidth: 480 }}
                     >
                         {t('domainResult.notFound')}
                     </MsqdxTypography>

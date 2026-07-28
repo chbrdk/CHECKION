@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
-import { MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
+import { MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { SearchMatch, SearchMatchType } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { LoadMoreBar } from '@/components/PaginationBar';
@@ -57,14 +57,14 @@ export function SearchResultsList({ matches, loading, query, onSelectMatch }: Se
             {showSpinnerOnly && (
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, py: 3 }}>
                     <CircularProgress size={24} sx={{ color: 'var(--color-theme-accent)' }} />
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                         {t('dashboard.searchLoading')}
                     </MsqdxTypography>
                 </Box>
             )}
             {showEmpty && (
                 <Box sx={{ textAlign: 'center', py: 3, px: 2 }}>
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                         {query ? t('dashboard.searchNoResults', { query }) : t('dashboard.searchNoResultsEmpty')}
                     </MsqdxTypography>
                 </Box>
@@ -74,7 +74,7 @@ export function SearchResultsList({ matches, loading, query, onSelectMatch }: Se
                     {loading && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1.5, mb: 0.5 }}>
                             <CircularProgress size={18} sx={{ color: 'var(--color-theme-accent)' }} />
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                 {t('dashboard.searchLoading')}
                             </MsqdxTypography>
                         </Box>
@@ -140,7 +140,7 @@ export function SearchResultsList({ matches, loading, query, onSelectMatch }: Se
                                 </MsqdxTypography>
                                 <MsqdxTypography
                                     variant="caption"
-                                    sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}
+                                    sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}
                                 >
                                     {match.snippet}
                                 </MsqdxTypography>

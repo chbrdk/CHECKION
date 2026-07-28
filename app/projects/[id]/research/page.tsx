@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Box, Stack } from '@mui/material';
-import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
+import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MSQDX_NEUTRAL } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
 import {
@@ -21,7 +21,7 @@ import type { ProjectResearchResult } from '@/lib/research/schema';
 export default function ProjectResearchPage() {
     const params = useParams();
     const { t } = useI18n();
-    const id = typeof params.id === 'string' ? params.id : params.id?.[0] ?? null;
+    const id = typeof params.id === 'string' ? params.id : (params.id?.[0] ?? null);
     const [project, setProject] = useState<{
         id: string;
         name: string;
@@ -106,7 +106,7 @@ export default function ProjectResearchPage() {
                 return { ...prev, [key]: arr };
             });
         },
-        []
+        [],
     );
 
     const handleApplyResearchCompetitors = useCallback(async () => {
@@ -150,7 +150,11 @@ export default function ProjectResearchPage() {
 
     const handleApplyResearchKeywords = useCallback(async () => {
         if (!id || !project?.domain || selectedResearchKeywords.size === 0 || applyMarketKeys.length === 0) return;
-        const domain = project.domain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] ?? project.domain;
+        const domain =
+            project.domain
+                .replace(/^https?:\/\//, '')
+                .replace(/^www\./, '')
+                .split('/')[0] ?? project.domain;
         const byMarket = researchResult?.seoKeywordsByMarket;
         const deList = byMarket?.['de-de'] ?? researchResult?.seoKeywords ?? [];
 
@@ -218,7 +222,14 @@ export default function ProjectResearchPage() {
         }
         setSelectedResearchKeywords(new Set());
         loadProject();
-    }, [id, project?.domain, selectedResearchKeywords, applyMarketKeys, researchResult?.seoKeywordsByMarket, loadProject]);
+    }, [
+        id,
+        project?.domain,
+        selectedResearchKeywords,
+        applyMarketKeys,
+        researchResult?.seoKeywordsByMarket,
+        loadProject,
+    ]);
 
     const handleToggleResearchKeyword = useCallback((kw: string) => {
         setSelectedResearchKeywords((prev) => {
@@ -233,7 +244,7 @@ export default function ProjectResearchPage() {
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
             setResearchResult((prev) => (prev ? { ...prev, valueProposition: e.target.value } : prev));
         },
-        []
+        [],
     );
 
     const handleSaveValueProposition = useCallback(async () => {
@@ -252,46 +263,47 @@ export default function ProjectResearchPage() {
         }
     }, [id, researchResult?.valueProposition, loadProject]);
 
-    const projectResearchResultFormProps =
-        researchResult
-            ? {
-                  researchResult,
-                  addTargetGroup: researchAddTargetGroup,
-                  addKeyword: researchAddKeyword,
-                  addGeoQuery: researchAddGeoQuery,
-                  addCompetitor: researchAddCompetitor,
-                  selectedKeywords: selectedResearchKeywords,
-                  onAddTargetGroupChange: (e: React.ChangeEvent<HTMLInputElement>) => setResearchAddTargetGroup(e.target.value),
-                  onValuePropositionChange: handleResearchValuePropositionChange,
-                  onAddKeywordChange: (e: React.ChangeEvent<HTMLInputElement>) => setResearchAddKeyword(e.target.value),
-                  onAddGeoQueryChange: (e: React.ChangeEvent<HTMLInputElement>) => setResearchAddGeoQuery(e.target.value),
-                  onAddCompetitorChange: (e: React.ChangeEvent<HTMLInputElement>) => setResearchAddCompetitor(e.target.value),
-                  onAddTargetGroupClick: () => {
-                      updateResearchArray('targetGroups', researchAddTargetGroup);
-                      setResearchAddTargetGroup('');
-                  },
-                  onAddKeywordClick: () => {
-                      updateResearchArray('seoKeywords', researchAddKeyword);
-                      setResearchAddKeyword('');
-                  },
-                  onAddGeoQueryClick: () => {
-                      updateResearchArray('geoQueries', researchAddGeoQuery);
-                      setResearchAddGeoQuery('');
-                  },
-                  onAddCompetitorClick: () => {
-                      updateResearchArray('competitors', researchAddCompetitor);
-                      setResearchAddCompetitor('');
-                  },
-                  onRemoveTargetGroup: (item: string) => updateResearchArray('targetGroups', null, item),
-                  onRemoveGeoQuery: (q: string) => updateResearchArray('geoQueries', null, q),
-                  onRemoveCompetitor: (c: string) => updateResearchArray('competitors', null, c),
-                  onToggleKeyword: handleToggleResearchKeyword,
-                  onApplyKeywords: handleApplyResearchKeywords,
-                  onApplyGeoQueries: handleApplyResearchGeoQueries,
-                  onApplyCompetitors: handleApplyResearchCompetitors,
-                  t,
-              }
-            : null;
+    const projectResearchResultFormProps = researchResult
+        ? {
+              researchResult,
+              addTargetGroup: researchAddTargetGroup,
+              addKeyword: researchAddKeyword,
+              addGeoQuery: researchAddGeoQuery,
+              addCompetitor: researchAddCompetitor,
+              selectedKeywords: selectedResearchKeywords,
+              onAddTargetGroupChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                  setResearchAddTargetGroup(e.target.value),
+              onValuePropositionChange: handleResearchValuePropositionChange,
+              onAddKeywordChange: (e: React.ChangeEvent<HTMLInputElement>) => setResearchAddKeyword(e.target.value),
+              onAddGeoQueryChange: (e: React.ChangeEvent<HTMLInputElement>) => setResearchAddGeoQuery(e.target.value),
+              onAddCompetitorChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+                  setResearchAddCompetitor(e.target.value),
+              onAddTargetGroupClick: () => {
+                  updateResearchArray('targetGroups', researchAddTargetGroup);
+                  setResearchAddTargetGroup('');
+              },
+              onAddKeywordClick: () => {
+                  updateResearchArray('seoKeywords', researchAddKeyword);
+                  setResearchAddKeyword('');
+              },
+              onAddGeoQueryClick: () => {
+                  updateResearchArray('geoQueries', researchAddGeoQuery);
+                  setResearchAddGeoQuery('');
+              },
+              onAddCompetitorClick: () => {
+                  updateResearchArray('competitors', researchAddCompetitor);
+                  setResearchAddCompetitor('');
+              },
+              onRemoveTargetGroup: (item: string) => updateResearchArray('targetGroups', null, item),
+              onRemoveGeoQuery: (q: string) => updateResearchArray('geoQueries', null, q),
+              onRemoveCompetitor: (c: string) => updateResearchArray('competitors', null, c),
+              onToggleKeyword: handleToggleResearchKeyword,
+              onApplyKeywords: handleApplyResearchKeywords,
+              onApplyGeoQueries: handleApplyResearchGeoQueries,
+              onApplyCompetitors: handleApplyResearchCompetitors,
+              t,
+          }
+        : null;
 
     if (!id) {
         return (
@@ -319,7 +331,10 @@ export default function ProjectResearchPage() {
                     footerDivider={false}
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
                 >
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}>
+                    <MsqdxTypography
+                        variant="caption"
+                        sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 1.5 }}
+                    >
                         {t('projects.researchDescription')}
                     </MsqdxTypography>
                     <Box sx={{ mb: 2 }}>
@@ -340,12 +355,15 @@ export default function ProjectResearchPage() {
                         {researchLoading ? t('common.loading') : t('projects.researchStart')}
                     </MsqdxButton>
                     {researchError ? (
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-status-error)', display: 'block', mt: 1 }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: 'var(--color-status-error)', display: 'block', mt: 1 }}
+                        >
                             {researchError}
                         </MsqdxTypography>
                     ) : null}
                     {!researchResult && !researchLoading ? (
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mt: 2 }}>
+                        <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mt: 2 }}>
                             {t('projects.researchEmpty')}
                         </MsqdxTypography>
                     ) : null}
@@ -360,7 +378,12 @@ export default function ProjectResearchPage() {
                                 />
                             </Box>
                             {researchResult?.valueProposition != null && (
-                                <MsqdxButton variant="outlined" size="small" onClick={handleSaveValueProposition} sx={{ mb: 1 }}>
+                                <MsqdxButton
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={handleSaveValueProposition}
+                                    sx={{ mb: 1 }}
+                                >
                                     {t('projects.saveValueProposition')}
                                 </MsqdxButton>
                             )}

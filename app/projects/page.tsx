@@ -3,12 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Box, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import {
-    MsqdxTypography,
-    MsqdxButton,
-    MsqdxMoleculeCard,
-    MsqdxFormField,
-} from '@msqdx/react';
+import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxFormField, MSQDX_NEUTRAL } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { API_AUTH_PROFILE, apiProjectsList, apiProjectsCreate, apiProject, pathProject } from '@/lib/constants';
 import { MSQDX_BUTTON_THEME_ACCENT_SX } from '@/lib/theme-accent';
@@ -69,7 +64,7 @@ function ProjectsPageInner() {
 
     const resolvedPlatformCompanyId = useMemo(
         () => resolvePlatformCompanyIdForApi(searchParams, { plexonDefaultCompanyId: profileDefaultCo }),
-        [searchParams, profileDefaultCo]
+        [searchParams, profileDefaultCo],
     );
 
     const loadProjects = useCallback(async () => {
@@ -159,12 +154,19 @@ function ProjectsPageInner() {
 
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1200, mx: 'auto' }}>
-            <Box sx={{ mb: 'var(--msqdx-spacing-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
+            <Box
+                sx={{
+                    mb: 'var(--msqdx-spacing-sm)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'end',
+                }}
+            >
                 <Box>
                     <MsqdxTypography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
                         {t('projects.title')}
                     </MsqdxTypography>
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                         {t('projects.subtitle')}
                     </MsqdxTypography>
                 </Box>
@@ -187,20 +189,28 @@ function ProjectsPageInner() {
                 sx={{ bgcolor: 'var(--color-card-bg)' }}
             >
                 {loading ? (
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                         {t('common.loading')}
                     </MsqdxTypography>
                 ) : projects.length === 0 ? (
                     <Box sx={{ py: 4, textAlign: 'center' }}>
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                        <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 2 }}>
                             {t('projects.noProjects')}
                         </MsqdxTypography>
-                        <MsqdxButton variant="contained" size="medium" onClick={openCreate} sx={MSQDX_BUTTON_THEME_ACCENT_SX}>
+                        <MsqdxButton
+                            variant="contained"
+                            size="medium"
+                            onClick={openCreate}
+                            sx={MSQDX_BUTTON_THEME_ACCENT_SX}
+                        >
                             {t('projects.noProjectsCta')}
                         </MsqdxButton>
                     </Box>
                 ) : (
-                    <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, display: 'flex', flexDirection: 'column', gap: 0 }}>
+                    <Box
+                        component="ul"
+                        sx={{ listStyle: 'none', m: 0, p: 0, display: 'flex', flexDirection: 'column', gap: 0 }}
+                    >
                         {projects.map((p) => (
                             <Box
                                 key={p.id}
@@ -224,7 +234,7 @@ function ProjectsPageInner() {
                                         {p.name}
                                     </MsqdxTypography>
                                     {p.domain && (
-                                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                        <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                             {p.domain}
                                         </MsqdxTypography>
                                     )}
@@ -241,7 +251,12 @@ function ProjectsPageInner() {
                                     >
                                         {t('projects.deleteProject')}
                                     </MsqdxButton>
-                                    <MsqdxButton variant="contained" size="small" onClick={() => router.push(pathProject(p.id))} sx={MSQDX_BUTTON_THEME_ACCENT_SX}>
+                                    <MsqdxButton
+                                        variant="contained"
+                                        size="small"
+                                        onClick={() => router.push(pathProject(p.id))}
+                                        sx={MSQDX_BUTTON_THEME_ACCENT_SX}
+                                    >
                                         {t('projects.open')}
                                     </MsqdxButton>
                                 </Box>
@@ -251,8 +266,16 @@ function ProjectsPageInner() {
                 )}
             </MsqdxMoleculeCard>
 
-            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 'var(--msqdx-spacing-md, 8px)' } }}>
-                <DialogTitle sx={{ fontWeight: 600 }}>{editId ? t('projects.editProject') : t('projects.newProject')}</DialogTitle>
+            <Dialog
+                open={dialogOpen}
+                onClose={() => setDialogOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{ sx: { borderRadius: 'var(--msqdx-spacing-md, 8px)' } }}
+            >
+                <DialogTitle sx={{ fontWeight: 600 }}>
+                    {editId ? t('projects.editProject') : t('projects.newProject')}
+                </DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 320, pt: 0.5 }}>
                         <MsqdxFormField
@@ -286,7 +309,13 @@ function ProjectsPageInner() {
                 </DialogActions>
             </Dialog>
 
-            <Dialog open={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 'var(--msqdx-spacing-md, 8px)' } }}>
+            <Dialog
+                open={!!deleteConfirmId}
+                onClose={() => setDeleteConfirmId(null)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{ sx: { borderRadius: 'var(--msqdx-spacing-md, 8px)' } }}
+            >
                 <DialogTitle sx={{ fontWeight: 600 }}>{t('projects.deleteProject')}</DialogTitle>
                 <DialogContent>
                     <MsqdxTypography variant="body2">{t('projects.deleteConfirm')}</MsqdxTypography>
@@ -314,7 +343,7 @@ export default function ProjectsPage() {
         <Suspense
             fallback={
                 <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1200, mx: 'auto' }}>
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                         {t('common.loading')}
                     </MsqdxTypography>
                 </Box>

@@ -62,6 +62,7 @@
     "matchType_seo": "SEO",
     "matchType_url": "URL",
     "newScan": "Neuer Scan",
+    "newScanTitle": "Start a new scan",
     "newScanTittle": "Einen neuen Scan starten",
     "next": "Weiter",
     "noFilterResults": "Keine Einträge entsprechen dem Filter.",
@@ -681,6 +682,7 @@
     "projects": "Projekte",
     "settings": "Profil"
   },
+  "one": "eine",
   "projectAudionLink": {
     "connected": "AUDION erreichbar — {count} Projekt(e) verfügbar.",
     "description": "Personas aus AUDION erscheinen im umfassenden Projekt-Report (Kapitel 06). Verknüpfung wird in AUDION gespeichert.",
@@ -1072,6 +1074,26 @@
     }
   },
   "results": {
+    "UXScan": {
+      "CLSLabel": "Visuelle Stabilität (CLS)",
+      "contentReadabilityLabel": "Lesbarkeit des Inhalts",
+      "cssReducedMotion": {
+        "false": "Kein @media (prefers-reduced-motion) gefunden",
+        "true": "CSS berücksichtigt prefers-reduced-motion"
+      },
+      "focusableElements": "fokussierbare Elemente ohne sichtbaren Fokus-Stil",
+      "fonts": "Schriftarten",
+      "headings": "Überschriften",
+      "images": "Bilder",
+      "metaRefresh": {
+        "false": "Nicht vorhanden",
+        "true": "Vorhanden (nicht empfohlen)"
+      },
+      "skipLink": {
+        "false": "Fehlt – Empfohlen für Tastatur-/Screenreader-Nutzung.",
+        "true": "Vorhanden"
+      }
+    },
     "attentionHeatmapComputing": "Wird berechnet…",
     "backToDashboard": "Zurück zum Dashboard",
     "contentFreshnessAgeDays": "Ungefähres Alter beim Scan: {count} Tage",
@@ -1104,6 +1126,7 @@
     "ecoGreenWebPrefix": "Green Web (Heuristik):",
     "ecoGreenWebUnknown": "unbekannt",
     "ecoGreenWebYes": "als grün gelistet",
+    "ecoSubtitle": "Geschätzter CO2-Fußabdruck pro Seitenaufruf",
     "errorNotFound": "Ergebnis nicht gefunden",
     "fixDocs": "Fix-Anleitung",
     "fixDocsAria": "Dokumentation und Fix-Anleitung für diese Regel öffnen",
@@ -1172,10 +1195,16 @@
     "structureQualitySingleH1": "Eine H1",
     "structureQualitySkippedLevels": "Übersprungene Level: {list}",
     "structureSemanticsCardSubtitle": "Landmarks, Überschriften und optionaler Seiten-Index — ohne doppelte Listen.",
-    "structureSemanticsCardTitle": "Struktur & Semantik",
     "structureSummaryHeadingsOnly": "{landmarks} Landmarks · {headings} Überschriften",
     "structureSummaryLine": "{landmarks} Landmarks · {headings} Überschriften — {levels}",
     "structureSummaryNoData": "Keine Strukturdaten",
+    "tab": {
+      "list": "Liste & Details",
+      "overview": "Übersicht",
+      "privacy": "Infrastruktur & Privacy",
+      "structureSemantics": "Struktur & Semantik",
+      "visual": "Visuelle Analyse"
+    },
     "tabAll": "Alle",
     "tabErrors": "Errors",
     "tabNotices": "Notices",
@@ -1413,9 +1442,11 @@
     "warnings": "Warnings",
     "wrongPassword": "Falsches Passwort"
   },
+  "skipped": "übersprungen",
   "standards": {
     "wcag2a": "Level A - Grundlegende Barrierefreiheit",
     "wcag2aa": "Level AA - Empfohlen für die meisten Websites",
     "wcag2aaa": "Level AAA - Höchstes Level der Barrierefreiheit"
-  }
+  },
+  "without": "ohne"
 }

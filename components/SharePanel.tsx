@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Box, Stack } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxFormField } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { Share2, Copy, Trash2, Lock, LockOpen } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import type { ShareResourceType } from '@/lib/db/shares';
@@ -131,14 +132,19 @@ export function SharePanel({ resourceType, resourceId, labelNamespace = 'results
     }
 
     if (shareInfo) {
-        const shortUrl = shareInfo.url.length > 48 ? shareInfo.url.slice(0, 24) + '…' + shareInfo.url.slice(-20) : shareInfo.url;
+        const shortUrl =
+            shareInfo.url.length > 48 ? shareInfo.url.slice(0, 24) + '…' + shareInfo.url.slice(-20) : shareInfo.url;
         return (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
-                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                     {t('share.alreadyShared')}
                     {shareInfo.hasPassword && ` · ${t('share.protected')}`}
                 </MsqdxTypography>
-                <MsqdxTypography variant="caption" sx={{ maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={shareInfo.url}>
+                <MsqdxTypography
+                    variant="caption"
+                    sx={{ maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    title={shareInfo.url}
+                >
                     {shortUrl}
                 </MsqdxTypography>
                 <MsqdxButton variant="outlined" size="small" startIcon={<Copy size={14} />} onClick={handleCopy}>
@@ -155,7 +161,14 @@ export function SharePanel({ resourceType, resourceId, labelNamespace = 'results
                 >
                     {shareInfo.hasPassword ? t('share.removePassword') : t('share.setPassword')}
                 </MsqdxButton>
-                <MsqdxButton variant="outlined" size="small" color="error" startIcon={<Trash2 size={14} />} onClick={handleRevoke} disabled={revokeLoading}>
+                <MsqdxButton
+                    variant="outlined"
+                    size="small"
+                    color="error"
+                    startIcon={<Trash2 size={14} />}
+                    onClick={handleRevoke}
+                    disabled={revokeLoading}
+                >
                     {t('share.revoke')}
                 </MsqdxButton>
 
@@ -186,25 +199,29 @@ export function SharePanel({ resourceType, resourceId, labelNamespace = 'results
                                 }}
                                 title={shareInfo.hasPassword ? t('share.removePassword') : t('share.setPassword')}
                             >
-                            <Stack sx={{ gap: 'var(--msqdx-spacing-md)', mt: 1 }}>
-                                <MsqdxFormField
-                                    label={t('share.passwordLabel')}
-                                    type="password"
-                                    value={passwordValue}
-                                    onChange={(e) => setPasswordValue((e.target as HTMLInputElement).value)}
-                                    placeholder={t('share.passwordPlaceholder')}
-                                    fullWidth
-                                    autoComplete="new-password"
-                                />
-                                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                                    <MsqdxButton variant="outlined" onClick={() => setPasswordDialogOpen(false)}>
-                                        {t('common.cancel')}
-                                    </MsqdxButton>
-                                    <MsqdxButton variant="contained" onClick={handlePatchPassword} disabled={patchLoading}>
-                                        {patchLoading ? t('common.saving') : t('common.save')}
-                                    </MsqdxButton>
-                                </Box>
-                            </Stack>
+                                <Stack sx={{ gap: 'var(--msqdx-spacing-md)', mt: 1 }}>
+                                    <MsqdxFormField
+                                        label={t('share.passwordLabel')}
+                                        type="password"
+                                        value={passwordValue}
+                                        onChange={(e) => setPasswordValue((e.target as HTMLInputElement).value)}
+                                        placeholder={t('share.passwordPlaceholder')}
+                                        fullWidth
+                                        autoComplete="new-password"
+                                    />
+                                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                                        <MsqdxButton variant="outlined" onClick={() => setPasswordDialogOpen(false)}>
+                                            {t('common.cancel')}
+                                        </MsqdxButton>
+                                        <MsqdxButton
+                                            variant="contained"
+                                            onClick={handlePatchPassword}
+                                            disabled={patchLoading}
+                                        >
+                                            {patchLoading ? t('common.saving') : t('common.save')}
+                                        </MsqdxButton>
+                                    </Box>
+                                </Stack>
                             </MsqdxMoleculeCard>
                         </Box>
                     </Box>

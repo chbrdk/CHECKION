@@ -4,7 +4,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
 import { Box } from '@mui/material';
-import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxFormField, MsqdxChip } from '@msqdx/react';
+import {
+    MsqdxTypography,
+    MsqdxButton,
+    MsqdxMoleculeCard,
+    MsqdxFormField,
+    MsqdxChip,
+    MSQDX_NEUTRAL,
+} from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
     apiProject,
@@ -751,11 +758,11 @@ export default function ProjectDetailPage() {
                         color: 'var(--color-text-on-light)',
                     }}
                 >
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}>
+                    <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 0.5 }}>
                         {t('projects.companyInfo')}
                     </MsqdxTypography>
                     {project.domain && (
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1 }}>
+                        <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 1 }}>
                             {project.domain}
                         </MsqdxTypography>
                     )}
@@ -769,20 +776,20 @@ export default function ProjectDetailPage() {
                         </Box>
                     ) : null}
                     {project.valueProposition && (
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                             {project.valueProposition}
                         </MsqdxTypography>
                     )}
                     <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid var(--color-border-subtle, #eee)' }}>
                         <MsqdxTypography
                             variant="caption"
-                            sx={{ display: 'block', mb: 1, color: 'var(--color-text-muted-on-light)' }}
+                            sx={{ display: 'block', mb: 1, color: `${MSQDX_NEUTRAL['700']}` }}
                         >
                             {t('projects.classificationTitle')}
                         </MsqdxTypography>
                         <MsqdxTypography
                             variant="caption"
-                            sx={{ display: 'block', mb: 0.5, color: 'var(--color-text-muted-on-light)' }}
+                            sx={{ display: 'block', mb: 0.5, color: `${MSQDX_NEUTRAL['700']}` }}
                         >
                             {t('projects.industryLabel')}
                         </MsqdxTypography>
@@ -807,7 +814,7 @@ export default function ProjectDetailPage() {
                         {!isIndustryPoolId(classificationIndustry) && classificationIndustry.trim() ? (
                             <MsqdxTypography
                                 variant="caption"
-                                sx={{ display: 'block', mt: 0.5, color: 'var(--color-text-muted-on-light)' }}
+                                sx={{ display: 'block', mt: 0.5, color: `${MSQDX_NEUTRAL['700']}` }}
                             >
                                 {t('projects.industryLegacyHint').replace('{{value}}', classificationIndustry.trim())}
                             </MsqdxTypography>
@@ -858,7 +865,7 @@ export default function ProjectDetailPage() {
                             <MsqdxTypography variant="h4" weight="bold" sx={{ mb: 0.5 }}>
                                 {rankingSummary?.score != null ? `${rankingSummary.score}/100` : '—'}
                             </MsqdxTypography>
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                 {rankingSummary
                                     ? t('projects.keywordCount', { count: rankingSummary.keywordCount })
                                     : ''}
@@ -990,7 +997,7 @@ export default function ProjectDetailPage() {
                         </MsqdxTypography>
                     ) : activeDeepScans.length > 0 ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, py: 0.5, width: '100%' }}>
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                 {t('projects.deepScanRunning')}
                             </MsqdxTypography>
                             {activeDeepScans.map((row) => {
@@ -1024,10 +1031,7 @@ export default function ProjectDetailPage() {
                                         <MsqdxTypography variant="body2" weight="medium">
                                             {row.label}
                                         </MsqdxTypography>
-                                        <MsqdxTypography
-                                            variant="caption"
-                                            sx={{ color: 'var(--color-text-muted-on-light)' }}
-                                        >
+                                        <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                             {st}
                                             {row.progress && row.progress.total > 0
                                                 ? ` · ${row.progress.scanned} / ${row.progress.total} ${t('domainResult.pagesScanned')}`
@@ -1038,7 +1042,7 @@ export default function ProjectDetailPage() {
                                                 variant="caption"
                                                 sx={{
                                                     wordBreak: 'break-all',
-                                                    color: 'var(--color-text-muted-on-light)',
+                                                    color: `${MSQDX_NEUTRAL['700']}`,
                                                 }}
                                             >
                                                 {row.progress.currentUrl}
@@ -1102,10 +1106,7 @@ export default function ProjectDetailPage() {
                                         {domainSummary.score}
                                     </MsqdxTypography>
                                 </Box>
-                                <MsqdxTypography
-                                    variant="body2"
-                                    sx={{ mt: 1, color: 'var(--color-text-muted-on-light)' }}
-                                >
+                                <MsqdxTypography variant="body2" sx={{ mt: 1, color: `${MSQDX_NEUTRAL['700']}` }}>
                                     {domainSummary.totalPageCount} {t('domainResult.pagesScanned')}
                                 </MsqdxTypography>
                             </Box>
@@ -1202,7 +1203,7 @@ export default function ProjectDetailPage() {
                             )}
                         </>
                     ) : (
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                             —
                         </MsqdxTypography>
                     )}
@@ -1226,7 +1227,7 @@ export default function ProjectDetailPage() {
                                 <Box>
                                     <MsqdxTypography
                                         variant="caption"
-                                        sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}
+                                        sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 0.5 }}
                                     >
                                         {t('domainResult.performanceAvg')}
                                     </MsqdxTypography>
@@ -1277,10 +1278,7 @@ export default function ProjectDetailPage() {
                                         <MsqdxTypography variant="body2" weight="bold">
                                             {domainSummary.aggregated.eco.avgCo2}g CO₂
                                         </MsqdxTypography>
-                                        <MsqdxTypography
-                                            variant="caption"
-                                            sx={{ color: 'var(--color-text-muted-on-light)' }}
-                                        >
+                                        <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                             {(
                                                 domainSummary.aggregated.eco.totalPageWeight /
                                                 1024 /
@@ -1293,13 +1291,13 @@ export default function ProjectDetailPage() {
                                 </Box>
                             )}
                             {!domainSummary.aggregated.performance && !domainSummary.aggregated.eco && (
-                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                     —
                                 </MsqdxTypography>
                             )}
                         </Box>
                     ) : (
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                             —
                         </MsqdxTypography>
                     )}
@@ -1336,7 +1334,7 @@ export default function ProjectDetailPage() {
                     sx={{ gridColumn: { xs: 1, md: 1 }, gridRow: { xs: 6, md: 2 }, bgcolor: 'var(--color-card-bg)' }}
                 >
                     {competitors.length === 0 ? (
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 1.5 }}>
+                        <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 1.5 }}>
                             {t('projects.noCompetitors')}
                         </MsqdxTypography>
                     ) : (
@@ -1429,7 +1427,7 @@ export default function ProjectDetailPage() {
                     {listsLoading ? (
                         <MsqdxTypography variant="body2">{t('common.loading')}</MsqdxTypography>
                     ) : (
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                             {(() => {
                                 const ownPc = domainSummary?.aggregated?.pageClassification;
                                 const ownN =

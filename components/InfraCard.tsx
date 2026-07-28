@@ -61,21 +61,21 @@ export function InfraCard({
                             </MsqdxTypography>
                             <MsqdxTypography
                                 variant="caption"
-                                sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}
+                                sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}
                             >
                                 {geo.location.region} • {geo.location.continent}
                             </MsqdxTypography>
                         </Box>
                     ) : (
                         <Box>
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                 Standort konnte nicht ermittelt werden (z. B. localhost, private IP oder keine Geo-API).
                             </MsqdxTypography>
                             {geo.serverIp &&
                             /^127\.|^10\.|^192\.168\.|^172\.(1[6-9]|2\d|3[01])\./.test(geo.serverIp.trim()) ? (
                                 <MsqdxTypography
                                     variant="caption"
-                                    sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.5 }}
+                                    sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mt: 0.5 }}
                                 >
                                     Hinweis: Bei lokaler Entwicklung ist die Server-IP oft privat — Geo-Lookup ist dann
                                     nicht möglich.
@@ -127,7 +127,7 @@ export function InfraCard({
                             {geo.hostingHints?.server ? (
                                 <MsqdxTypography
                                     variant="caption"
-                                    sx={{ color: 'var(--color-text-muted-on-light)', fontFamily: 'monospace' }}
+                                    sx={{ color: `${MSQDX_NEUTRAL['700']}`, fontFamily: 'monospace' }}
                                 >
                                     Server: {geo.hostingHints.server}
                                 </MsqdxTypography>
@@ -135,7 +135,7 @@ export function InfraCard({
                             {geo.hostingHints?.poweredBy ? (
                                 <MsqdxTypography
                                     variant="caption"
-                                    sx={{ color: 'var(--color-text-muted-on-light)', fontFamily: 'monospace' }}
+                                    sx={{ color: `${MSQDX_NEUTRAL['700']}`, fontFamily: 'monospace' }}
                                 >
                                     X-Powered-By: {geo.hostingHints.poweredBy}
                                 </MsqdxTypography>
@@ -178,7 +178,7 @@ export function InfraCard({
                         </Box>
                         <MsqdxTypography
                             variant="caption"
-                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.5 }}
+                            sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mt: 0.5 }}
                         >
                             Heuristik aus eingebundenen Skripten und Abgleich mit Drittanbieter-Domains aus dem
                             Seitenaufruf. Keine Garantie auf Vollständigkeit (z. B. Consent, später geladene Tags).
@@ -195,7 +195,7 @@ export function InfraCard({
                                 alignItems: 'center',
                                 gap: 'var(--msqdx-spacing-xs)',
                                 mb: 'var(--msqdx-spacing-xxs)',
-                                color: 'var(--color-text-muted-on-light)',
+                                color: `${MSQDX_NEUTRAL['700']}`,
                             }}
                         >
                             <Server size={14} />
@@ -220,7 +220,7 @@ export function InfraCard({
                                 alignItems: 'center',
                                 gap: 'var(--msqdx-spacing-xs)',
                                 mb: 'var(--msqdx-spacing-xxs)',
-                                color: 'var(--color-text-muted-on-light)',
+                                color: `${MSQDX_NEUTRAL['700']}`,
                             }}
                         >
                             <Cloud size={14} />
@@ -247,7 +247,7 @@ export function InfraCard({
                         ) : (
                             <MsqdxTypography
                                 variant="body2"
-                                sx={{ color: 'var(--color-text-muted-on-light)', fontSize: '0.85rem' }}
+                                sx={{ color: `${MSQDX_NEUTRAL['700']}`, fontSize: '0.85rem' }}
                             >
                                 Kein CDN erkannt
                             </MsqdxTypography>
@@ -281,30 +281,28 @@ export function InfraCard({
                             />
                         )}
                         {geo.languages.hreflangs.length > 0 ? (
-                            geo.languages.hreflangs
-                                .slice(0, 5)
-                                .map((hl, i) => (
-                                    <MsqdxChip
-                                        key={i}
-                                        label={hl.lang}
-                                        size="small"
-                                        variant="outlined"
-                                        sx={{
-                                            bgcolor: alpha(MSQDX_NEUTRAL[400], 0.1),
-                                            height: 20,
-                                            fontSize: '0.65rem',
-                                        }}
-                                    />
-                                ))
+                            geo.languages.hreflangs.slice(0, 5).map((hl, i) => (
+                                <MsqdxChip
+                                    key={i}
+                                    label={hl.lang}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{
+                                        bgcolor: alpha(MSQDX_NEUTRAL[400], 0.1),
+                                        height: 20,
+                                        fontSize: '0.65rem',
+                                    }}
+                                />
+                            ))
                         ) : (
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                 Keine hreflang-Tags gefunden.
                             </MsqdxTypography>
                         )}
                         {geo.languages.hreflangs.length > 5 && (
                             <MsqdxTypography
                                 variant="caption"
-                                sx={{ color: 'var(--color-text-muted-on-light)', alignSelf: 'center' }}
+                                sx={{ color: `${MSQDX_NEUTRAL['700']}`, alignSelf: 'center' }}
                             >
                                 +{geo.languages.hreflangs.length - 5} more
                             </MsqdxTypography>
@@ -330,7 +328,7 @@ export function InfraCard({
                         {performance?.nextHopProtocol && (
                             <MsqdxTypography
                                 variant="caption"
-                                sx={{ display: 'block', color: 'var(--color-text-muted-on-light)' }}
+                                sx={{ display: 'block', color: `${MSQDX_NEUTRAL['700']}` }}
                             >
                                 Protokoll: {performance.nextHopProtocol}
                             </MsqdxTypography>
@@ -339,7 +337,7 @@ export function InfraCard({
                             performance.scriptTransferBytesApprox > 0 && (
                                 <MsqdxTypography
                                     variant="caption"
-                                    sx={{ display: 'block', color: 'var(--color-text-muted-on-light)' }}
+                                    sx={{ display: 'block', color: `${MSQDX_NEUTRAL['700']}` }}
                                 >
                                     Skript-Transfer (ca.): {(performance.scriptTransferBytesApprox / 1024).toFixed(0)}{' '}
                                     KB
@@ -350,7 +348,7 @@ export function InfraCard({
                                 variant="caption"
                                 sx={{
                                     display: 'block',
-                                    color: 'var(--color-text-muted-on-light)',
+                                    color: `${MSQDX_NEUTRAL['700']}`,
                                     wordBreak: 'break-word',
                                 }}
                             >

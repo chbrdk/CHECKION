@@ -3,7 +3,7 @@
 import React, { memo } from 'react';
 import { Box, IconButton, Stack, Tooltip } from '@mui/material';
 import { MsqdxTypography, MsqdxMoleculeCard } from '@msqdx/react';
-import { MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_STATUS, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { ExternalLink } from 'lucide-react';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { InfoTooltip } from '@/components/InfoTooltip';
@@ -39,7 +39,7 @@ function DomainResultStructureSectionInner({ t, structure, onOpenPageUrl }: Doma
                 bgcolor: 'var(--color-card-bg)',
             }}
         >
-            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}>
                 {t(labelKey)}
             </MsqdxTypography>
             <MsqdxTypography
@@ -55,11 +55,7 @@ function DomainResultStructureSectionInner({ t, structure, onOpenPageUrl }: Doma
         </Box>
     );
 
-    const urlListCard = (
-        titleKey: string,
-        subtitleKey: string,
-        urls: string[],
-    ) => (
+    const urlListCard = (titleKey: string, subtitleKey: string, urls: string[]) => (
         <MsqdxMoleculeCard
             title={t(titleKey)}
             titleVariant="h6"
@@ -78,7 +74,7 @@ function DomainResultStructureSectionInner({ t, structure, onOpenPageUrl }: Doma
                     ))}
                 </Box>
             ) : (
-                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
+                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, lineHeight: 1.45 }}>
                     {t('domainResult.structureListEmpty')}
                 </MsqdxTypography>
             )}
@@ -103,8 +99,16 @@ function DomainResultStructureSectionInner({ t, structure, onOpenPageUrl }: Doma
                         gap: 1.5,
                     }}
                 >
-                    {kpiCell('domainResult.structureKpiMultipleH1', nMulti, nMulti > 0 ? MSQDX_STATUS.warning.base : undefined)}
-                    {kpiCell('domainResult.structureKpiSkipped', nSkip, nSkip > 0 ? MSQDX_STATUS.warning.base : undefined)}
+                    {kpiCell(
+                        'domainResult.structureKpiMultipleH1',
+                        nMulti,
+                        nMulti > 0 ? MSQDX_STATUS.warning.base : undefined,
+                    )}
+                    {kpiCell(
+                        'domainResult.structureKpiSkipped',
+                        nSkip,
+                        nSkip > 0 ? MSQDX_STATUS.warning.base : undefined,
+                    )}
                     {kpiCell('domainResult.structureKpiGood', nGood, nGood > 0 ? THEME_ACCENT_CSS : undefined)}
                 </Box>
 
@@ -183,7 +187,11 @@ function DomainResultStructureSectionInner({ t, structure, onOpenPageUrl }: Doma
 
 export const DomainResultStructureSection = memo(DomainResultStructureSectionInner);
 
-function DomainResultStructureEmptyInner({ t }: { t: (key: string, params?: Record<string, string | number>) => string }) {
+function DomainResultStructureEmptyInner({
+    t,
+}: {
+    t: (key: string, params?: Record<string, string | number>) => string;
+}) {
     return (
         <MsqdxMoleculeCard
             title={t('domainResult.structureDomainTitle')}
@@ -193,7 +201,7 @@ function DomainResultStructureEmptyInner({ t }: { t: (key: string, params?: Reco
             footerDivider={false}
             sx={{ bgcolor: 'var(--color-card-bg)' }}
         >
-            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                 {t('domainResult.structureEmpty')}
             </MsqdxTypography>
         </MsqdxMoleculeCard>

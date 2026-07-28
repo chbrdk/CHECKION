@@ -73,7 +73,7 @@ export function PageIndexCard({
                 </Box>
             )}
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', mr: 0.5 }}>
+                <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mr: 0.5 }}>
                     {t('results.pageIndexAboveFoldCount', { count: aboveFoldCount })}
                     {' · '}
                     {t('results.pageIndexBelowFoldCount', { count: belowFoldCount })}

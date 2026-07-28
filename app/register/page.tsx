@@ -4,14 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Box, Stack } from '@mui/material';
-import {
-    MsqdxButton,
-    MsqdxFormField,
-    MsqdxMoleculeCard,
-    MsqdxLogo,
-    MsqdxTypography,
-} from '@msqdx/react';
-import { MSQDX_TYPOGRAPHY } from '@msqdx/tokens';
+import { MsqdxButton, MsqdxFormField, MsqdxMoleculeCard, MsqdxLogo, MsqdxTypography } from '@msqdx/react';
+import { MSQDX_NEUTRAL, MSQDX_TYPOGRAPHY } from '@msqdx/tokens';
 import { AuthBrandColorSelector } from '@/components/auth/AuthBrandColorSelector';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { API_AUTH_REGISTER, PATH_LOGIN } from '@/lib/constants';
@@ -69,11 +63,7 @@ export default function RegisterPage() {
             >
                 <Stack alignItems="flex-start" sx={{ gap: 0 }}>
                     <Stack direction="row" alignItems="center">
-                        <MsqdxLogo
-                            width={220}
-                            height={53}
-                            color="var(--auth-logo-color, var(--color-primary-white))"
-                        />
+                        <MsqdxLogo width={220} height={53} color="var(--auth-logo-color, var(--color-primary-white))" />
                         <MsqdxTypography
                             variant="h4"
                             weight="light"
@@ -171,7 +161,10 @@ export default function RegisterPage() {
                                         required
                                         fullWidth
                                     />
-                                    <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'var(--color-text-muted-on-light)' }}>
+                                    <MsqdxTypography
+                                        variant="caption"
+                                        sx={{ display: 'block', mt: 0.5, color: `${MSQDX_NEUTRAL['700']}` }}
+                                    >
                                         {t('auth.register.passwordRequirements')}
                                     </MsqdxTypography>
                                 </Box>
@@ -203,18 +196,18 @@ export default function RegisterPage() {
                         </MsqdxTypography>
                         {typeof process.env.NEXT_PUBLIC_PLEXON_REGISTER_URL === 'string' &&
                             process.env.NEXT_PUBLIC_PLEXON_REGISTER_URL.trim() !== '' && (
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
-                                {t('auth.register.centralHint')}{' '}
-                                <Link
-                                    href={process.env.NEXT_PUBLIC_PLEXON_REGISTER_URL.trim()}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{ color: 'inherit', fontWeight: 600 }}
-                                >
-                                    {t('auth.register.centralLink')}
-                                </Link>
-                            </MsqdxTypography>
-                        )}
+                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)' }}>
+                                    {t('auth.register.centralHint')}{' '}
+                                    <Link
+                                        href={process.env.NEXT_PUBLIC_PLEXON_REGISTER_URL.trim()}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ color: 'inherit', fontWeight: 600 }}
+                                    >
+                                        {t('auth.register.centralLink')}
+                                    </Link>
+                                </MsqdxTypography>
+                            )}
                     </Stack>
                 </MsqdxMoleculeCard>
             </Box>

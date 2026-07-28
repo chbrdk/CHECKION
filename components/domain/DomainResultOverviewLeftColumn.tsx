@@ -4,6 +4,7 @@ import React, { memo } from 'react';
 import Link from 'next/link';
 import { Box, Stack } from '@mui/material';
 import { MsqdxTypography, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { CheckCircle } from 'lucide-react';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { InfoTooltip } from '@/components/InfoTooltip';
@@ -83,7 +84,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                             sx={{
                                 mt: 'var(--msqdx-spacing-sm)',
                                 fontSize: '0.8125rem',
-                                color: 'var(--color-text-muted-on-light)',
+                                color: `${MSQDX_NEUTRAL['700']}`,
                             }}
                         >
                             {totalPages} {t('domainResult.pagesScanned')}
@@ -152,10 +153,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                     >
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 'var(--msqdx-spacing-sm)' }}>
                             <Box>
-                                <MsqdxTypography
-                                    variant="subtitle2"
-                                    sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}
-                                >
+                                <MsqdxTypography variant="subtitle2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 0.5 }}>
                                     {t('domainResult.eeatTrust')}
                                 </MsqdxTypography>
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xs)' }}>
@@ -189,10 +187,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                                 </Box>
                             </Box>
                             <Box>
-                                <MsqdxTypography
-                                    variant="subtitle2"
-                                    sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}
-                                >
+                                <MsqdxTypography variant="subtitle2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 0.5 }}>
                                     {t('domainResult.eeatExperience')}
                                 </MsqdxTypography>
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--msqdx-spacing-xs)' }}>
@@ -230,10 +225,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                                 </Box>
                             </Box>
                             <Box>
-                                <MsqdxTypography
-                                    variant="subtitle2"
-                                    sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}
-                                >
+                                <MsqdxTypography variant="subtitle2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 0.5 }}>
                                     {t('domainResult.eeatExpertise')}
                                 </MsqdxTypography>
                                 <Box
@@ -266,10 +258,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                                                 : undefined
                                         }
                                     />
-                                    <MsqdxTypography
-                                        variant="caption"
-                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
-                                    >
+                                    <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                         {t('domainResult.eeatAvgCitations', {
                                             avg: eeat.expertise.avgCitationsPerPage.toFixed(1),
                                         })}
@@ -280,7 +269,7 @@ export const DomainResultOverviewLeftColumn = memo(function DomainResultOverview
                                 <Box>
                                     <MsqdxTypography
                                         variant="subtitle2"
-                                        sx={{ color: 'var(--color-text-muted-on-light)', mb: 0.5 }}
+                                        sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 0.5 }}
                                     >
                                         {t('domainResult.eeatAuthoritativeness')}
                                     </MsqdxTypography>

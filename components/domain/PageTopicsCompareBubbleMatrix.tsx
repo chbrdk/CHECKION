@@ -14,6 +14,7 @@ import {
     type ScatterShapeProps,
 } from 'recharts';
 import { MsqdxTypography, MsqdxButton } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import {
     buildCombinedCompareBubblePoints,
     pageTopicTierColorCss,
@@ -54,13 +55,16 @@ function CompareBubbleTooltip({
                 boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
             }}
         >
-            <MsqdxTypography variant="caption" sx={{ fontWeight: 600, display: 'block', color: 'var(--color-text-muted-on-light)' }}>
+            <MsqdxTypography
+                variant="caption"
+                sx={{ fontWeight: 600, display: 'block', color: `${MSQDX_NEUTRAL['700']}` }}
+            >
                 {p.seriesLabel}
             </MsqdxTypography>
             <MsqdxTypography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.35, mt: 0.25 }}>
                 {p.tag}
             </MsqdxTypography>
-            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.5 }}>
+            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mt: 0.5 }}>
                 {t('projects.pageTopicsCompareBubbleTooltip', {
                     pages: p.pageCount,
                     maxTier: p.maxTier,
@@ -68,7 +72,10 @@ function CompareBubbleTooltip({
                     score: Math.round(p.zSize * 100) / 100,
                 })}
             </MsqdxTypography>
-            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.75, fontStyle: 'italic' }}>
+            <MsqdxTypography
+                variant="caption"
+                sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mt: 0.75, fontStyle: 'italic' }}
+            >
                 {t('projects.pageTopicsCompareTooltipHint')}
             </MsqdxTypography>
         </Box>
@@ -148,10 +155,10 @@ export function PageTopicsCompareBubbleMatrix({ t, sources }: PageTopicsCompareB
 
     return (
         <Box sx={{ mb: 1 }}>
-            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}>
+            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 0.5 }}>
                 {t('projects.pageTopicsCombinedDiagramCaption')}
             </MsqdxTypography>
-            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}>
+            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 1 }}>
                 {t('projects.pageTopicsCompareInteractionHint')}
             </MsqdxTypography>
             {anyFocus ? (
@@ -160,7 +167,7 @@ export function PageTopicsCompareBubbleMatrix({ t, sources }: PageTopicsCompareB
                         {t('projects.pageTopicsCompareClearFocus')}
                     </MsqdxButton>
                     {focusTagKey != null && tagSourceCount >= 2 ? (
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                             {t('projects.pageTopicsCompareTagLinkHint', { count: tagSourceCount })}
                         </MsqdxTypography>
                     ) : null}
@@ -212,7 +219,10 @@ export function PageTopicsCompareBubbleMatrix({ t, sources }: PageTopicsCompareB
                             }}
                         />
                         <ZAxis type="number" dataKey="zSize" range={[260, 4200]} name="score" />
-                        <Tooltip content={<CompareBubbleTooltip t={t} />} cursor={{ strokeDasharray: '4 4', stroke: gridStroke }} />
+                        <Tooltip
+                            content={<CompareBubbleTooltip t={t} />}
+                            cursor={{ strokeDasharray: '4 4', stroke: gridStroke }}
+                        />
                         <Scatter
                             data={points}
                             isAnimationActive={false}
@@ -243,7 +253,9 @@ export function PageTopicsCompareBubbleMatrix({ t, sources }: PageTopicsCompareB
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setFocusSeriesKey(null);
-                                            setFocusTagKey((k) => (k === payload.baseTagKey ? null : payload.baseTagKey));
+                                            setFocusTagKey((k) =>
+                                                k === payload.baseTagKey ? null : payload.baseTagKey,
+                                            );
                                         }}
                                     />
                                 );
@@ -286,7 +298,9 @@ export function PageTopicsCompareBubbleMatrix({ t, sources }: PageTopicsCompareB
                                 py: 0.25,
                                 outline: selected ? `2px solid ${pageTopicsCompareSeriesStrokeColor(s.index)}` : 'none',
                                 outlineOffset: 2,
-                                bgcolor: selected ? 'var(--color-secondary-dx-grey-light-tint, rgba(0,0,0,0.04))' : 'transparent',
+                                bgcolor: selected
+                                    ? 'var(--color-secondary-dx-grey-light-tint, rgba(0,0,0,0.04))'
+                                    : 'transparent',
                             }}
                         >
                             <Box
@@ -299,7 +313,12 @@ export function PageTopicsCompareBubbleMatrix({ t, sources }: PageTopicsCompareB
                                     flexShrink: 0,
                                 }}
                             />
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', maxWidth: 220 }} noWrap title={s.label}>
+                            <MsqdxTypography
+                                variant="caption"
+                                sx={{ color: `${MSQDX_NEUTRAL['700']}`, maxWidth: 220 }}
+                                noWrap
+                                title={s.label}
+                            >
                                 {s.label}
                             </MsqdxTypography>
                         </Box>
@@ -322,7 +341,7 @@ export function PageTopicsCompareBubbleMatrix({ t, sources }: PageTopicsCompareB
                                 border: '1px solid var(--color-border-subtle, #e5e7eb)',
                             }}
                         />
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                             {t('domainResult.pageTopicsTierLegendShort', { tier })}
                         </MsqdxTypography>
                     </Box>

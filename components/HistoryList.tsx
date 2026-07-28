@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { alpha, Box, CircularProgress } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxChip, MsqdxFormField } from '@msqdx/react';
-import { MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_STATUS, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { Trash2 } from 'lucide-react';
 import type { StandaloneScanSummary } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -105,7 +105,7 @@ export function SingleScanRow({
                 >
                     {scan.url}
                 </MsqdxTypography>
-                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                     <span suppressHydrationWarning>{new Date(scan.timestamp).toLocaleString('de-DE')}</span>
                 </MsqdxTypography>
             </Box>
@@ -129,7 +129,7 @@ export function SingleScanRow({
                         size="small"
                         onClick={handleDelete}
                         aria-label={t('dashboard.deleteScanAria')}
-                        sx={{ minWidth: 32, p: 0.5, color: 'var(--color-text-muted-on-light)' }}
+                        sx={{ minWidth: 32, p: 0.5, color: `${MSQDX_NEUTRAL['700']}` }}
                     >
                         <Trash2 size={16} />
                     </MsqdxButton>
@@ -183,7 +183,7 @@ export function DomainScanRow({
                 >
                     {item.domain}
                 </MsqdxTypography>
-                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                     <span suppressHydrationWarning>{new Date(item.timestamp).toLocaleString('de-DE')}</span> ·{' '}
                     {item.totalPages} {t('deepScans.listPagesSuffix')}
                     {item.projectId == null || item.projectId === ''
@@ -211,7 +211,7 @@ export function DomainScanRow({
                         size="small"
                         onClick={handleDelete}
                         aria-label={t('dashboard.deleteDomainScanAria')}
-                        sx={{ minWidth: 32, p: 0.5, color: 'var(--color-text-muted-on-light)' }}
+                        sx={{ minWidth: 32, p: 0.5, color: `${MSQDX_NEUTRAL['700']}` }}
                     >
                         <Trash2 size={16} />
                     </MsqdxButton>
@@ -287,7 +287,7 @@ export function HistoryList<T>({
                         }}
                     >
                         <CircularProgress size={20} sx={{ color: 'var(--color-theme-accent)' }} />
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                             Laden…
                         </MsqdxTypography>
                     </Box>
@@ -306,7 +306,7 @@ export function HistoryList<T>({
                     >
                         <MsqdxTypography
                             variant="body2"
-                            sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-sm)' }}
+                            sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 'var(--msqdx-spacing-sm)' }}
                         >
                             {filterQuery.length >= 2 ? t('dashboard.noFilterResults') : emptyMessage}
                         </MsqdxTypography>
@@ -331,7 +331,7 @@ export function HistoryList<T>({
                                 }}
                             >
                                 <CircularProgress size={16} sx={{ color: 'var(--color-theme-accent)' }} />
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                     Aktualisiere…
                                 </MsqdxTypography>
                             </Box>

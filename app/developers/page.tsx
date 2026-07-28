@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Box } from '@mui/material';
-import { MsqdxCard, MsqdxChip, MsqdxTypography } from '@msqdx/react';
+import { MSQDX_NEUTRAL, MsqdxCard, MsqdxChip, MsqdxTypography } from '@msqdx/react';
 import { Code, Terminal, Database } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
@@ -25,7 +25,7 @@ export default function DevelopersPage() {
                     </MsqdxTypography>
                     <InfoTooltip title={t('info.developers')} ariaLabel={t('common.info')} />
                 </Box>
-                <MsqdxTypography variant="body1" sx={{ maxWidth: 800, color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="body1" sx={{ maxWidth: 800, color: `${MSQDX_NEUTRAL['700']}` }}>
                     {t('developers.subtitle')}
                 </MsqdxTypography>
             </Box>
@@ -235,16 +235,13 @@ function Endpoint({
                     {path}
                 </MsqdxTypography>
             </Box>
-            <MsqdxTypography
-                variant="body2"
-                sx={{ mb: 'var(--msqdx-spacing-xs)', color: 'var(--color-text-muted-on-light)' }}
-            >
+            <MsqdxTypography variant="body2" sx={{ mb: 'var(--msqdx-spacing-xs)', color: `${MSQDX_NEUTRAL['700']}` }}>
                 {desc}
             </MsqdxTypography>
             {params && (
                 <MsqdxTypography
                     variant="caption"
-                    sx={{ display: 'block', color: 'var(--color-text-muted-on-light)', fontFamily: 'monospace' }}
+                    sx={{ display: 'block', color: `${MSQDX_NEUTRAL['700']}`, fontFamily: 'monospace' }}
                 >
                     Params: {params}
                 </MsqdxTypography>
@@ -252,7 +249,7 @@ function Endpoint({
             {body && (
                 <MsqdxTypography
                     variant="caption"
-                    sx={{ display: 'block', color: 'var(--color-text-muted-on-light)', fontFamily: 'monospace' }}
+                    sx={{ display: 'block', color: `${MSQDX_NEUTRAL['700']}`, fontFamily: 'monospace' }}
                 >
                     Body: {body}
                 </MsqdxTypography>

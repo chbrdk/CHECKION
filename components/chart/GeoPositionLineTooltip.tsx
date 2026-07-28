@@ -1,5 +1,7 @@
 'use client';
 
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
+
 export interface GeoPositionLineTooltipPayloadItem {
     name?: string | number;
     dataKey?: string | number;
@@ -16,12 +18,7 @@ export interface GeoPositionLineTooltipProps {
 }
 
 /** Tooltip for a single hovered line (`Tooltip shared={false}`): date, series name, position. */
-export function GeoPositionLineTooltip({
-    active,
-    payload,
-    label,
-    formatPositionValue,
-}: GeoPositionLineTooltipProps) {
+export function GeoPositionLineTooltip({ active, payload, label, formatPositionValue }: GeoPositionLineTooltipProps) {
     if (!active || !payload?.length) return null;
 
     const item = payload[0];
@@ -45,7 +42,7 @@ export function GeoPositionLineTooltip({
             {label != null && String(label) !== '' && (
                 <div
                     style={{
-                        color: 'var(--color-text-muted-on-light)',
+                        color: `${MSQDX_NEUTRAL['700']}`,
                         marginBottom: 4,
                         fontSize: 10,
                     }}

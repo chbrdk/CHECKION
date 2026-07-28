@@ -3,6 +3,7 @@
 import React, { memo } from 'react';
 import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { useRouter } from 'next/navigation';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { InfoTooltip } from '@/components/InfoTooltip';
@@ -19,10 +20,15 @@ export type DomainResultVisualAnalysisSectionProps = {
     onOpenPageUrl: (url: string) => void;
 };
 
-function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, ux, onOpenPageUrl }: DomainResultVisualAnalysisSectionProps) {
+function DomainResultVisualAnalysisSectionInner({
+    t,
+    domainId,
+    domainLinkQuery,
+    ux,
+    onOpenPageUrl,
+}: DomainResultVisualAnalysisSectionProps) {
     const router = useRouter();
-    const hasLists =
-        ux && (ux.focusOrderByPage.length > 0 || ux.tapTargets.detailsByPage.length > 0);
+    const hasLists = ux && (ux.focusOrderByPage.length > 0 || ux.tapTargets.detailsByPage.length > 0);
     return (
         <MsqdxMoleculeCard
             title="Visuelle Analyse (Domain)"
@@ -32,14 +38,17 @@ function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, 
             sx={{ bgcolor: 'var(--color-card-bg)' }}
             borderRadius="lg"
         >
-            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
-                Screenshot, Focus Order und Touch Targets sind pro Seite in den Einzel-Scans sichtbar. Unten: Seiten mit relevanten Einträgen.
+            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 2 }}>
+                Screenshot, Focus Order und Touch Targets sind pro Seite in den Einzel-Scans sichtbar. Unten: Seiten mit
+                relevanten Einträgen.
             </MsqdxTypography>
             {hasLists ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     {ux!.focusOrderByPage.length > 0 && (
                         <Box>
-                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit Focus-Order-Einträgen</MsqdxTypography>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                                Seiten mit Focus-Order-Einträgen
+                            </MsqdxTypography>
                             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                                 {ux!.focusOrderByPage.map(({ url, count }) => (
                                     <React.Fragment key={url}>
@@ -56,7 +65,9 @@ function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, 
                     )}
                     {ux!.tapTargets.detailsByPage.length > 0 && (
                         <Box>
-                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Seiten mit Touch-Target-Problemen</MsqdxTypography>
+                            <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                                Seiten mit Touch-Target-Problemen
+                            </MsqdxTypography>
                             <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                                 {ux!.tapTargets.detailsByPage.map(({ url, count }) => (
                                     <React.Fragment key={url}>
@@ -73,7 +84,7 @@ function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, 
                     )}
                 </Box>
             ) : null}
-            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 2 }}>
+            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mt: 2 }}>
                 {t('domainResult.allPagesInOverview')}
             </MsqdxTypography>
             <MsqdxButton
@@ -81,7 +92,11 @@ function DomainResultVisualAnalysisSectionInner({ t, domainId, domainLinkQuery, 
                 variant="text"
                 onClick={() =>
                     router.push(
-                        pathDomainSection(domainId, 'overview', Object.keys(domainLinkQuery).length ? domainLinkQuery : undefined)
+                        pathDomainSection(
+                            domainId,
+                            'overview',
+                            Object.keys(domainLinkQuery).length ? domainLinkQuery : undefined,
+                        ),
                     )
                 }
                 sx={{ mt: 0.5, fontSize: '0.75rem' }}

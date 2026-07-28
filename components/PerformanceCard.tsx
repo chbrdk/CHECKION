@@ -14,7 +14,15 @@ interface PerformanceCardProps {
 }
 
 // Thresholds in ms
-const METRICS_CONFIG: Record<string, { label: string; icon: React.ComponentType<{ size?: number; color?: string; style?: React.CSSProperties }>; good: number; poor: number }> = {
+const METRICS_CONFIG: Record<
+    string,
+    {
+        label: string;
+        icon: React.ComponentType<{ size?: number; color?: string; style?: React.CSSProperties }>;
+        good: number;
+        poor: number;
+    }
+> = {
     ttfb: { label: 'TTFB', icon: Timer, good: 800, poor: 1800 },
     fcp: { label: 'FCP', icon: Zap, good: 1800, poor: 3000 },
     windowLoad: { label: 'Load', icon: Layout, good: 2500, poor: 4500 },
@@ -39,13 +47,20 @@ export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf, sx }) =>
                 maxWidth: '100%',
                 boxSizing: 'border-box',
                 overflow: 'hidden',
-                /* Ensure content area uses full width (override card content padding if any) */
-                '& > div': { boxSizing: 'border-box' },
-                '& > div:last-of-type': { paddingRight: 0, marginRight: 0, maxWidth: '100%' },
                 ...sx,
             }}
         >
-            <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 'var(--msqdx-spacing-sm)', height: '100%', width: '100%', minWidth: 0, boxSizing: 'border-box' }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexWrap: 'nowrap',
+                    gap: 'var(--msqdx-spacing-sm)',
+                    height: '100%',
+                    width: '100%',
+                    minWidth: 0,
+                    boxSizing: 'border-box',
+                }}
+            >
                 {Object.entries(METRICS_CONFIG).map(([key, config]) => {
                     const raw = perf[key as keyof typeof perf];
                     const value = typeof raw === 'number' ? raw : 0;
@@ -54,7 +69,58 @@ export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf, sx }) =>
                     const Icon = config.icon;
 
                     return (
-                        <Box key={key} sx={{
+                        <Box
+                            key={key}
+                            sx={{
+                                flex: '1 1 0',
+                                minWidth: 0,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                p: 'var(--msqdx-spacing-sm)',
+                                borderRadius: '12px',
+                                border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                                backgroundColor: 'var(--color-card-bg)',
+                                containerType: 'inline-size',
+                            }}
+                        >
+                            <Icon size={20} color={MSQDX_NEUTRAL[600]} style={{ marginBottom: 8 }} />
+                            <MsqdxTypography
+                                variant="caption"
+                                sx={{ color: `${MSQDX_NEUTRAL['700']}`, fontWeight: 500, mb: 0.5 }}
+                            >
+                                {config.label}
+                            </MsqdxTypography>
+                            <MsqdxTypography
+                                variant="h4"
+                                sx={{
+                                    color: color,
+                                    fontWeight: 700,
+                                    fontSize: 'clamp(0.875rem, 12cqw, 1.75rem)',
+                                    lineHeight: 1.2,
+                                }}
+                            >
+                                {value}ms
+                            </MsqdxTypography>
+                            <Box
+                                sx={{
+                                    width: '100%',
+                                    height: 4,
+                                    bgcolor: MSQDX_NEUTRAL[200],
+                                    borderRadius: 2,
+                                    mt: 1,
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                <Box sx={{ width: '100%', height: '100%', bgcolor: color, opacity: 0.6 }} />
+                            </Box>
+                        </Box>
+                    );
+                })}
+                {perf.inp != null && (
+                    <Box
+                        sx={{
                             flex: '1 1 0',
                             minWidth: 0,
                             display: 'flex',
@@ -66,32 +132,29 @@ export const PerformanceCard: React.FC<PerformanceCardProps> = ({ perf, sx }) =>
                             border: '1px solid var(--color-secondary-dx-grey-light-tint)',
                             backgroundColor: 'var(--color-card-bg)',
                             containerType: 'inline-size',
-                        }}>
-                            <Icon size={20} color={MSQDX_NEUTRAL[600]} style={{ marginBottom: 8 }} />
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500, mb: 0.5 }}>
-                                {config.label}
-                            </MsqdxTypography>
-                            <MsqdxTypography variant="h4" sx={{ color: color, fontWeight: 700, fontSize: 'clamp(0.875rem, 12cqw, 1.75rem)', lineHeight: 1.2 }}>
-                                {value}ms
-                            </MsqdxTypography>
-                            <Box sx={{ width: '100%', height: 4, bgcolor: MSQDX_NEUTRAL[200], borderRadius: 2, mt: 1, overflow: 'hidden' }}>
-                                <Box sx={{ width: '100%', height: '100%', bgcolor: color, opacity: 0.6 }} />
-                            </Box>
-                        </Box>
-                    );
-                })}
-                {perf.inp != null && (
-                    <Box sx={{
-                        flex: '1 1 0',
-                        minWidth: 0,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                        p: 'var(--msqdx-spacing-sm)', borderRadius: '12px', border: '1px solid var(--color-secondary-dx-grey-light-tint)',
-                        backgroundColor: 'var(--color-card-bg)',
-                        containerType: 'inline-size',
-                    }}>
+                        }}
+                    >
                         <Zap size={20} color={MSQDX_NEUTRAL[600]} style={{ marginBottom: 8 }} />
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500, mb: 0.5 }}>INP</MsqdxTypography>
-                        <MsqdxTypography variant="h4" sx={{ color: perf.inp <= 200 ? MSQDX_STATUS.success.base : perf.inp <= 500 ? MSQDX_STATUS.warning.base : MSQDX_STATUS.error.base, fontWeight: 700, fontSize: 'clamp(0.875rem, 12cqw, 1.75rem)', lineHeight: 1.2 }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: `${MSQDX_NEUTRAL['700']}`, fontWeight: 500, mb: 0.5 }}
+                        >
+                            INP
+                        </MsqdxTypography>
+                        <MsqdxTypography
+                            variant="h4"
+                            sx={{
+                                color:
+                                    perf.inp <= 200
+                                        ? MSQDX_STATUS.success.base
+                                        : perf.inp <= 500
+                                          ? MSQDX_STATUS.warning.base
+                                          : MSQDX_STATUS.error.base,
+                                fontWeight: 700,
+                                fontSize: 'clamp(0.875rem, 12cqw, 1.75rem)',
+                                lineHeight: 1.2,
+                            }}
+                        >
                             {perf.inp}ms
                         </MsqdxTypography>
                     </Box>

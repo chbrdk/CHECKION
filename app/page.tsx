@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxCard, MsqdxMoleculeCard, MsqdxIcon } from '@msqdx/react';
-import { MSQDX_COLORS, MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_COLORS, MSQDX_NEUTRAL, MSQDX_STATUS } from '@msqdx/tokens';
 import type { StandaloneScanSummary } from '@/lib/types';
 import { HistoryList, SingleScanRow, DomainScanRow, type DomainScanSummary } from '@/components/HistoryList';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -155,7 +155,7 @@ export default function DashboardPage() {
                             {t('dashboard.title')}
                         </MsqdxTypography>
                     </Box>
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                         {t('info.dashboard')}
                     </MsqdxTypography>
                 </Box>
@@ -291,7 +291,7 @@ export default function DashboardPage() {
                         sx={{ bgcolor: 'var(--color-card-bg)', mt: 'var(--msqdx-spacing-md)' }}
                     >
                         {savedJourneys.length === 0 ? (
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                 {t('dashboard.journeyHistoryEmpty')}
                             </MsqdxTypography>
                         ) : (
@@ -327,7 +327,7 @@ export default function DashboardPage() {
                                             </MsqdxTypography>
                                             <MsqdxTypography
                                                 variant="caption"
-                                                sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                                sx={{ color: `${MSQDX_NEUTRAL['700']}` }}
                                             >
                                                 {j.domain ?? j.domainScanId} ·{' '}
                                                 {new Date(j.createdAt).toLocaleDateString()}
@@ -391,7 +391,7 @@ function StatCard({
             <MsqdxTypography
                 variant="caption"
                 sx={{
-                    color: 'var(--color-text-muted-on-light)',
+                    color: `${MSQDX_NEUTRAL['700']}`,
                     textTransform: 'uppercase',
                     letterSpacing: '0.1em',
                     fontSize: '0.65rem',

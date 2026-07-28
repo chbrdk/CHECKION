@@ -17,13 +17,19 @@ import {
     MsqdxFormField,
 } from '@msqdx/react';
 import { InfoTooltip } from '@/components/InfoTooltip';
-import { MSQDX_SPACING } from '@msqdx/tokens';
+import { MSQDX_NEUTRAL, MSQDX_SPACING } from '@msqdx/tokens';
 import type { WcagStandard, Runner } from '@/lib/types';
 import type { SelectChangeEvent } from '@mui/material';
 import { BrandColorSelector } from '@/components/settings/BrandColorSelector';
 import { FORM_FIELD_ACCENT_SX } from '@/lib/theme-accent';
 import { useI18n } from '@/components/i18n/I18nProvider';
-import { API_AUTH_PROFILE, API_AUTH_CHANGE_PASSWORD, API_AUTH_TOKENS, apiAuthTokenRevoke, PATH_LOGIN } from '@/lib/constants';
+import {
+    API_AUTH_PROFILE,
+    API_AUTH_CHANGE_PASSWORD,
+    API_AUTH_TOKENS,
+    apiAuthTokenRevoke,
+    PATH_LOGIN,
+} from '@/lib/constants';
 
 function useStandards(t: (k: string) => string): { value: WcagStandard; label: string; desc: string }[] {
     return useMemo(
@@ -32,7 +38,7 @@ function useStandards(t: (k: string) => string): { value: WcagStandard; label: s
             { value: 'WCAG2AA', label: t('standards.wcag2aa'), desc: '' },
             { value: 'WCAG2AAA', label: t('standards.wcag2aaa'), desc: '' },
         ],
-        [t]
+        [t],
     );
 }
 
@@ -42,7 +48,7 @@ function useRunners(t: (k: string) => string): { value: Runner; label: string; d
             { value: 'axe', label: t('runners.axe'), desc: '' },
             { value: 'htmlcs', label: t('runners.htmlcs'), desc: '' },
         ],
-        [t]
+        [t],
     );
 }
 
@@ -69,7 +75,7 @@ export default function SettingsPage() {
             { value: 'de', label: t('language.de') },
             { value: 'en', label: t('language.en') },
         ],
-        [t]
+        [t],
     );
 
     const [profile, setProfile] = useState<ProfileUser | null>(null);
@@ -261,16 +267,20 @@ export default function SettingsPage() {
     return (
         <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 1600, mx: 'auto' }}>
             <Box sx={{ mb: MSQDX_SPACING.scale.md }}>
-                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: MSQDX_SPACING.scale.xs }}>
-                    <MsqdxTypography
-                        variant="h4"
-                        sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}
-                    >
+                <Box
+                    sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 'var(--msqdx-spacing-xs)',
+                        mb: MSQDX_SPACING.scale.xs,
+                    }}
+                >
+                    <MsqdxTypography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
                         {t('settings.title')}
                     </MsqdxTypography>
                     <InfoTooltip title={t('info.settings')} ariaLabel={t('common.info')} />
                 </Box>
-                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                     {t('settings.subtitle')}
                 </MsqdxTypography>
             </Box>
@@ -294,9 +304,17 @@ export default function SettingsPage() {
                 <MsqdxCard
                     variant="flat"
                     borderRadius="button"
-                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
+                    sx={{
+                        p: 'var(--msqdx-spacing-md)',
+                        border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                        bgcolor: 'var(--color-card-bg)',
+                        color: 'var(--color-text-on-light)',
+                    }}
                 >
-                    <Stack direction={{ xs: 'column', md: 'row' }} sx={{ gap: 'var(--msqdx-spacing-lg)', alignItems: 'center' }}>
+                    <Stack
+                        direction={{ xs: 'column', md: 'row' }}
+                        sx={{ gap: 'var(--msqdx-spacing-lg)', alignItems: 'center' }}
+                    >
                         <MsqdxAvatar
                             src={avatarUrl || undefined}
                             size="xl"
@@ -310,7 +328,14 @@ export default function SettingsPage() {
                             {initials}
                         </MsqdxAvatar>
                         <Box sx={{ flex: 1 }}>
-                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
+                            <Box
+                                sx={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--msqdx-spacing-xs)',
+                                    mb: 'var(--msqdx-spacing-xs)',
+                                }}
+                            >
                                 <MsqdxTypography variant="h6" weight="semibold">
                                     {t('settings.profile.title')}
                                 </MsqdxTypography>
@@ -363,7 +388,12 @@ export default function SettingsPage() {
                             size="small"
                             sx={FORM_FIELD_ACCENT_SX}
                         />
-                        <MsqdxButton variant="contained" onClick={handleSaveProfile} disabled={savingProfile} sx={{ alignSelf: 'flex-start' }}>
+                        <MsqdxButton
+                            variant="contained"
+                            onClick={handleSaveProfile}
+                            disabled={savingProfile}
+                            sx={{ alignSelf: 'flex-start' }}
+                        >
                             {savingProfile ? t('settings.profile.saving') : t('settings.profile.save')}
                         </MsqdxButton>
                     </Stack>
@@ -373,15 +403,30 @@ export default function SettingsPage() {
                 <MsqdxCard
                     variant="flat"
                     borderRadius="button"
-                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
+                    sx={{
+                        p: 'var(--msqdx-spacing-md)',
+                        border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                        bgcolor: 'var(--color-card-bg)',
+                        color: 'var(--color-text-on-light)',
+                    }}
                 >
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
+                    <Box
+                        sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 'var(--msqdx-spacing-xs)',
+                            mb: 'var(--msqdx-spacing-xs)',
+                        }}
+                    >
                         <MsqdxTypography variant="h6" weight="semibold">
                             {t('settings.appearance.title')}
                         </MsqdxTypography>
                         <InfoTooltip title={t('info.appearance')} ariaLabel={t('common.info')} />
                     </Box>
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)', mb: 'var(--msqdx-spacing-md)' }}>
+                    <MsqdxTypography
+                        variant="body2"
+                        sx={{ color: 'var(--color-text-secondary)', mb: 'var(--msqdx-spacing-md)' }}
+                    >
                         {t('settings.appearance.subtitle')}
                     </MsqdxTypography>
                     <BrandColorSelector />
@@ -391,9 +436,21 @@ export default function SettingsPage() {
                 <MsqdxCard
                     variant="flat"
                     borderRadius="button"
-                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
+                    sx={{
+                        p: 'var(--msqdx-spacing-md)',
+                        border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                        bgcolor: 'var(--color-card-bg)',
+                        color: 'var(--color-text-on-light)',
+                    }}
                 >
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-sm)' }}>
+                    <Box
+                        sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 'var(--msqdx-spacing-xs)',
+                            mb: 'var(--msqdx-spacing-sm)',
+                        }}
+                    >
                         <MsqdxTypography variant="h6" weight="semibold">
                             {t('settings.password.title')}
                         </MsqdxTypography>
@@ -417,7 +474,10 @@ export default function SettingsPage() {
                                 fullWidth
                                 sx={FORM_FIELD_ACCENT_SX}
                             />
-                            <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'var(--color-text-muted-on-light)' }}>
+                            <MsqdxTypography
+                                variant="caption"
+                                sx={{ display: 'block', mt: 0.5, color: `${MSQDX_NEUTRAL['700']}` }}
+                            >
                                 {t('settings.password.newRequirements')}
                             </MsqdxTypography>
                         </Box>
@@ -429,7 +489,12 @@ export default function SettingsPage() {
                             fullWidth
                             sx={FORM_FIELD_ACCENT_SX}
                         />
-                        <MsqdxButton variant="outlined" onClick={handlePasswordUpdate} disabled={savingPassword} sx={{ alignSelf: 'flex-start' }}>
+                        <MsqdxButton
+                            variant="outlined"
+                            onClick={handlePasswordUpdate}
+                            disabled={savingPassword}
+                            sx={{ alignSelf: 'flex-start' }}
+                        >
                             {savingPassword ? t('settings.password.ctaSaving') : t('settings.password.cta')}
                         </MsqdxButton>
                     </Stack>
@@ -439,15 +504,30 @@ export default function SettingsPage() {
                 <MsqdxCard
                     variant="flat"
                     borderRadius="button"
-                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
+                    sx={{
+                        p: 'var(--msqdx-spacing-md)',
+                        border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                        bgcolor: 'var(--color-card-bg)',
+                        color: 'var(--color-text-on-light)',
+                    }}
                 >
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
+                    <Box
+                        sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 'var(--msqdx-spacing-xs)',
+                            mb: 'var(--msqdx-spacing-xs)',
+                        }}
+                    >
                         <MsqdxTypography variant="h6" weight="semibold">
                             {t('settings.apiTokens.title')}
                         </MsqdxTypography>
                         <InfoTooltip title={t('settings.apiTokens.subtitle')} ariaLabel={t('common.info')} />
                     </Box>
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)', mb: 'var(--msqdx-spacing-md)' }}>
+                    <MsqdxTypography
+                        variant="body2"
+                        sx={{ color: 'var(--color-text-secondary)', mb: 'var(--msqdx-spacing-md)' }}
+                    >
                         {t('settings.apiTokens.subtitle')}
                     </MsqdxTypography>
                     {newToken ? (
@@ -474,7 +554,7 @@ export default function SettingsPage() {
                                     {t('settings.apiTokens.newTokenCopy')}
                                 </MsqdxButton>
                             </Box>
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                 {t('settings.apiTokens.newTokenWarning')}
                             </MsqdxTypography>
                             <MsqdxButton variant="text" size="small" onClick={() => setNewToken(null)}>
@@ -482,7 +562,13 @@ export default function SettingsPage() {
                             </MsqdxButton>
                         </Stack>
                     ) : (
-                        <Stack direction="row" spacing={1} sx={{ mb: 'var(--msqdx-spacing-md)' }} alignItems="center" flexWrap="wrap">
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{ mb: 'var(--msqdx-spacing-md)' }}
+                            alignItems="center"
+                            flexWrap="wrap"
+                        >
                             <MsqdxFormField
                                 label={t('settings.apiTokens.nameLabel')}
                                 value={tokenName}
@@ -491,7 +577,12 @@ export default function SettingsPage() {
                                 size="small"
                                 sx={{ minWidth: 200, ...FORM_FIELD_ACCENT_SX }}
                             />
-                            <MsqdxButton variant="contained" onClick={handleCreateToken} disabled={creatingToken} sx={{ mt: 1 }}>
+                            <MsqdxButton
+                                variant="contained"
+                                onClick={handleCreateToken}
+                                disabled={creatingToken}
+                                sx={{ mt: 1 }}
+                            >
                                 {creatingToken ? t('settings.apiTokens.creating') : t('settings.apiTokens.create')}
                             </MsqdxButton>
                         </Stack>
@@ -500,9 +591,13 @@ export default function SettingsPage() {
                         {t('settings.apiTokens.listTitle')}
                     </MsqdxTypography>
                     {loadingTokens ? (
-                        <MsqdxTypography variant="body2" color="text.secondary">{t('common.loading')}</MsqdxTypography>
+                        <MsqdxTypography variant="body2" color="text.secondary">
+                            {t('common.loading')}
+                        </MsqdxTypography>
                     ) : apiTokens.length === 0 ? (
-                        <MsqdxTypography variant="body2" color="text.secondary">{t('settings.apiTokens.empty')}</MsqdxTypography>
+                        <MsqdxTypography variant="body2" color="text.secondary">
+                            {t('settings.apiTokens.empty')}
+                        </MsqdxTypography>
                     ) : (
                         <Stack spacing={0.5}>
                             {apiTokens.map((token) => (
@@ -517,12 +612,19 @@ export default function SettingsPage() {
                                     }}
                                 >
                                     <Box>
-                                        <MsqdxTypography variant="body2">{token.name || token.id.slice(0, 8)}</MsqdxTypography>
+                                        <MsqdxTypography variant="body2">
+                                            {token.name || token.id.slice(0, 8)}
+                                        </MsqdxTypography>
                                         <MsqdxTypography variant="caption" color="text.secondary">
                                             {new Date(token.createdAt).toLocaleString()}
                                         </MsqdxTypography>
                                     </Box>
-                                    <MsqdxButton variant="text" size="small" color="error" onClick={() => handleRevokeToken(token.id)}>
+                                    <MsqdxButton
+                                        variant="text"
+                                        size="small"
+                                        color="error"
+                                        onClick={() => handleRevokeToken(token.id)}
+                                    >
                                         {t('settings.apiTokens.revoke')}
                                     </MsqdxButton>
                                 </Box>
@@ -535,15 +637,30 @@ export default function SettingsPage() {
                 <MsqdxCard
                     variant="flat"
                     borderRadius="button"
-                    sx={{ p: 'var(--msqdx-spacing-md)', border: '1px solid var(--color-secondary-dx-grey-light-tint)', bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
+                    sx={{
+                        p: 'var(--msqdx-spacing-md)',
+                        border: '1px solid var(--color-secondary-dx-grey-light-tint)',
+                        bgcolor: 'var(--color-card-bg)',
+                        color: 'var(--color-text-on-light)',
+                    }}
                 >
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', mb: 'var(--msqdx-spacing-xs)' }}>
+                    <Box
+                        sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 'var(--msqdx-spacing-xs)',
+                            mb: 'var(--msqdx-spacing-xs)',
+                        }}
+                    >
                         <MsqdxTypography variant="h6" weight="semibold">
                             {t('settings.session.title')}
                         </MsqdxTypography>
                         <InfoTooltip title={t('info.session')} ariaLabel={t('common.info')} />
                     </Box>
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-secondary)', mb: 'var(--msqdx-spacing-md)' }}>
+                    <MsqdxTypography
+                        variant="body2"
+                        sx={{ color: 'var(--color-text-secondary)', mb: 'var(--msqdx-spacing-md)' }}
+                    >
                         {t('settings.session.subtitle')}
                     </MsqdxTypography>
                     <MsqdxButton variant="text" onClick={handleLogout}>
@@ -552,11 +669,19 @@ export default function SettingsPage() {
                 </MsqdxCard>
 
                 {/* Scan-Standards + Über CHECKION (bestehend) */}
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 'var(--msqdx-spacing-md)' }}>
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' },
+                        gap: 'var(--msqdx-spacing-md)',
+                    }}
+                >
                     <Box>
                         <MsqdxMoleculeCard
                             title={t('settings.scanConfig.title')}
-                            headerActions={<InfoTooltip title={t('info.scanConfigSettings')} ariaLabel={t('common.info')} />}
+                            headerActions={
+                                <InfoTooltip title={t('info.scanConfigSettings')} ariaLabel={t('common.info')} />
+                            }
                             variant="flat"
                             borderRadius="lg"
                             footerDivider={false}
@@ -596,8 +721,15 @@ export default function SettingsPage() {
                         </MsqdxButton>
                     </Box>
                     <Box>
-                        <MsqdxMoleculeCard title={t('settings.about.title')} headerActions={<InfoTooltip title={t('info.about')} ariaLabel={t('common.info')} />} variant="flat" borderRadius="lg" footerDivider={false} sx={{ bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}>
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.7 }}>
+                        <MsqdxMoleculeCard
+                            title={t('settings.about.title')}
+                            headerActions={<InfoTooltip title={t('info.about')} ariaLabel={t('common.info')} />}
+                            variant="flat"
+                            borderRadius="lg"
+                            footerDivider={false}
+                            sx={{ bgcolor: 'var(--color-card-bg)', color: 'var(--color-text-on-light)' }}
+                        >
+                            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, lineHeight: 1.7 }}>
                                 {t('settings.about.body')}
                             </MsqdxTypography>
                         </MsqdxMoleculeCard>

@@ -3,7 +3,7 @@
 import React from 'react';
 import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxChip, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
-import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
+import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { AggregatedIssue } from '@/lib/domain-aggregation';
 import { useI18n } from '@/components/i18n/I18nProvider';
 
@@ -128,7 +128,7 @@ export function PageIssuesCard({
                                 sx={{
                                     fontFamily: 'monospace',
                                     fontSize: '0.65rem',
-                                    color: 'var(--color-text-muted-on-light)',
+                                    color: `${MSQDX_NEUTRAL['700']}`,
                                     display: 'block',
                                 }}
                             >

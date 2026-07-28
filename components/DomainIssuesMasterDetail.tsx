@@ -93,7 +93,7 @@ function IssuesEmptyState({
                 alignItems: 'center',
                 textAlign: 'center',
                 gap: 1,
-                color: 'var(--color-text-muted-on-light)',
+                color: `${MSQDX_NEUTRAL['700']}`,
                 borderRadius: 1,
                 border: '1px dashed',
                 borderColor: MSQDX_NEUTRAL[300],
@@ -488,7 +488,7 @@ function DomainIssuesMasterDetailInner({
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
                         <MsqdxTypography
                             variant="caption"
-                            sx={{ color: 'var(--color-text-muted-on-light)', width: '100%', mb: -0.5 }}
+                            sx={{ color: `${MSQDX_NEUTRAL['700']}`, width: '100%', mb: -0.5 }}
                         >
                             {t('domainResult.issuesFilterSeverityLabel')}
                         </MsqdxTypography>
@@ -545,7 +545,7 @@ function DomainIssuesMasterDetailInner({
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
                         <MsqdxTypography
                             variant="caption"
-                            sx={{ color: 'var(--color-text-muted-on-light)', width: '100%', mb: -0.5 }}
+                            sx={{ color: `${MSQDX_NEUTRAL['700']}`, width: '100%', mb: -0.5 }}
                         >
                             {t('domainResult.issuesFilterWcagLabel')}
                         </MsqdxTypography>
@@ -733,7 +733,7 @@ function DomainIssuesMasterDetailInner({
                                                                     variant="caption"
                                                                     noWrap
                                                                     sx={{
-                                                                        color: 'var(--color-text-muted-on-light)',
+                                                                        color: `${MSQDX_NEUTRAL['700']}`,
                                                                         fontFamily: 'ui-monospace, monospace',
                                                                         display: 'block',
                                                                         mt: 0.25,
@@ -877,7 +877,7 @@ function DomainIssuesMasterDetailInner({
                                                                 <MsqdxTypography
                                                                     variant="caption"
                                                                     sx={{
-                                                                        color: 'var(--color-text-muted-on-light)',
+                                                                        color: `${MSQDX_NEUTRAL['700']}`,
                                                                         display: 'block',
                                                                         fontSize: '0.7rem',
                                                                         lineHeight: 1.2,
@@ -1060,7 +1060,7 @@ function DomainIssuesMasterDetailInner({
                                                                 noWrap
                                                                 sx={{
                                                                     fontFamily: 'ui-monospace, monospace',
-                                                                    color: 'var(--color-text-muted-on-light)',
+                                                                    color: `${MSQDX_NEUTRAL['700']}`,
                                                                     display: 'block',
                                                                 }}
                                                             >

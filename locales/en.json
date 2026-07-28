@@ -681,6 +681,7 @@
     "projects": "Projects",
     "settings": "Profile"
   },
+  "one": "one",
   "projectAudionLink": {
     "connected": "AUDION reachable — {count} project(s) available.",
     "description": "Personas from AUDION appear in the comprehensive project report (chapter 06). The link is stored on the AUDION side.",
@@ -1072,6 +1073,26 @@
     }
   },
   "results": {
+    "UXScan": {
+      "CLSLabel": "Visual Stability (CLS)",
+      "contentReadabilityLabel": "Content Readability",
+      "cssReducedMotion": {
+        "false": "No @media (prefers-reduced-motion) found",
+        "true": "CSS respects prefers-reduced-motion."
+      },
+      "focusableElements": "focusable elements without a visible focus style",
+      "fonts": "Fonts",
+      "headings": "Headlines",
+      "images": "Pictures",
+      "metaRefresh": {
+        "false": "Unavailable",
+        "true": "Available (not recommended)"
+      },
+      "skipLink": {
+        "false": "Missing – Recommended for keyboard/screen reader use.",
+        "true": "Available"
+      }
+    },
     "attentionHeatmapComputing": "Computing…",
     "backToDashboard": "Back to Dashboard",
     "contentFreshnessAgeDays": "Approx. age at scan: {count} days",
@@ -1104,6 +1125,7 @@
     "ecoGreenWebPrefix": "Green Web (heuristic):",
     "ecoGreenWebUnknown": "unknown",
     "ecoGreenWebYes": "listed as green",
+    "ecoSubtitle": "Estimated CO2 footprint per page view",
     "errorNotFound": "Result not found",
     "fixDocs": "Fix guide",
     "fixDocsAria": "Open documentation and fix guide for this rule",
@@ -1172,10 +1194,16 @@
     "structureQualitySingleH1": "Single H1",
     "structureQualitySkippedLevels": "Skipped levels: {list}",
     "structureSemanticsCardSubtitle": "Landmarks, headings, and optional page index — one list, no duplication.",
-    "structureSemanticsCardTitle": "Structure & semantics",
     "structureSummaryHeadingsOnly": "{landmarks} landmarks · {headings} headings",
     "structureSummaryLine": "{landmarks} landmarks · {headings} headings — {levels}",
     "structureSummaryNoData": "No structure data",
+    "tab": {
+      "list": "List & Details",
+      "overview": "Overview",
+      "privacy": "Infrastructur & Privacy",
+      "structureSemantics": "Structure & Semantics",
+      "visual": "Visual Analisis"
+    },
     "tabAll": "All",
     "tabErrors": "Errors",
     "tabNotices": "Notices",
@@ -1413,9 +1441,11 @@
     "warnings": "Warnings",
     "wrongPassword": "Wrong password"
   },
+  "skipped": "skipped",
   "standards": {
     "wcag2a": "Level A - Basic accessibility",
     "wcag2aa": "Level AA - Recommended for most sites",
     "wcag2aaa": "Level AAA - Highest level of accessibility"
-  }
+  },
+  "without": "without"
 }

@@ -82,18 +82,10 @@ function ScannedPagesTableInner({
                 setLocalSortDir('asc');
             }
         },
-        [serverSort, onSortChange, sortKey]
+        [serverSort, onSortChange, sortKey],
     );
 
-    const SortHeader = ({
-        id,
-        label,
-        active,
-    }: {
-        id: ScannedPagesSortKey;
-        label: string;
-        active: boolean;
-    }) => (
+    const SortHeader = ({ id, label, active }: { id: ScannedPagesSortKey; label: string; active: boolean }) => (
         <Box
             component="button"
             role="columnheader"
@@ -128,7 +120,7 @@ function ScannedPagesTableInner({
     if (pages.length === 0) {
         return (
             <Box sx={{ textAlign: 'center', py: 3 }}>
-                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                     {t('domainResult.noPages')}
                 </MsqdxTypography>
             </Box>
@@ -165,7 +157,11 @@ function ScannedPagesTableInner({
                 >
                     <SortHeader id="url" label={t('domainResult.pagesTableUrl')} active={sortKey === 'url'} />
                     <SortHeader id="score" label={t('domainResult.pagesTableScore')} active={sortKey === 'score'} />
-                    <SortHeader id="uxScore" label={t('domainResult.pagesTableUxScore')} active={sortKey === 'uxScore'} />
+                    <SortHeader
+                        id="uxScore"
+                        label={t('domainResult.pagesTableUxScore')}
+                        active={sortKey === 'uxScore'}
+                    />
                     <SortHeader id="issues" label={t('domainResult.pagesTableIssues')} active={sortKey === 'issues'} />
                     <Box component="div" role="columnheader" sx={{ px: 1, py: 0.5 }} />
                 </Box>
@@ -190,7 +186,7 @@ function ScannedPagesTableInner({
             </Box>
             {paginationFooter ?? (
                 <Box sx={{ mt: 1, px: 0.5 }}>
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', fontSize: '0.7rem' }}>
+                    <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, fontSize: '0.7rem' }}>
                         {sortedPages.length.toLocaleString()} {t('domainResult.pagesScanned')}
                     </MsqdxTypography>
                 </Box>

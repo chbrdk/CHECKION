@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, CircularProgress, Dialog, DialogContent, DialogTitle, IconButton } from '@mui/material';
 import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { X } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { apiRankTrackingKeywordSerpPreview } from '@/lib/constants';
@@ -139,7 +140,7 @@ export function SerpGooglePreviewModal({
                         {t('projects.serpPreviewTitle')}
                     </MsqdxTypography>
                     {data && (
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                             {t('projects.serpPreviewSubtitle', {
                                 count: String(totalOrganic),
                                 date: new Date(data.recordedAt).toLocaleString(),

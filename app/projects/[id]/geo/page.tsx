@@ -5,7 +5,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
 import Link from 'next/link';
 import { Box, Dialog, DialogTitle, DialogContent, Stack } from '@mui/material';
-import { MsqdxTypography, MsqdxButton, MsqdxFormField, MsqdxChip, MsqdxMoleculeCard } from '@msqdx/react';
+import {
+    MsqdxTypography,
+    MsqdxButton,
+    MsqdxFormField,
+    MsqdxChip,
+    MsqdxMoleculeCard,
+    MSQDX_NEUTRAL,
+} from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import {
     apiProject,
@@ -384,7 +391,7 @@ export default function ProjectGeoPage() {
                         <Box>
                             <MsqdxTypography
                                 variant="caption"
-                                sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}
+                                sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}
                             >
                                 {t('projects.ourScore')}
                             </MsqdxTypography>
@@ -411,14 +418,14 @@ export default function ProjectGeoPage() {
                                 <Box key={domain}>
                                     <MsqdxTypography
                                         variant="caption"
-                                        sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}
+                                        sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}
                                     >
                                         {domain}
                                     </MsqdxTypography>
                                     <MsqdxTypography
                                         variant="h4"
                                         weight="bold"
-                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                        sx={{ color: `${MSQDX_NEUTRAL['700']}` }}
                                     >
                                         {score}/100
                                     </MsqdxTypography>
@@ -476,7 +483,7 @@ export default function ProjectGeoPage() {
 
                     {historyLoading && (
                         <Box sx={{ py: 6, textAlign: 'center' }}>
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                 {t('common.loading')}
                             </MsqdxTypography>
                         </Box>
@@ -512,7 +519,7 @@ export default function ProjectGeoPage() {
 
                     {!historyLoading && questionHistory.length === 0 && geoRuns.length > 0 && project?.domain && (
                         <Box sx={{ py: 4, textAlign: 'center' }}>
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 2 }}>
                                 {t('geoEeat.noResultsDisplay')}
                             </MsqdxTypography>
                             <Link href={pathGeoEeat(geoRuns[0]!.id)} style={{ textDecoration: 'none' }}>
@@ -525,7 +532,7 @@ export default function ProjectGeoPage() {
 
                     {!historyLoading && questionHistory.length === 0 && geoRuns.length === 0 && project?.domain && (
                         <Box sx={{ py: 4, textAlign: 'center' }}>
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 2 }}>
+                            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 2 }}>
                                 {t('projects.emptyGeoEeatRuns')}
                             </MsqdxTypography>
                             <MsqdxButton
@@ -554,7 +561,7 @@ export default function ProjectGeoPage() {
                 <DialogContent>
                     <MsqdxTypography
                         variant="caption"
-                        sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}
+                        sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 1.5 }}
                     >
                         {t('projects.geoQueriesDescription')}
                     </MsqdxTypography>
@@ -593,7 +600,7 @@ export default function ProjectGeoPage() {
                         </MsqdxTypography>
                     )}
                     {geoQueries.length === 0 ? (
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                             {t('projects.emptyGeoQueries')}
                         </MsqdxTypography>
                     ) : (

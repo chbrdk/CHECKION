@@ -3,6 +3,7 @@
 import React, { memo } from 'react';
 import { Box, Stack } from '@mui/material';
 import { MsqdxTypography, MsqdxMoleculeCard } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { DomainResultPageTopicsCard } from './DomainResultPageTopicsCard';
 import type { AggregatedPageClassification } from '@/lib/types';
@@ -27,7 +28,7 @@ function DomainResultPageTopicsEmptyInner({ t }: { t: (key: string) => string })
                     bgcolor: 'var(--color-card-bg)',
                 }}
             >
-                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
+                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, lineHeight: 1.45 }}>
                     {t('domainResult.pageTopicsEmpty')}
                 </MsqdxTypography>
             </Box>
@@ -43,8 +44,7 @@ export type DomainResultPageTopicsSectionProps = {
 };
 
 function DomainResultPageTopicsSectionInner({ t, pageClassification }: DomainResultPageTopicsSectionProps) {
-    const hasData =
-        pageClassification != null && pageClassification.coverage.pagesWithClassification > 0;
+    const hasData = pageClassification != null && pageClassification.coverage.pagesWithClassification > 0;
 
     return (
         <MsqdxMoleculeCard
@@ -68,7 +68,7 @@ function DomainResultPageTopicsSectionInner({ t, pageClassification }: DomainRes
                             bgcolor: 'var(--color-card-bg)',
                         }}
                     >
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.45 }}>
+                        <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, lineHeight: 1.45 }}>
                             {t('domainResult.pageTopicsEmpty')}
                         </MsqdxTypography>
                     </Box>

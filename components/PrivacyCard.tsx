@@ -2,7 +2,7 @@
 
 import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
-import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
+import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { ConsentSignals, PrivacyAudit } from '@/lib/types';
 import { ShieldCheck, FileText, Cookie } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -60,7 +60,7 @@ export function PrivacyCard({ privacy, consentSignals }: { privacy: PrivacyAudit
                         {(consentSignals.cmpDomHints?.length ?? 0) > 0 && (
                             <MsqdxTypography
                                 variant="caption"
-                                sx={{ display: 'block', color: 'var(--color-text-muted-on-light)' }}
+                                sx={{ display: 'block', color: `${MSQDX_NEUTRAL['700']}` }}
                             >
                                 CMP-Hinweise: {consentSignals.cmpDomHints!.join(', ')}
                             </MsqdxTypography>
@@ -68,7 +68,7 @@ export function PrivacyCard({ privacy, consentSignals }: { privacy: PrivacyAudit
                         {(consentSignals.consentModeHints?.length ?? 0) > 0 && (
                             <MsqdxTypography
                                 variant="caption"
-                                sx={{ display: 'block', color: 'var(--color-text-muted-on-light)' }}
+                                sx={{ display: 'block', color: `${MSQDX_NEUTRAL['700']}` }}
                             >
                                 Consent-Mode-ähnlich: {consentSignals.consentModeHints!.join(', ')}
                             </MsqdxTypography>
@@ -79,7 +79,7 @@ export function PrivacyCard({ privacy, consentSignals }: { privacy: PrivacyAudit
                                 sx={{
                                     display: 'block',
                                     mt: 0.5,
-                                    color: 'var(--color-text-muted-on-light)',
+                                    color: `${MSQDX_NEUTRAL['700']}`,
                                     wordBreak: 'break-all',
                                 }}
                             >
@@ -101,7 +101,7 @@ export function PrivacyCard({ privacy, consentSignals }: { privacy: PrivacyAudit
                 >
                     <MsqdxTypography
                         variant="caption"
-                        sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.4, display: 'block' }}
+                        sx={{ color: `${MSQDX_NEUTRAL['700']}`, lineHeight: 1.4, display: 'block' }}
                     >
                         Hinweis: Diese Prüfung basiert auf Heuristiken (Keywords, Selektoren) und ersetzt keine
                         rechtliche Beratung.
@@ -147,7 +147,7 @@ function PrivacyItem({
                         <MsqdxTypography
                             variant="caption"
                             sx={{
-                                color: 'var(--color-text-muted-on-light)',
+                                color: `${MSQDX_NEUTRAL['700']}`,
                                 display: 'block',
                                 maxWidth: '180px',
                                 overflow: 'hidden',

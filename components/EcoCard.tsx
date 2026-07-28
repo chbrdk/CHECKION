@@ -5,7 +5,7 @@ import { Box } from '@mui/material';
 import { Leaf } from 'lucide-react';
 import { MsqdxMoleculeCard, MsqdxTypography } from '@msqdx/react';
 import { ScanResult } from '../lib/types';
-import { MSQDX_NEUTRAL } from '@msqdx/tokens';
+import { MSQDX_NEUTRAL, MSQDX_SPACING } from '@msqdx/tokens';
 import { useI18n } from '@/components/i18n/I18nProvider';
 
 interface EcoCardProps {
@@ -15,45 +15,54 @@ interface EcoCardProps {
 
 const GRADE_COLORS: Record<string, string> = {
     'A+': '#22c55e', // Green 500
-    'A': '#4ade80',  // Green 400
-    'B': '#84cc16',  // Lime 500
-    'C': '#eab308',  // Yellow 500
-    'D': '#f97316',  // Orange 500
-    'E': '#ef4444',  // Red 500
-    'F': '#b91c1c',  // Red 700
+    A: '#4ade80', // Green 400
+    B: '#84cc16', // Lime 500
+    C: '#eab308', // Yellow 500
+    D: '#f97316', // Orange 500
+    E: '#ef4444', // Red 500
+    F: '#b91c1c', // Red 700
 };
 
 export const EcoCard: React.FC<EcoCardProps> = ({ eco, sx }) => {
     const { t } = useI18n();
     const gradeColor = GRADE_COLORS[eco.grade] || MSQDX_NEUTRAL[500];
     const hasGreenWebInfo =
-        eco.greenWebCheckedAt != null ||
-        eco.greenWebSource != null ||
-        eco.greenWebHosted !== undefined;
+        eco.greenWebCheckedAt != null || eco.greenWebSource != null || eco.greenWebHosted !== undefined;
 
     return (
         <MsqdxMoleculeCard
             title="Eco Score"
-            subtitle="Geschätzter CO2-Fußabdruck pro Seitenaufruf"
+            subtitle={t('results.ecoSubtitle')}
             sx={{ bgcolor: 'var(--color-card-bg)', ...sx }}
         >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-md)', height: '100%' }}>
-                {/* Grade Circle */}
-                <Box sx={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: '50%',
-                    border: `4px solid ${gradeColor}`,
+            <Box
+                sx={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: `${gradeColor}20`, // 20% opacity
-                }}>
+                    gap: 'var(--msqdx-spacing-md)',
+                    height: '100%',
+                }}
+            >
+                {/* Grade Circle */}
+                <Box
+                    sx={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: '50%',
+                        border: `4px solid ${gradeColor}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: `${gradeColor}20`, // 20% opacity
+                    }}
+                >
                     <MsqdxTypography
-                        variant="h2"
+                        variant="h3"
                         sx={{
                             color: gradeColor,
                             lineHeight: 1,
+                            translate: '0 -3px', // Adjust vertical alignment
                         }}
                     >
                         {eco.grade}
@@ -61,28 +70,56 @@ export const EcoCard: React.FC<EcoCardProps> = ({ eco, sx }) => {
                 </Box>
 
                 {/* Details */}
-                <Box sx={{ flex: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 'var(--msqdx-spacing-xxs)', mb: 'var(--msqdx-spacing-xs)' }}>
-                        <MsqdxTypography variant="h3" sx={{ fontWeight: 700, color: 'var(--color-text-on-light)' }}>
-                            {eco.co2}g
-                        </MsqdxTypography>
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
-                            CO2 / View
-                        </MsqdxTypography>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: `${MSQDX_SPACING.gap.xl}px`,
+                    }}
+                >
+                    <Box sx={{ pr: `${MSQDX_SPACING.gap.xl}px`, borderRight: `1px solid ${MSQDX_NEUTRAL[400]}` }}>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'baseline',
+                                gap: 'var(--msqdx-spacing-xxs)',
+                                mb: 'var(--msqdx-spacing-xs)',
+                            }}
+                        >
+                            <MsqdxTypography variant="h4" sx={{ fontWeight: 700, color: 'var(--color-text-on-light)' }}>
+                                {eco.co2}g
+                            </MsqdxTypography>
+                            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
+                                CO2 / View
+                            </MsqdxTypography>
+                        </Box>
+
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 'var(--msqdx-spacing-xs)',
+                                color: `${MSQDX_NEUTRAL['700']}`,
+                            }}
+                        >
+                            <Leaf size={16} color={gradeColor} />
+                            <MsqdxTypography variant="body2">
+                                {(eco.pageWeight / 1024 / 1024).toFixed(2)} MB Transfer
+                            </MsqdxTypography>
+                        </Box>
                     </Box>
 
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 'var(--msqdx-spacing-xs)', color: 'var(--color-text-muted-on-light)' }}>
-                        <Leaf size={16} color={gradeColor} />
-                        <MsqdxTypography variant="body2">
-                            {(eco.pageWeight / 1024 / 1024).toFixed(2)} MB Transfer
-                        </MsqdxTypography>
-                    </Box>
-
-                    <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1, color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography
+                        variant="caption"
+                        sx={{ display: 'block', mt: 1, color: `${MSQDX_NEUTRAL['700']}` }}
+                    >
                         Cleaner than ~{getPercentile(eco.co2)}% of pages
                     </MsqdxTypography>
                     {hasGreenWebInfo ? (
-                        <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 1.25, color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ display: 'block', mt: 1.25, color: `${MSQDX_NEUTRAL['700']}` }}
+                        >
                             {t('results.ecoGreenWebPrefix')}{' '}
                             {eco.greenWebHosted === true
                                 ? t('results.ecoGreenWebYes')

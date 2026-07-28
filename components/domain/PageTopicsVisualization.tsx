@@ -15,6 +15,7 @@ import {
     Cell,
 } from 'recharts';
 import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { normalizePageTopicTagKey } from '@/lib/domain-aggregation';
 import { pathResults } from '@/lib/constants';
@@ -61,10 +62,7 @@ function PageTopicsBubbleTooltip({
             <MsqdxTypography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.35 }}>
                 {p.tag}
             </MsqdxTypography>
-            <MsqdxTypography
-                variant="caption"
-                sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.5 }}
-            >
+            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mt: 0.5 }}>
                 {t('domainResult.pageTopicsBubbleTooltip', {
                     pages: p.pageCount,
                     maxTier: p.maxTier,
@@ -74,7 +72,7 @@ function PageTopicsBubbleTooltip({
             </MsqdxTypography>
             <MsqdxTypography
                 variant="caption"
-                sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.75, fontStyle: 'italic' }}
+                sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mt: 0.75, fontStyle: 'italic' }}
             >
                 {t('domainResult.pageTopicsBubbleTooltipClick')}
             </MsqdxTypography>
@@ -174,13 +172,13 @@ export function PageTopicsVisualization({ t, pageClassification }: PageTopicsVis
                     </MsqdxTypography>
                     <MsqdxTypography
                         variant="caption"
-                        sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}
+                        sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 0.5 }}
                     >
                         {t('domainResult.pageTopicsBubbleMatrixCaption')}
                     </MsqdxTypography>
                     <MsqdxTypography
                         variant="caption"
-                        sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1.5 }}
+                        sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 1.5 }}
                     >
                         {t('domainResult.pageTopicsClickBubbleHint')}
                     </MsqdxTypography>
@@ -267,10 +265,7 @@ export function PageTopicsVisualization({ t, pageClassification }: PageTopicsVis
                                             border: '1px solid var(--color-border-subtle, #e5e7eb)',
                                         }}
                                     />
-                                    <MsqdxTypography
-                                        variant="caption"
-                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
-                                    >
+                                    <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                         {t('domainResult.pageTopicsTierLegendShort', { tier })}
                                     </MsqdxTypography>
                                 </Box>
@@ -306,7 +301,7 @@ export function PageTopicsVisualization({ t, pageClassification }: PageTopicsVis
                             </MsqdxTypography>
                             <MsqdxTypography
                                 variant="caption"
-                                sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.5 }}
+                                sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mt: 0.5 }}
                             >
                                 {t('domainResult.pageTopicsBubbleTooltip', {
                                     pages: selectedTheme.pageCount,
@@ -365,7 +360,7 @@ export function PageTopicsVisualization({ t, pageClassification }: PageTopicsVis
                                 ))}
                             </Box>
                             {relatedTotal > relatedShown ? (
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                     {t('domainResult.pageTopicsThemeRelatedPagesMore', {
                                         shown: relatedShown,
                                         total: relatedTotal,
@@ -380,10 +375,7 @@ export function PageTopicsVisualization({ t, pageClassification }: PageTopicsVis
             <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, mt: hasBubbleChart ? 2 : 0 }}>
                 {t('domainResult.pageTopicsTierSpectrumTitle')}
             </MsqdxTypography>
-            <MsqdxTypography
-                variant="caption"
-                sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}
-            >
+            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 1 }}>
                 {spectrumScope === 'theme' && hasThemeSubset
                     ? t('domainResult.pageTopicsTierSpectrumCaptionTheme')
                     : t('domainResult.pageTopicsTierSpectrumCaption')}
@@ -392,7 +384,7 @@ export function PageTopicsVisualization({ t, pageClassification }: PageTopicsVis
 
             <MsqdxTypography
                 variant="subtitle2"
-                sx={{ color: 'var(--color-text-muted-on-light)', mb: 'var(--msqdx-spacing-xs)', mt: 2 }}
+                sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 'var(--msqdx-spacing-xs)', mt: 2 }}
             >
                 {t('domainResult.pageTopicsTierMix')}
             </MsqdxTypography>

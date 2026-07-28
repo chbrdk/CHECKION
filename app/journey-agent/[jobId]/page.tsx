@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Box, CircularProgress, IconButton, useTheme, useMediaQuery } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxCard, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
-import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_STATUS, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { SharePanel } from '@/components/SharePanel';
 import { AddToProject } from '@/components/AddToProject';
@@ -66,7 +66,7 @@ function StepResultSections({ resultText }: { resultText: string }) {
         return (
             <MsqdxTypography
                 variant="body2"
-                sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: 'var(--color-text-muted-on-light)' }}
+                sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: `${MSQDX_NEUTRAL['700']}` }}
             >
                 {resultText.length > 500 ? resultText.slice(0, 500) + '…' : resultText}
             </MsqdxTypography>
@@ -103,7 +103,7 @@ function StepResultSections({ resultText }: { resultText: string }) {
                         sx={{
                             whiteSpace: 'pre-wrap',
                             wordBreak: 'break-word',
-                            color: 'var(--color-text-muted-on-light)',
+                            color: `${MSQDX_NEUTRAL['700']}`,
                         }}
                     >
                         {value.length > 800 ? value.slice(0, 800) + '…' : value}
@@ -211,7 +211,7 @@ function ReasoningBlock({ text }: { text: string }) {
                                     key={i}
                                     variant="body2"
                                     component="li"
-                                    sx={{ mb: 0.25, color: 'var(--color-text-muted-on-light)' }}
+                                    sx={{ mb: 0.25, color: `${MSQDX_NEUTRAL['700']}` }}
                                 >
                                     {line.replace(/^(\d+\.|[-*•])\s*/, '')}
                                 </MsqdxTypography>
@@ -226,7 +226,7 @@ function ReasoningBlock({ text }: { text: string }) {
                         sx={{
                             whiteSpace: 'pre-wrap',
                             wordBreak: 'break-word',
-                            color: 'var(--color-text-muted-on-light)',
+                            color: `${MSQDX_NEUTRAL['700']}`,
                         }}
                     >
                         {lines.join('\n')}
@@ -291,7 +291,7 @@ function StepCard({
                     }}
                 />
                 {totalSteps > 1 && (
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                         {t('scan.journeyStepOf', { n: stepNumber, total: totalSteps })}
                     </MsqdxTypography>
                 )}
@@ -639,10 +639,7 @@ export default function JourneyAgentStatusPage() {
                             title={`${t('scan.journeyStepsTitle')} (${steps.length})`}
                             headerActions={
                                 stepRangeLabel ? (
-                                    <MsqdxTypography
-                                        variant="caption"
-                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
-                                    >
+                                    <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                         {stepRangeLabel}
                                     </MsqdxTypography>
                                 ) : undefined

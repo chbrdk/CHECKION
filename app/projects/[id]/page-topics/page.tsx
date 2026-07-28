@@ -4,11 +4,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Box, Stack } from '@mui/material';
-import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
+import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MSQDX_NEUTRAL } from '@msqdx/react';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
-import { apiProject, apiProjectDomainSummaryAll, apiProjectCompetitorChanges, pathDomain, pathProject } from '@/lib/constants';
+import {
+    apiProject,
+    apiProjectDomainSummaryAll,
+    apiProjectCompetitorChanges,
+    pathDomain,
+    pathProject,
+} from '@/lib/constants';
 import { DomainResultPageTopicsCard } from '@/components/domain/DomainResultPageTopicsCard';
 import { PageTopicsCompareBubbleMatrix } from '@/components/domain/PageTopicsCompareBubbleMatrix';
 import { PageTopicsChangeHighlights } from '@/components/PageTopicsChangeHighlights';
@@ -33,7 +39,7 @@ type CompetitorPayload = {
 export default function ProjectPageTopicsPage() {
     const params = useParams();
     const { t } = useI18n();
-    const id = typeof params.id === 'string' ? params.id : params.id?.[0] ?? null;
+    const id = typeof params.id === 'string' ? params.id : (params.id?.[0] ?? null);
     const [project, setProject] = useState<{ name: string; domain: string | null } | null>(null);
     const [loading, setLoading] = useState(true);
     const [own, setOwn] = useState<OwnPayload>(null);
@@ -61,7 +67,10 @@ export default function ProjectPageTopicsPage() {
                 if (p) setProject({ name: p.name ?? '', domain: p.domain ?? null });
                 else setProject(null);
                 if (summaryRes?.success && summaryRes?.data) {
-                    const d = summaryRes.data as { own: OwnPayload; competitors: Record<string, CompetitorPayload | null> };
+                    const d = summaryRes.data as {
+                        own: OwnPayload;
+                        competitors: Record<string, CompetitorPayload | null>;
+                    };
                     setOwn(d.own ?? null);
                     setCompetitors(d.competitors ?? {});
                 }
@@ -106,7 +115,7 @@ export default function ProjectPageTopicsPage() {
             ([, c]) =>
                 c?.status === 'complete' &&
                 c?.aggregated?.pageClassification &&
-                c.aggregated.pageClassification.coverage.pagesWithClassification > 0
+                c.aggregated.pageClassification.coverage.pagesWithClassification > 0,
         );
 
     const showCombinedMatrix = compareTopicSources.length >= 2;
@@ -139,7 +148,7 @@ export default function ProjectPageTopicsPage() {
             <MsqdxTypography variant="h4" weight="bold" sx={{ mb: 0.5 }}>
                 {t('projects.pageTopicsCompareTitle')}
             </MsqdxTypography>
-            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)', mb: 3 }}>
+            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 3 }}>
                 {t('projects.pageTopicsCompareSubtitle')}
             </MsqdxTypography>
 
@@ -152,7 +161,7 @@ export default function ProjectPageTopicsPage() {
                     borderRadius="lg"
                     sx={{ bgcolor: 'var(--color-card-bg)' }}
                 >
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                         {t('domainResult.pageTopicsEmpty')}
                     </MsqdxTypography>
                 </MsqdxMoleculeCard>
@@ -163,7 +172,9 @@ export default function ProjectPageTopicsPage() {
                             title={t('projects.pageTopicsCombinedDiagramTitle')}
                             variant="flat"
                             borderRadius="lg"
-                            headerActions={<InfoTooltip title={t('info.pageTopicsCompareMatrix')} ariaLabel={t('common.info')} />}
+                            headerActions={
+                                <InfoTooltip title={t('info.pageTopicsCompareMatrix')} ariaLabel={t('common.info')} />
+                            }
                             sx={{ bgcolor: 'var(--color-card-bg)' }}
                         >
                             <PageTopicsCompareBubbleMatrix t={t} sources={compareTopicSources} />
@@ -171,13 +182,25 @@ export default function ProjectPageTopicsPage() {
                     ) : null}
                     {own && (
                         <Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    flexWrap: 'wrap',
+                                    gap: 1,
+                                    mb: 1,
+                                }}
+                            >
                                 <MsqdxTypography variant="h5" weight="bold">
                                     {ownLabel}
                                 </MsqdxTypography>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <InfoTooltip title={t('info.pageTopicsAggregate')} ariaLabel={t('common.info')} />
-                                    <Link href={pathDomain(own.scanId, { projectId: id })} style={{ textDecoration: 'none' }}>
+                                    <Link
+                                        href={pathDomain(own.scanId, { projectId: id })}
+                                        style={{ textDecoration: 'none' }}
+                                    >
                                         <MsqdxButton variant="outlined" size="small">
                                             {t('projects.openDeepScan')}
                                         </MsqdxButton>
@@ -187,7 +210,7 @@ export default function ProjectPageTopicsPage() {
                             {ownPc && ownPc.coverage.pagesWithClassification > 0 ? (
                                 <DomainResultPageTopicsCard t={t} pageClassification={ownPc} placement="tab" />
                             ) : (
-                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                     {t('domainResult.pageTopicsEmpty')}
                                 </MsqdxTypography>
                             )}
@@ -200,27 +223,46 @@ export default function ProjectPageTopicsPage() {
                         const hasData = comp.status === 'complete' && pc && pc.coverage.pagesWithClassification > 0;
                         return (
                             <Box key={domain}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        flexWrap: 'wrap',
+                                        gap: 1,
+                                        mb: 1,
+                                    }}
+                                >
                                     <MsqdxTypography variant="h5" weight="bold">
                                         {domain}
                                     </MsqdxTypography>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <InfoTooltip title={t('info.pageTopicsAggregate')} ariaLabel={t('common.info')} />
-                                        <Link href={pathDomain(comp.scanId, { projectId: id })} style={{ textDecoration: 'none' }}>
-                                            <MsqdxButton variant="outlined" size="small" disabled={comp.status !== 'complete'}>
+                                        <InfoTooltip
+                                            title={t('info.pageTopicsAggregate')}
+                                            ariaLabel={t('common.info')}
+                                        />
+                                        <Link
+                                            href={pathDomain(comp.scanId, { projectId: id })}
+                                            style={{ textDecoration: 'none' }}
+                                        >
+                                            <MsqdxButton
+                                                variant="outlined"
+                                                size="small"
+                                                disabled={comp.status !== 'complete'}
+                                            >
                                                 {t('projects.openDeepScan')}
                                             </MsqdxButton>
                                         </Link>
                                     </Box>
                                 </Box>
                                 {comp.status !== 'complete' ? (
-                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                    <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                         {t('projects.pageTopicsCompetitorIncomplete', { status: comp.status })}
                                     </MsqdxTypography>
                                 ) : hasData ? (
                                     <DomainResultPageTopicsCard t={t} pageClassification={pc} placement="tab" />
                                 ) : (
-                                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                    <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                         {t('domainResult.pageTopicsEmpty')}
                                     </MsqdxTypography>
                                 )}

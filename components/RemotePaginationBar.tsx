@@ -2,6 +2,7 @@
 
 import { Box } from '@mui/material';
 import { MsqdxButton, MsqdxTypography } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 
 export type RemotePaginationBarProps = {
     /** Zero-based page index */
@@ -16,17 +17,29 @@ export type RemotePaginationBarProps = {
     };
 };
 
-export function RemotePaginationBar({ page, pageSize, total, loading, onPageChange, labels }: RemotePaginationBarProps) {
+export function RemotePaginationBar({
+    page,
+    pageSize,
+    total,
+    loading,
+    onPageChange,
+    labels,
+}: RemotePaginationBarProps) {
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const safePage = Math.min(Math.max(0, page), totalPages - 1);
     const displayPage = safePage + 1;
 
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mt: 1, mb: 0.5 }}>
-            <MsqdxButton size="small" variant="outlined" disabled={loading || safePage <= 0} onClick={() => onPageChange(safePage - 1)}>
+            <MsqdxButton
+                size="small"
+                variant="outlined"
+                disabled={loading || safePage <= 0}
+                onClick={() => onPageChange(safePage - 1)}
+            >
                 {labels.prev}
             </MsqdxButton>
-            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                 {displayPage} / {totalPages} · {total.toLocaleString()}
             </MsqdxTypography>
             <MsqdxButton

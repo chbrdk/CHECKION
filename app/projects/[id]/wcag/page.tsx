@@ -6,7 +6,7 @@ import { useFetchOnceForId } from '@/hooks/useFetchOnceForId';
 import Link from 'next/link';
 import { Box, Stack, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
-import { MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_NEUTRAL, MSQDX_STATUS } from '@msqdx/tokens';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { DomainAggregatedIssueList } from '@/components/DomainAggregatedIssueList';
@@ -171,15 +171,12 @@ export default function ProjectWcagPage() {
                             {t('common.loading')}
                         </MsqdxTypography>
                     ) : fullSummary ? (
-                        <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                             {t('projects.wcag.fromScan')} · {totalPageCount} {t('domainResult.pagesScanned')}
                         </MsqdxTypography>
                     ) : !scanId ? (
                         <>
-                            <MsqdxTypography
-                                variant="body2"
-                                sx={{ color: 'var(--color-text-muted-on-light)', mb: 1.5 }}
-                            >
+                            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, mb: 1.5 }}>
                                 {t('projects.wcag.noScan')}
                             </MsqdxTypography>
                             <Link
@@ -201,7 +198,7 @@ export default function ProjectWcagPage() {
                 {loading && (
                     <MsqdxMoleculeCard variant="flat" borderRadius="lg" sx={{ bgcolor: 'var(--color-card-bg)' }}>
                         <Box sx={{ py: 4, textAlign: 'center' }}>
-                            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                 {t('common.loading')}
                             </MsqdxTypography>
                         </Box>
@@ -246,7 +243,7 @@ export default function ProjectWcagPage() {
                                         <Box>
                                             <MsqdxTypography
                                                 variant="caption"
-                                                sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}
+                                                sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}
                                             >
                                                 {t('projects.ourScore')}
                                             </MsqdxTypography>
@@ -256,7 +253,7 @@ export default function ProjectWcagPage() {
                                                 </MsqdxTypography>
                                                 <MsqdxTypography
                                                     variant="body2"
-                                                    sx={{ color: 'var(--color-text-muted-on-light)', fontWeight: 500 }}
+                                                    sx={{ color: `${MSQDX_NEUTRAL['700']}`, fontWeight: 500 }}
                                                 >
                                                     {t('projects.wcag.score')}
                                                 </MsqdxTypography>
@@ -275,7 +272,7 @@ export default function ProjectWcagPage() {
                                                         <MsqdxTypography
                                                             variant="caption"
                                                             sx={{
-                                                                color: 'var(--color-text-muted-on-light)',
+                                                                color: `${MSQDX_NEUTRAL['700']}`,
                                                                 display: 'block',
                                                             }}
                                                         >
@@ -285,7 +282,7 @@ export default function ProjectWcagPage() {
                                                             <MsqdxTypography
                                                                 variant="h4"
                                                                 weight="bold"
-                                                                sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                                                sx={{ color: `${MSQDX_NEUTRAL['700']}` }}
                                                             >
                                                                 {c.status === 'complete'
                                                                     ? `${c.wcagScore}/100`

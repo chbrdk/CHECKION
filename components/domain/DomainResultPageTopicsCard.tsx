@@ -3,6 +3,7 @@
 import React, { memo } from 'react';
 import { Box, Stack } from '@mui/material';
 import { MsqdxTypography, MsqdxMoleculeCard } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { AggregatedPageClassification, AggregatedPageClassificationProfile } from '@/lib/types';
 import { PageTopicsVisualization } from '@/components/domain/PageTopicsVisualization';
 import { MSQDX_INNER_CARD_BORDER_SX } from '@/lib/theme-accent';
@@ -60,13 +61,16 @@ export const DomainResultPageTopicsCard = memo(function DomainResultPageTopicsCa
                             gridColumn: { xs: 'span 2', md: 'span 2' },
                         }}
                     >
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                        <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}>
                             {t('domainResult.pageTopicsKpiCoverage')}
                         </MsqdxTypography>
                         <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mt: 0.5, lineHeight: 1.2 }}>
                             {coverage.pagesWithClassification} / {coverage.totalPages}
                         </MsqdxTypography>
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.75, lineHeight: 1.35 }}>
+                        <MsqdxTypography
+                            variant="caption"
+                            sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mt: 0.75, lineHeight: 1.35 }}
+                        >
                             {t('domainResult.pageTopicsCoverage', {
                                 classified: coverage.pagesWithClassification,
                                 total: coverage.totalPages,
@@ -81,7 +85,7 @@ export const DomainResultPageTopicsCard = memo(function DomainResultPageTopicsCa
                             bgcolor: 'var(--color-card-bg)',
                         }}
                     >
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                        <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}>
                             T5
                         </MsqdxTypography>
                         <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mt: 0.5, lineHeight: 1.2 }}>
@@ -96,7 +100,7 @@ export const DomainResultPageTopicsCard = memo(function DomainResultPageTopicsCa
                             bgcolor: 'var(--color-card-bg)',
                         }}
                     >
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+                        <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}>
                             T1–2 &gt; T4–5
                         </MsqdxTypography>
                         <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mt: 0.5, lineHeight: 1.2 }}>
@@ -105,12 +109,7 @@ export const DomainResultPageTopicsCard = memo(function DomainResultPageTopicsCa
                     </Box>
                 </Box>
 
-                <MsqdxMoleculeCard
-                    variant="flat"
-                    borderRadius="1.5xl"
-                    footerDivider={false}
-                    sx={INNER_CARD_SX}
-                >
+                <MsqdxMoleculeCard variant="flat" borderRadius="1.5xl" footerDivider={false} sx={INNER_CARD_SX}>
                     <PageTopicsVisualization t={t} pageClassification={pageClassification} />
                 </MsqdxMoleculeCard>
 
@@ -125,7 +124,11 @@ export const DomainResultPageTopicsCard = memo(function DomainResultPageTopicsCa
                     >
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                             {pageSamples.map((s) => (
-                                <MsqdxTypography key={s.url} variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', lineHeight: 1.4 }}>
+                                <MsqdxTypography
+                                    key={s.url}
+                                    variant="caption"
+                                    sx={{ color: `${MSQDX_NEUTRAL['700']}`, lineHeight: 1.4 }}
+                                >
                                     <strong>{profileLabel(t, s.profile)}</strong>
                                     {' · '}
                                     {s.url.length > 88 ? `${s.url.slice(0, 85)}…` : s.url}

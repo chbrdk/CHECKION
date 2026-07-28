@@ -1,6 +1,6 @@
 import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxCard, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
-import { MSQDX_SPACING, MSQDX_THEME, MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
+import { MSQDX_SPACING, MSQDX_THEME, MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { SeoAudit } from '@/lib/types';
 import { CheckCircle, XCircle, AlertTriangle, BarChart3 } from 'lucide-react';
 
@@ -73,7 +73,7 @@ export function SeoCard({ seo }: { seo: SeoAudit }) {
                         <MsqdxTypography
                             variant="caption"
                             sx={{
-                                color: 'var(--color-text-muted-on-light)',
+                                color: `${MSQDX_NEUTRAL['700']}`,
                                 display: 'block',
                                 mb: 'var(--msqdx-spacing-xxs)',
                             }}
@@ -96,7 +96,7 @@ export function SeoCard({ seo }: { seo: SeoAudit }) {
                         <MsqdxTypography
                             variant="caption"
                             sx={{
-                                color: 'var(--color-text-muted-on-light)',
+                                color: `${MSQDX_NEUTRAL['700']}`,
                                 display: 'block',
                                 mb: 'var(--msqdx-spacing-xxs)',
                             }}
@@ -129,7 +129,7 @@ export function SeoCard({ seo }: { seo: SeoAudit }) {
                         </Box>
                         <MsqdxTypography
                             variant="caption"
-                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 1 }}
+                            sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 1 }}
                         >
                             {seo.keywordAnalysis.totalWords} Wörter im Body · Top-Begriffe (Stopwörter entfernt), Dichte
                             in %
@@ -178,7 +178,7 @@ export function SeoCard({ seo }: { seo: SeoAudit }) {
                                             </MsqdxTypography>
                                             <MsqdxTypography
                                                 variant="caption"
-                                                sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                                sx={{ color: `${MSQDX_NEUTRAL['700']}` }}
                                             >
                                                 {k.count}× · {k.densityPercent}%
                                             </MsqdxTypography>
@@ -227,7 +227,7 @@ export function SeoCard({ seo }: { seo: SeoAudit }) {
                                                 {!presence.inTitle && !presence.inH1 && !presence.inMetaDescription && (
                                                     <MsqdxTypography
                                                         variant="caption"
-                                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
+                                                        sx={{ color: `${MSQDX_NEUTRAL['700']}` }}
                                                     >
                                                         nur im Fließtext
                                                     </MsqdxTypography>
@@ -241,7 +241,7 @@ export function SeoCard({ seo }: { seo: SeoAudit }) {
                         {seo.keywordAnalysis.metaKeywordsRaw && (
                             <MsqdxTypography
                                 variant="caption"
-                                sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 1 }}
+                                sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mt: 1 }}
                             >
                                 meta keywords: {seo.keywordAnalysis.metaKeywordsRaw.slice(0, 80)}
                                 {seo.keywordAnalysis.metaKeywordsRaw.length > 80 ? '…' : ''}
@@ -285,7 +285,7 @@ function SeoItem({
                     {label}
                 </MsqdxTypography>
                 {recommended && (
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                         Rec: {recommended}
                     </MsqdxTypography>
                 )}

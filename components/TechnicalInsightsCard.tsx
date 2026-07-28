@@ -1,6 +1,6 @@
 import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
-import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
+import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { TechnicalInsights } from '@/lib/types';
 import { Globe, Smartphone, Palette, CheckCircle2, Cog, Repeat, RefreshCw } from 'lucide-react';
 
@@ -42,7 +42,7 @@ export function TechnicalInsightsCard({ insights }: { insights: TechnicalInsight
                                 />
                             ))}
                             {insights.thirdPartyDomains.length > 12 && (
-                                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                     + {insights.thirdPartyDomains.length - 12}
                                 </MsqdxTypography>
                             )}
@@ -147,7 +147,7 @@ export function TechnicalInsightsCard({ insights }: { insights: TechnicalInsight
                                 </MsqdxTypography>
                             </>
                         ) : (
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                 Nicht gesetzt
                             </MsqdxTypography>
                         )}
@@ -174,7 +174,7 @@ export function TechnicalInsightsCard({ insights }: { insights: TechnicalInsight
                             Vorhanden
                         </MsqdxTypography>
                     ) : (
-                        <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                        <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                             Fehlt
                         </MsqdxTypography>
                     )}

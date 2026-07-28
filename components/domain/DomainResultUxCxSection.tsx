@@ -3,7 +3,7 @@
 import React, { memo } from 'react';
 import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxButton, MsqdxChip, MsqdxMoleculeCard } from '@msqdx/react';
-import { MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_STATUS, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import { apiScanDomainSummarize } from '@/lib/constants';
 import type { DomainSummaryApiResponse } from '@/lib/domain-summary';
@@ -100,7 +100,7 @@ function DomainResultUxCxSectionInner({
                                             )}
                                             <MsqdxTypography
                                                 variant="body2"
-                                                sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.25 }}
+                                                sx={{ color: `${MSQDX_NEUTRAL['700']}`, mt: 0.25 }}
                                             >
                                                 {r.description}
                                             </MsqdxTypography>
@@ -109,7 +109,7 @@ function DomainResultUxCxSectionInner({
                             </Box>
                         </Box>
                     )}
-                    <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                         Generiert mit {result.llmSummary.modelUsed} am{' '}
                         <span suppressHydrationWarning>
                             {new Date(result.llmSummary.generatedAt).toLocaleString('de-DE')}
@@ -119,10 +119,7 @@ function DomainResultUxCxSectionInner({
                 </Box>
             ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, py: 4 }}>
-                    <MsqdxTypography
-                        variant="body2"
-                        sx={{ color: 'var(--color-text-muted-on-light)', textAlign: 'center' }}
-                    >
+                    <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}`, textAlign: 'center' }}>
                         Hier erscheint eine Gesamtbewertung der Domain und konkrete Handlungsempfehlungen auf Basis
                         aller gescannten Seiten und systemischen Issues.
                     </MsqdxTypography>

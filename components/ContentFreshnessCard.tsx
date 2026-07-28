@@ -2,7 +2,7 @@
 
 import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
-import { MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_STATUS, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { ContentFreshness, ContentFreshnessSource } from '@/lib/types';
 import { CalendarClock, Info } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -28,7 +28,7 @@ function confidenceColor(c: ContentFreshness['confidence']): string {
         case 'low':
             return MSQDX_STATUS.info.base;
         default:
-            return 'var(--color-text-muted-on-light)';
+            return MSQDX_NEUTRAL[600];
     }
 }
 
@@ -93,7 +93,7 @@ export function ContentFreshnessCard({ data }: { data: ContentFreshness }) {
                 </Box>
 
                 {!hasBest && (
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                         {t('results.contentFreshnessNoDates')}
                     </MsqdxTypography>
                 )}
@@ -109,7 +109,7 @@ export function ContentFreshnessCard({ data }: { data: ContentFreshness }) {
                         >
                             <MsqdxTypography
                                 variant="caption"
-                                sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}
+                                sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 0.5 }}
                             >
                                 {t('results.contentFreshnessBestSource')}
                             </MsqdxTypography>
@@ -176,10 +176,7 @@ export function ContentFreshnessCard({ data }: { data: ContentFreshness }) {
                                         flexWrap: 'wrap',
                                     }}
                                 >
-                                    <MsqdxTypography
-                                        variant="caption"
-                                        sx={{ color: 'var(--color-text-muted-on-light)' }}
-                                    >
+                                    <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                         {t(sourceLabelKey(s.source))}
                                     </MsqdxTypography>
                                     <MsqdxTypography

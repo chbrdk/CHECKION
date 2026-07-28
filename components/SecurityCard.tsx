@@ -2,7 +2,7 @@
 
 import { Box, alpha } from '@mui/material';
 import { MsqdxTypography, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
-import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY } from '@msqdx/tokens';
+import { MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { SecurityAudit } from '@/lib/types';
 import { ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -82,7 +82,7 @@ export function SecurityCard({ security }: { security: SecurityAudit }) {
                                         <MsqdxTypography
                                             variant="caption"
                                             sx={{
-                                                color: 'var(--color-text-muted-on-light)',
+                                                color: `${MSQDX_NEUTRAL['700']}`,
                                                 display: 'block',
                                                 maxWidth: '240px',
                                                 overflow: 'hidden',
@@ -154,7 +154,7 @@ export function SecurityCard({ security }: { security: SecurityAudit }) {
                             </MsqdxTypography>
                         ))}
                         {security.mixedContentUrls.length > 5 && (
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                 + {security.mixedContentUrls.length - 5} weitere
                             </MsqdxTypography>
                         )}
@@ -186,7 +186,7 @@ export function SecurityCard({ security }: { security: SecurityAudit }) {
                             </MsqdxTypography>
                         ))}
                         {security.sriMissing.length > 5 && (
-                            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                 + {security.sriMissing.length - 5} weitere
                             </MsqdxTypography>
                         )}

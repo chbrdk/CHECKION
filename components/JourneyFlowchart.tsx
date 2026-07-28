@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Box, CircularProgress, IconButton } from '@mui/material';
 import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import type { JourneyStep } from '@/lib/types';
 import type { PageIndexRegion } from '@/lib/types';
@@ -126,7 +127,7 @@ function StepScreenshot({
                     justifyContent: 'center',
                 }}
             >
-                <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                     {alt}
                 </MsqdxTypography>
             </Box>
@@ -197,7 +198,7 @@ export function JourneyFlowchart({
     if (steps.length === 0) {
         return (
             <Box sx={{ py: 3, textAlign: 'center' }}>
-                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                     {t('domainResult.journeyNoSteps')}
                 </MsqdxTypography>
             </Box>
@@ -219,7 +220,7 @@ export function JourneyFlowchart({
                     {message && (
                         <MsqdxTypography
                             variant="caption"
-                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mt: 0.5 }}
+                            sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mt: 0.5 }}
                         >
                             {message}
                         </MsqdxTypography>
@@ -296,15 +297,12 @@ export function JourneyFlowchart({
                                 >
                                     <MsqdxTypography
                                         variant="caption"
-                                        sx={{ fontWeight: 700, color: 'var(--color-text-muted-on-light)' }}
+                                        sx={{ fontWeight: 700, color: `${MSQDX_NEUTRAL['700']}` }}
                                     >
                                         {t('domainResult.journeyStep')} {step.index + 1}
                                     </MsqdxTypography>
                                     {steps.length > 1 && (
-                                        <MsqdxTypography
-                                            variant="caption"
-                                            sx={{ color: 'var(--color-text-muted-on-light)' }}
-                                        >
+                                        <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                             {activeIndex + 1} / {steps.length}
                                         </MsqdxTypography>
                                     )}
@@ -326,7 +324,7 @@ export function JourneyFlowchart({
                                                 variant="body2"
                                                 sx={{
                                                     fontStyle: 'italic',
-                                                    color: 'var(--color-text-muted-on-light)',
+                                                    color: `${MSQDX_NEUTRAL['700']}`,
                                                     display: 'block',
                                                     mb: 0.5,
                                                 }}
@@ -356,7 +354,7 @@ export function JourneyFlowchart({
                                                 variant="body2"
                                                 sx={{
                                                     fontStyle: 'italic',
-                                                    color: 'var(--color-text-muted-on-light)',
+                                                    color: `${MSQDX_NEUTRAL['700']}`,
                                                     display: 'block',
                                                     mt: 0.5,
                                                 }}
@@ -413,7 +411,7 @@ export function JourneyFlowchart({
                                                 variant="caption"
                                                 sx={{
                                                     fontStyle: 'italic',
-                                                    color: 'var(--color-text-muted-on-light)',
+                                                    color: `${MSQDX_NEUTRAL['700']}`,
                                                     mt: 0.5,
                                                 }}
                                             >
@@ -430,7 +428,7 @@ export function JourneyFlowchart({
                                             alignItems: 'center',
                                             gap: 0.5,
                                             mt: 2,
-                                            color: 'var(--color-text-muted-on-light)',
+                                            color: `${MSQDX_NEUTRAL['700']}`,
                                         }}
                                     >
                                         <CircularProgress size={18} sx={{ color: 'var(--color-theme-accent)' }} />

@@ -216,13 +216,10 @@ export default function GeoEeatResultPage() {
         return (
             <Box sx={{ p: 'var(--msqdx-spacing-md)', maxWidth: 900, mx: 'auto', textAlign: 'center', py: 6 }}>
                 <CircularProgress size={40} sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
-                <MsqdxTypography variant="body1" sx={{ mt: 2, color: 'var(--color-text-muted-on-light)' }}>
+                <MsqdxTypography variant="body1" sx={{ mt: 2, color: `${MSQDX_NEUTRAL['700']}` }}>
                     {t('geoEeat.statusRunning')}
                 </MsqdxTypography>
-                <MsqdxTypography
-                    variant="caption"
-                    sx={{ display: 'block', mt: 0.5, color: 'var(--color-text-muted-on-light)' }}
-                >
+                <MsqdxTypography variant="caption" sx={{ display: 'block', mt: 0.5, color: `${MSQDX_NEUTRAL['700']}` }}>
                     {url || jobId}
                 </MsqdxTypography>
             </Box>
@@ -237,7 +234,7 @@ export default function GeoEeatResultPage() {
                     variant="flat"
                     sx={{ bgcolor: 'var(--color-card-bg)', borderColor: MSQDX_STATUS.error.base }}
                 >
-                    <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                    <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                         {error || t('geoEeat.unknownError')}
                     </MsqdxTypography>
                     <Box sx={{ mt: 2 }}>
@@ -367,7 +364,7 @@ export default function GeoEeatResultPage() {
                                     variant="caption"
                                     sx={{
                                         display: 'block',
-                                        color: 'var(--color-text-muted-on-light)',
+                                        color: `${MSQDX_NEUTRAL['700']}`,
                                         wordBreak: 'break-all',
                                     }}
                                 >
@@ -381,7 +378,7 @@ export default function GeoEeatResultPage() {
                                             variant="caption"
                                             sx={{
                                                 fontWeight: 600,
-                                                color: 'var(--color-text-muted-on-light)',
+                                                color: `${MSQDX_NEUTRAL['700']}`,
                                                 display: 'block',
                                                 mb: 0.5,
                                             }}
@@ -459,7 +456,7 @@ export default function GeoEeatResultPage() {
                                             variant="caption"
                                             sx={{
                                                 fontWeight: 600,
-                                                color: 'var(--color-text-muted-on-light)',
+                                                color: `${MSQDX_NEUTRAL['700']}`,
                                                 display: 'block',
                                                 mb: 0.5,
                                             }}
@@ -573,7 +570,7 @@ export default function GeoEeatResultPage() {
                                             variant="caption"
                                             sx={{
                                                 fontWeight: 600,
-                                                color: 'var(--color-text-muted-on-light)',
+                                                color: `${MSQDX_NEUTRAL['700']}`,
                                                 display: 'block',
                                                 mb: 0.5,
                                             }}
@@ -648,7 +645,7 @@ export default function GeoEeatResultPage() {
                                                 sx={{
                                                     display: 'block',
                                                     mt: 0.5,
-                                                    color: 'var(--color-text-muted-on-light)',
+                                                    color: `${MSQDX_NEUTRAL['700']}`,
                                                 }}
                                             >
                                                 {page.eeatScores.trust.reasoning
@@ -669,7 +666,7 @@ export default function GeoEeatResultPage() {
                                             variant="caption"
                                             sx={{
                                                 fontWeight: 600,
-                                                color: 'var(--color-text-muted-on-light)',
+                                                color: `${MSQDX_NEUTRAL['700']}`,
                                                 display: 'block',
                                                 mb: 0.5,
                                             }}
@@ -715,7 +712,7 @@ export default function GeoEeatResultPage() {
                                                 sx={{
                                                     display: 'block',
                                                     mt: 0.5,
-                                                    color: 'var(--color-text-muted-on-light)',
+                                                    color: `${MSQDX_NEUTRAL['700']}`,
                                                 }}
                                             >
                                                 {t('geoEeat.missingWeakLabel')}: {page.missingGeoElements.join(', ')}
@@ -731,7 +728,7 @@ export default function GeoEeatResultPage() {
                                             display: 'block',
                                             mt: 1,
                                             fontStyle: 'italic',
-                                            color: 'var(--color-text-muted-on-light)',
+                                            color: `${MSQDX_NEUTRAL['700']}`,
                                         }}
                                     >
                                         {t('geoEeat.llmUnavailableHint')}
@@ -756,10 +753,7 @@ export default function GeoEeatResultPage() {
                                 >
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 2 }}>
                                         <CircularProgress size={24} sx={{ color: MSQDX_BRAND_PRIMARY.green }} />
-                                        <MsqdxTypography
-                                            variant="body2"
-                                            sx={{ color: 'var(--color-text-muted-on-light)' }}
-                                        >
+                                        <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                             {t('geoEeat.competitiveHistoryLoading')}
                                         </MsqdxTypography>
                                     </Box>

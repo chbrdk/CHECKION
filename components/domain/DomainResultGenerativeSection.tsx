@@ -3,7 +3,7 @@
 import React, { memo, Profiler } from 'react';
 import { Box, Stack } from '@mui/material';
 import { MsqdxTypography, MsqdxMoleculeCard } from '@msqdx/react';
-import { MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_STATUS, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
 import { InfoTooltip } from '@/components/InfoTooltip';
 import type { AggregatedGenerative } from '@/lib/domain-aggregation';
@@ -53,7 +53,7 @@ function DomainResultGenerativeSectionInner({
                 bgcolor: 'var(--color-card-bg)',
             }}
         >
-            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}>
                 {t(labelKey)}
             </MsqdxTypography>
             <MsqdxTypography
@@ -132,19 +132,19 @@ function DomainResultGenerativeSectionInner({
                             sx={INNER_CARD_SX}
                         >
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                     {t('domainResult.generativePatternNoFaq', {
                                         count: generative.issuePatterns.pagesWithoutFaqSchema,
                                         total: n,
                                     })}
                                 </MsqdxTypography>
-                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                     {t('domainResult.generativePatternNoFaqHowTo', {
                                         count: generative.issuePatterns.pagesWithoutHowToOrFaqSchema,
                                         total: n,
                                     })}
                                 </MsqdxTypography>
-                                <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+                                <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                                     {t('domainResult.generativePatternNoBreadcrumb', {
                                         count: generative.issuePatterns.pagesWithoutBreadcrumbSchema,
                                         total: n,
@@ -270,7 +270,7 @@ function DomainResultGenerativeEmptyInner({
             footerDivider={false}
             sx={{ bgcolor: 'var(--color-card-bg)' }}
         >
-            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                 {t('domainResult.generativeEmpty')}
             </MsqdxTypography>
         </MsqdxMoleculeCard>

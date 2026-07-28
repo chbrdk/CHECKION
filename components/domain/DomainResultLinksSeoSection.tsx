@@ -4,6 +4,7 @@ import React, { memo, useCallback, useMemo, useState } from 'react';
 import type { CrossPageKeyword } from '@/lib/domain-aggregation';
 import { Box, CircularProgress, IconButton, Stack, Tooltip } from '@mui/material';
 import { MsqdxTypography, MsqdxChip, MsqdxButton, MsqdxMoleculeCard } from '@msqdx/react';
+import { MSQDX_NEUTRAL } from '@msqdx/tokens';
 import { ExternalLink } from 'lucide-react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { VirtualScrollList } from '@/components/VirtualScrollList';
@@ -152,7 +153,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({
                 bgcolor: 'var(--color-card-bg)',
             }}
         >
-            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}>
                 {t(labelKey)}
             </MsqdxTypography>
             <MsqdxTypography variant="h5" sx={{ fontWeight: 700, mt: 0.5, lineHeight: 1.2 }}>
@@ -206,7 +207,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({
                 {moreMissingMeta > 0 && (
                     <MsqdxTypography
                         variant="caption"
-                        sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.75, display: 'block' }}
+                        sx={{ color: `${MSQDX_NEUTRAL['700']}`, mt: 0.75, display: 'block' }}
                     >
                         {t('domainResult.missingMetaMoreUrls', {
                             count: moreMissingMeta,
@@ -270,7 +271,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({
                     <Box sx={{ mb: 1.25 }}>
                         <MsqdxTypography
                             variant="caption"
-                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}
+                            sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 0.5 }}
                         >
                             {t('domainResult.linksSeoDupTitlesSubtitle')}
                         </MsqdxTypography>
@@ -296,7 +297,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({
                     <Box sx={{ mb: 1.25 }}>
                         <MsqdxTypography
                             variant="caption"
-                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}
+                            sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 0.5 }}
                         >
                             {t('domainResult.linksSeoDupMetasSubtitle')}
                         </MsqdxTypography>
@@ -322,7 +323,7 @@ const DomainResultSeoPanel = memo(function DomainResultSeoPanel({
                     <Box sx={{ mb: hrefConflict || hrefTargets.length > 1 ? 1.25 : 0 }}>
                         <MsqdxTypography
                             variant="caption"
-                            sx={{ color: 'var(--color-text-muted-on-light)', display: 'block', mb: 0.5 }}
+                            sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 0.5 }}
                         >
                             {t('domainResult.linksSeoCanonicalMismatchSubtitle')}
                         </MsqdxTypography>
@@ -536,7 +537,7 @@ const DomainResultLinksPanel = memo(function DomainResultLinksPanel({
                     : 'var(--color-card-bg)',
             }}
         >
-            <MsqdxTypography variant="caption" sx={{ color: 'var(--color-text-muted-on-light)', display: 'block' }}>
+            <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block' }}>
                 {label}
             </MsqdxTypography>
             <MsqdxTypography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.2, mt: 0.5 }}>
@@ -545,7 +546,7 @@ const DomainResultLinksPanel = memo(function DomainResultLinksPanel({
             {summaryLine ? (
                 <MsqdxTypography
                     variant="caption"
-                    sx={{ color: 'var(--color-text-muted-on-light)', mt: 0.75, display: 'block' }}
+                    sx={{ color: `${MSQDX_NEUTRAL['700']}`, mt: 0.75, display: 'block' }}
                 >
                     {summaryLine}
                 </MsqdxTypography>
@@ -733,7 +734,7 @@ function DomainResultLinksSeoEmptyInner({
             footerDivider={false}
             sx={{ bgcolor: 'var(--color-card-bg)' }}
         >
-            <MsqdxTypography variant="body2" sx={{ color: 'var(--color-text-muted-on-light)' }}>
+            <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
                 {t('domainResult.linksSeoEmpty')}
             </MsqdxTypography>
         </MsqdxMoleculeCard>
