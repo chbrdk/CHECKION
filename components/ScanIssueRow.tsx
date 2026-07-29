@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Box, alpha } from '@mui/material';
-import { MsqdxTypography, MsqdxChip } from '@msqdx/react';
+import { MsqdxTypography, MsqdxChip, MsqdxButton } from '@msqdx/react';
 import { MSQDX_SPACING, MSQDX_THEME, MSQDX_BRAND_PRIMARY, MSQDX_STATUS, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { Issue } from '@/lib/types';
 import { useI18n } from '@/components/i18n/I18nProvider';
@@ -42,7 +42,7 @@ export const ScanIssueRow = memo(({ issue, globalRowIndex, registerRef }: ScanIs
             data-row-index={globalRowIndex}
             sx={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) minmax(120px, 1.2fr) 80px 72px minmax(0, 1fr) 40px',
+                gridTemplateColumns: 'auto minmax(120px, 1.2fr) 120px 92px minmax(0, 1fr) 40px',
                 gridTemplateRows: 'auto auto',
                 gap: 0,
                 borderBottom: tableBorder,
@@ -81,14 +81,43 @@ export const ScanIssueRow = memo(({ issue, globalRowIndex, registerRef }: ScanIs
             <Box
                 component="div"
                 role="cell"
-                sx={{ px: 1.5, py: 1, minWidth: 0, display: 'flex', alignItems: 'center', borderRight: tableBorder }}
+                sx={{
+                    px: 1.5,
+                    py: 1,
+                    minWidth: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    borderRight: tableBorder,
+                }}
             >
                 <MsqdxTypography
                     variant="body2"
-                    sx={{ fontWeight: 500, lineHeight: 1.4, color: MSQDX_THEME.light.text.primary }}
+                    sx={{
+                        fontWeight: 500,
+                        lineHeight: 1.4,
+                        color: MSQDX_THEME.light.text.primary,
+                        wordBreak: 'break-word',
+                    }}
                 >
                     {issue.message}
                 </MsqdxTypography>
+                {issue.helpUrl && (
+                    <Box sx={{ pt: 1 }}>
+                        <a
+                            href={issue.helpUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={t('results.fixDocsAria')}
+                            style={{
+                                fontSize: '0.75rem',
+                                color: MSQDX_BRAND_PRIMARY.green,
+                                textDecoration: 'underline',
+                            }}
+                        >
+                            {t('results.fixDocs')} →
+                        </a>
+                    </Box>
+                )}
             </Box>
             <Box
                 component="div"
@@ -155,37 +184,50 @@ export const ScanIssueRow = memo(({ issue, globalRowIndex, registerRef }: ScanIs
 
             {/* Last cell: native <details> with display:contents so summary and content become grid children */}
             {hasDetails ? (
-                <Box component="details" sx={{ margin: 0, display: 'contents' }} onClick={(e) => e.stopPropagation()}>
-                    <Box
-                        component="summary"
+                </* component="details" sx={{ margin: 0, display: 'contents' }} onClick={(e) => e.stopPropagation()} */>
+                    <MsqdxButton
+                        variant="text"
                         title="Selector & Kontext ein- oder ausklappen"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            const details = document.querySelector(
+                                `#${e.currentTarget.parentElement?.id} > .details-content`,
+                            );
+                            details?.classList.toggle('open');
+                        }}
                         sx={{
-                            listStyle: 'none',
                             cursor: 'pointer',
                             px: 1,
                             py: 1,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            alignSelf: 'center',
                             fontSize: '0.7rem',
                             color: MSQDX_THEME.light.text.tertiary,
-                            userSelect: 'none',
-                            '&::-webkit-details-marker': { display: 'none' },
                         }}
                     >
                         <span aria-hidden>▼</span>
-                    </Box>
+                    </MsqdxButton>
                     <Box
-                        component="div"
+                        className="details-content"
                         sx={{
                             gridColumn: '1 / -1',
-                            p: 1.5,
+                            p: ` 0 ${MSQDX_SPACING.padding.sm}px`,
                             backgroundColor: MSQDX_NEUTRAL[50],
                             borderTop: tableBorder,
                             display: 'grid',
                             gridTemplateColumns: '1fr 1fr',
                             gap: 2,
                             color: MSQDX_THEME.light.text.primary,
+                            maxHeight: 0,
+                            transition: 'max-height 0.5s ease-in-out, padding 0.1s ease-in-out 0.25s',
+                            '&.open': {
+                                p: `${MSQDX_SPACING.padding.sm}px`,
+                                maxHeight: '250px',
+                                overflowY: 'auto',
+                                transition: 'max-height 0.6s ease-in-out, padding 0.2s ease-in-out 0.2s',
+                            },
                         }}
                     >
                         {issue.selector && (
@@ -255,7 +297,7 @@ export const ScanIssueRow = memo(({ issue, globalRowIndex, registerRef }: ScanIs
                                 </Box>
                             </Box>
                         )}
-                        {issue.helpUrl && (
+                        {/* {issue.helpUrl && (
                             <Box sx={{ gridColumn: '1 / -1', pt: 1 }}>
                                 <a
                                     href={issue.helpUrl}
@@ -271,9 +313,9 @@ export const ScanIssueRow = memo(({ issue, globalRowIndex, registerRef }: ScanIs
                                     {t('results.fixDocs')} →
                                 </a>
                             </Box>
-                        )}
+                        )} */}
                     </Box>
-                </Box>
+                </>
             ) : (
                 <Box
                     component="div"

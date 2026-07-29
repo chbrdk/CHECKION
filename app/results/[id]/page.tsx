@@ -3,12 +3,11 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
-import { Box, alpha, Collapse, CircularProgress, Alert } from '@mui/material';
+import { Box, alpha, CircularProgress, Alert } from '@mui/material';
 import {
     MsqdxTypography,
     MsqdxButton,
     MsqdxChip,
-    MsqdxCard,
     MsqdxMoleculeCard,
     MsqdxTabs,
     MsqdxTooltip,
@@ -16,17 +15,16 @@ import {
     MsqdxAccordionItem,
     MsqdxIcon,
 } from '@msqdx/react';
-import { MSQDX_SPACING, MSQDX_THEME, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL, MSQDX_STATUS } from '@msqdx/tokens';
+import { MSQDX_SPACING, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL, MSQDX_STATUS } from '@msqdx/tokens';
 import { EcoCard } from '@/components/EcoCard';
 import { PerformanceCard } from '@/components/PerformanceCard';
 import { ScanIssueList, type ScanIssueListHandle } from '@/components/ScanIssueList';
 import { UxCard } from '@/components/UxCard';
-import type { ScanResult, Issue, IssueSeverity } from '@/lib/types';
+import type { ScanResult, IssueSeverity } from '@/lib/types';
 import {
     API_SALIENCY_GENERATE,
     apiScan,
     apiScanList,
-    apiScanSummarize,
     apiScanUxCheck,
     apiSaliencyResult,
     PAGE_INDEX_INITIAL_VISIBLE,
@@ -391,8 +389,8 @@ const SEVERITY_CONFIG: Record<IssueSeverity, { color: string; label: string }> =
     notice: { color: MSQDX_STATUS.info.base, label: 'Notice' },
 };
 
-type TabFilter = 'all' | IssueSeverity | 'passed';
-type LevelFilter = 'all' | 'A' | 'AA' | 'AAA' | 'APCA' | 'Unknown';
+type TabFilter = IssueSeverity | 'passed';
+type LevelFilter = 'A' | 'AA' | 'AAA' | 'APCA' | 'Unknown';
 
 export default function ResultsPage() {
     const params = useParams();
@@ -401,8 +399,8 @@ export default function ResultsPage() {
     const [result, setResult] = useState<ScanResult | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [tab, setTab] = useState<TabFilter>('all');
-    const [levelFilter, setLevelFilter] = useState<LevelFilter>('all');
+    const [tab, setTab] = useState<TabFilter>('error');
+    const [levelFilter, setLevelFilter] = useState<LevelFilter>('AA');
     const [issuesPage, setIssuesPage] = useState(1);
     const [viewMode, setViewMode] = useState<
         'overview' | 'list' | 'summary' | 'visual' | 'ux' | 'structure' | 'seo' | 'infra' | 'generative'
@@ -431,9 +429,9 @@ export default function ResultsPage() {
     // Derived stats for WCAG levels
     const [levelStats, setLevelStats] = useState({ A: 0, AA: 0, AAA: 0, APCA: 0, Unknown: 0 });
 
-    const handleHover = useCallback((index: number | null) => {
+    /* const handleHover = useCallback((index: number | null) => {
         setHighlightedIndex(index);
-    }, []);
+    }, []); */
 
     const handleRefRegister = useCallback((index: number, el: HTMLDivElement | null) => {
         issueRefs.current[index] = el;
@@ -503,12 +501,12 @@ export default function ResultsPage() {
         }
     }, [result?.id, saliencyGenerating, t]);
 
-    const issues = Array.isArray(result?.issues) ? result.issues : [];
+    const issues = useMemo(() => (Array.isArray(result?.issues) ? result.issues : []), [result]);
     const filteredIssues = useMemo(() => {
         if (!result) return [];
         return issues.filter((i) => {
-            const typeMatch = tab === 'all' || i.type === tab;
-            const levelMatch = levelFilter === 'all' || i.wcagLevel === levelFilter;
+            const typeMatch = tab === 'error' || i.type === tab;
+            const levelMatch = levelFilter === 'AA' || i.wcagLevel === levelFilter;
             return typeMatch && levelMatch;
         });
     }, [result, issues, tab, levelFilter]);
@@ -631,7 +629,6 @@ export default function ResultsPage() {
 
     const TABS: { key: TabFilter | 'passed'; label: string; count: number; color: string }[] = result
         ? [
-              { key: 'all', label: t('results.tabAll'), count: issues.length, color: MSQDX_BRAND_PRIMARY.green },
               {
                   key: 'error',
                   label: t('results.tabErrors'),
@@ -1450,21 +1447,32 @@ export default function ResultsPage() {
                         {viewMode === 'list' && (
                             <MsqdxMoleculeCard
                                 title="Gefundene Issues"
+                                subtitle={`${t('info.issuesList')} ${t('info.severityTabs')}`}
                                 variant="flat"
                                 sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}
                                 borderRadius="lg"
-                                headerActions={
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: MSQDX_SPACING.scale.sm }}>
-                                        <InfoTooltip
-                                            title={t('info.issuesList')}
-                                            ariaLabel={t('common.info')}
-                                            placement="bottom"
-                                        />
-                                        <InfoTooltip
-                                            title={t('info.severityTabs')}
-                                            ariaLabel={t('common.info')}
-                                            placement="bottom"
-                                        />
+                                footerDivider={false}
+                            >
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        // flexDirection: 'column',
+                                        flexWrap: 'wrap',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: `${MSQDX_SPACING.scale.sm}px`,
+                                        padding: `${MSQDX_SPACING.scale.sm}px 0`,
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            flexWrap: 'wrap',
+                                            alignItems: 'center',
+                                            gap: `${MSQDX_SPACING.scale.xs}px`,
+                                            margin: '0 auto',
+                                        }}
+                                    >
                                         {TABS.map((t) => (
                                             <MsqdxButton
                                                 key={t.key}
@@ -1491,19 +1499,19 @@ export default function ResultsPage() {
                                                 {t.label}({t.count})
                                             </MsqdxButton>
                                         ))}
-                                        {/* Divider */}
-                                        <Box
-                                            sx={{
-                                                width: 1,
-                                                height: 24,
-                                                bgcolor: 'var(--color-secondary-dx-grey-light-tint)',
-                                                mx: 1,
-                                                alignSelf: 'center',
-                                            }}
-                                        />
+                                    </Box>
 
-                                        {/* Level Filters */}
-                                        {['all', 'A', 'AA', 'AAA', 'APCA'].map((level) => (
+                                    {/* Level Filters */}
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            flexWrap: 'wrap',
+                                            alignItems: 'center',
+                                            gap: `${MSQDX_SPACING.scale.xs}px`,
+                                            margin: '0 auto',
+                                        }}
+                                    >
+                                        {['A', 'AA', 'AAA', 'APCA'].map((level) => (
                                             <MsqdxButton
                                                 key={level}
                                                 variant={levelFilter === level ? 'contained' : 'text'}
@@ -1531,32 +1539,25 @@ export default function ResultsPage() {
                                                     px: 2,
                                                 }}
                                             >
-                                                {level === 'all'
-                                                    ? 'Alle Level'
-                                                    : level === 'APCA'
-                                                      ? 'APCA'
-                                                      : `Lvl ${level}`}
-                                                {level !== 'all' && (
-                                                    <Box
-                                                        component="span"
-                                                        sx={{
-                                                            ml: 1,
-                                                            fontSize: '0.65rem',
-                                                            opacity: 0.7,
-                                                            backgroundColor: 'rgba(0,0,0,0.1)',
-                                                            px: 0.5,
-                                                            borderRadius: '4px',
-                                                        }}
-                                                    >
-                                                        {levelStats[level as keyof typeof levelStats]}
-                                                    </Box>
-                                                )}
+                                                {level === 'APCA' ? 'APCA' : `Lvl ${level}`}
+
+                                                <Box
+                                                    component="span"
+                                                    sx={{
+                                                        ml: 1,
+                                                        fontSize: '0.65rem',
+                                                        opacity: 0.7,
+                                                        backgroundColor: 'rgba(0,0,0,0.1)',
+                                                        px: 0.5,
+                                                        borderRadius: '4px',
+                                                    }}
+                                                >
+                                                    {levelStats[level as keyof typeof levelStats]}
+                                                </Box>
                                             </MsqdxButton>
                                         ))}
                                     </Box>
-                                }
-                                footerDivider={false}
-                            >
+                                </Box>
                                 {/* Issues List via MsqdxAccordion */}
                                 {tab === 'passed' ? (
                                     result.passes && result.passes.length > 0 ? (
@@ -1567,147 +1568,143 @@ export default function ResultsPage() {
                                             sx={{
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                gap: 'var(--msqdx-spacing-sm)',
                                                 background: 'transparent',
                                                 border: 'none',
                                             }}
                                         >
-                                            {result.passes.map((pass, idx) => {
-                                                const itemId = `pass-${idx}`;
-                                                return (
-                                                    <MsqdxAccordionItem
-                                                        key={itemId}
-                                                        id={itemId}
-                                                        summary={
+                                            {result.passes.map((pass, idx) => (
+                                                <MsqdxAccordionItem
+                                                    key={`pass-${idx}`}
+                                                    id={`pass-${idx}`}
+                                                    summary={
+                                                        <Box
+                                                            sx={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: 'var(--msqdx-spacing-sm)',
+                                                                width: '100%',
+                                                                p: `${MSQDX_SPACING.padding.sm}px 0`,
+                                                            }}
+                                                        >
+                                                            {/* Success dot */}
                                                             <Box
                                                                 sx={{
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    gap: 'var(--msqdx-spacing-sm)',
-                                                                    width: '100%',
+                                                                    width: 8,
+                                                                    height: 8,
+                                                                    borderRadius: '50%',
+                                                                    backgroundColor: MSQDX_STATUS.success.base,
+                                                                    flexShrink: 0,
                                                                 }}
-                                                            >
-                                                                {/* Success dot */}
+                                                            />
+                                                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                                <MsqdxTypography
+                                                                    variant="body2"
+                                                                    sx={{
+                                                                        fontWeight: 500,
+                                                                        lineHeight: 1.5,
+                                                                        whiteSpace: 'normal',
+                                                                    }}
+                                                                >
+                                                                    {pass.help}
+                                                                </MsqdxTypography>
                                                                 <Box
                                                                     sx={{
-                                                                        width: 8,
-                                                                        height: 8,
-                                                                        borderRadius: '50%',
-                                                                        backgroundColor: MSQDX_STATUS.success.base,
-                                                                        flexShrink: 0,
+                                                                        display: 'flex',
+                                                                        gap: `${MSQDX_SPACING.scale.xs}px`,
+                                                                        mt: `${MSQDX_SPACING.scale.xs}px`,
+                                                                        flexWrap: 'wrap',
                                                                     }}
-                                                                />
-                                                                <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                                    <MsqdxTypography
-                                                                        variant="body2"
+                                                                >
+                                                                    <MsqdxChip
+                                                                        label={pass.id}
+                                                                        size="small"
                                                                         sx={{
-                                                                            fontWeight: 500,
-                                                                            lineHeight: 1.5,
-                                                                            whiteSpace: 'normal',
+                                                                            backgroundColor: alpha(
+                                                                                MSQDX_STATUS.success.base,
+                                                                                0.12,
+                                                                            ),
+                                                                            color: MSQDX_STATUS.success.base,
+                                                                            fontWeight: 600,
+                                                                            fontSize: '0.6rem',
+                                                                            height: 20,
                                                                         }}
-                                                                    >
-                                                                        {pass.help}
-                                                                    </MsqdxTypography>
-                                                                    <Box
+                                                                    />
+                                                                    <MsqdxChip
+                                                                        label={`${pass.nodes.length} Element${pass.nodes.length !== 1 ? 'e' : ''}`}
+                                                                        size="small"
                                                                         sx={{
-                                                                            display: 'flex',
-                                                                            gap: MSQDX_SPACING.scale.xs,
-                                                                            mt: MSQDX_SPACING.scale.xs,
-                                                                            flexWrap: 'wrap',
+                                                                            backgroundColor: alpha(
+                                                                                MSQDX_NEUTRAL[400],
+                                                                                0.1,
+                                                                            ),
+                                                                            color: `${MSQDX_NEUTRAL['700']}`,
+                                                                            fontSize: '0.6rem',
+                                                                            height: 20,
                                                                         }}
-                                                                    >
-                                                                        <MsqdxChip
-                                                                            label={pass.id}
-                                                                            size="small"
-                                                                            sx={{
-                                                                                backgroundColor: alpha(
-                                                                                    MSQDX_STATUS.success.base,
-                                                                                    0.12,
-                                                                                ),
-                                                                                color: MSQDX_STATUS.success.base,
-                                                                                fontWeight: 600,
-                                                                                fontSize: '0.6rem',
-                                                                                height: 20,
-                                                                            }}
-                                                                        />
-                                                                        <MsqdxChip
-                                                                            label={`${pass.nodes.length} Element${pass.nodes.length !== 1 ? 'e' : ''}`}
-                                                                            size="small"
-                                                                            sx={{
-                                                                                backgroundColor: alpha(
-                                                                                    MSQDX_NEUTRAL[400],
-                                                                                    0.1,
-                                                                                ),
-                                                                                color: `${MSQDX_NEUTRAL['700']}`,
-                                                                                fontSize: '0.6rem',
-                                                                                height: 20,
-                                                                            }}
-                                                                        />
-                                                                    </Box>
+                                                                    />
                                                                 </Box>
                                                             </Box>
-                                                        }
+                                                        </Box>
+                                                    }
+                                                >
+                                                    <Box
+                                                        sx={{
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            gap: 'var(--msqdx-spacing-sm)',
+                                                            width: '100%',
+                                                        }}
                                                     >
+                                                        <MsqdxTypography
+                                                            variant="body2"
+                                                            sx={{ color: `${MSQDX_NEUTRAL['700']}` }}
+                                                        >
+                                                            {pass.description}
+                                                        </MsqdxTypography>
+
                                                         <Box
                                                             sx={{
                                                                 display: 'flex',
                                                                 flexDirection: 'column',
-                                                                gap: 'var(--msqdx-spacing-sm)',
-                                                                width: '100%',
+                                                                gap: `${MSQDX_SPACING.scale.xs}px`,
+                                                                maxHeight: '300px',
+                                                                overflowY: 'auto',
+                                                                p: `${MSQDX_SPACING.scale.xs}px`,
+                                                                borderRadius: `${MSQDX_SPACING.scale.xs}px`,
+                                                                backgroundColor: `${MSQDX_NEUTRAL[100]}`,
+                                                                border: `1px solid ${MSQDX_NEUTRAL[300]}`,
                                                             }}
                                                         >
-                                                            <MsqdxTypography
-                                                                variant="body2"
-                                                                sx={{ color: `${MSQDX_NEUTRAL['700']}` }}
-                                                            >
-                                                                {pass.description}
-                                                            </MsqdxTypography>
-
-                                                            <Box
-                                                                sx={{
-                                                                    display: 'flex',
-                                                                    flexDirection: 'column',
-                                                                    gap: MSQDX_SPACING.scale.xs,
-                                                                    maxHeight: '300px',
-                                                                    overflowY: 'auto',
-                                                                    p: MSQDX_SPACING.scale.xs,
-                                                                    borderRadius: MSQDX_SPACING.scale.xs,
-                                                                    backgroundColor:
-                                                                        'var(--color-secondary-dx-grey-light-tint)',
-                                                                    border: `1px solid ${'var(--color-secondary-dx-grey-light-tint)'}`,
-                                                                }}
-                                                            >
-                                                                {pass.nodes
-                                                                    .slice(0, 50)
-                                                                    .map((node: any, nodeIdx: number) => (
-                                                                        <Box
-                                                                            key={nodeIdx}
-                                                                            sx={{
-                                                                                p: MSQDX_SPACING.scale.xs,
-                                                                                borderBottom:
-                                                                                    nodeIdx < pass.nodes.length - 1
-                                                                                        ? `1px solid ${'var(--color-secondary-dx-grey-light-tint)'}`
-                                                                                        : 'none',
+                                                            {pass.nodes
+                                                                .slice(0, 50)
+                                                                .map((node: any, nodeIdx: number) => (
+                                                                    <Box
+                                                                        key={nodeIdx}
+                                                                        sx={{
+                                                                            p: `${MSQDX_SPACING.scale.xs}px`,
+                                                                            borderBottom:
+                                                                                nodeIdx < pass.nodes.length - 1
+                                                                                    ? `1px solid ${MSQDX_NEUTRAL[300]}`
+                                                                                    : 'none',
+                                                                        }}
+                                                                    >
+                                                                        <code
+                                                                            style={{
+                                                                                fontSize: '0.75rem',
+                                                                                color: MSQDX_BRAND_PRIMARY.green,
+                                                                                fontFamily: 'monospace',
+                                                                                display: 'block',
+                                                                                wordBreak: 'break-all',
                                                                             }}
                                                                         >
-                                                                            <code
-                                                                                style={{
-                                                                                    fontSize: '0.75rem',
-                                                                                    color: MSQDX_BRAND_PRIMARY.green,
-                                                                                    fontFamily: 'monospace',
-                                                                                    display: 'block',
-                                                                                    wordBreak: 'break-all',
-                                                                                }}
-                                                                            >
-                                                                                {node.html}
-                                                                            </code>
-                                                                        </Box>
-                                                                    ))}
-                                                            </Box>
+                                                                            {node.html}
+                                                                        </code>
+                                                                    </Box>
+                                                                ))}
                                                         </Box>
-                                                    </MsqdxAccordionItem>
-                                                );
-                                            })}
+                                                    </Box>
+                                                </MsqdxAccordionItem>
+                                            ))}
                                         </MsqdxAccordion>
                                     ) : (
                                         <Box
@@ -1730,7 +1727,7 @@ export default function ResultsPage() {
                                         }}
                                     >
                                         <MsqdxTypography variant="h6" sx={{ color: MSQDX_BRAND_PRIMARY.green }}>
-                                            ✓ Keine Issues gefunden
+                                            {`✓ ${t('noIssues')}`}
                                         </MsqdxTypography>
                                     </Box>
                                 ) : (

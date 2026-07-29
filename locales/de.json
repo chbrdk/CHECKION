@@ -152,6 +152,7 @@
     "themeScore": "Score",
     "title": "Domain-Deep-Scans"
   },
+  "description": "meldung",
   "developers": {
     "contrastDesc": "Calculate WCAG contrast ratio between two colors.",
     "deleteDesc": "Delete a scan result from memory.",
@@ -682,6 +683,7 @@
     "projects": "Projekte",
     "settings": "Profil"
   },
+  "noIssues": "Keine Issues gefunden",
   "one": "eine",
   "projectAudionLink": {
     "connected": "AUDION erreichbar — {count} Projekt(e) verfügbar.",
@@ -1390,6 +1392,7 @@
     "subtitle": "Profil, Erscheinungsbild, Sicherheit und Scan-Standards.",
     "title": "Einstellungen"
   },
+  "severity": "schwere",
   "share": {
     "accessDenied": "Zugriff verweigert",
     "alreadyShared": "Bereits geteilt",
