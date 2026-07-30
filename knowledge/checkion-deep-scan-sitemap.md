@@ -4,6 +4,13 @@
 
 Beim **Deep Scan (Domain-Scan)** zusätzlich eine **Sitemap-Option**: Wir erkennen automatisch eine Sitemap (robots.txt oder Standard-URL) und nutzen, falls vorhanden, deren URLs als Scan-Liste statt nur Link-Crawl.
 
+## www vs. Apex (Bugfix 2026-07)
+
+- **Symptom:** Deep Scan von `https://vkb.de` landete oft bei **1 Seite**, obwohl `sitemap.xml` ~800+ URLs hat.
+- **Ursache:** robots/`Sitemap:` und alle `<loc>` zeigen auf **`https://www.vkb.de/...`**. `fetchSitemapUrls` filterte mit **striktem Origin** (`https://vkb.de` ≠ `https://www.vkb.de`) → 0 Sitemap-URLs → Fallback nur Start-URL.
+- **Fix:** `isSameSiteOrigin` / `siteHostKey` (www-insensitive); `getSitemapUrlsFromRobots` sammelt **alle** `Sitemap:`-Zeilen; Spider nutzt `discoverSitemapPageUrls`.
+- **Tests:** `__tests__/lib/sitemap.test.ts`
+
 ## Vorteile
 
 - **Sitemap** = vom Betreiber gewünschte, indexierbare Seiten → oft vollständiger als reiner Link-Crawl.
@@ -20,7 +27,7 @@ Beim **Deep Scan (Domain-Scan)** zusätzlich eine **Sitemap-Option**: Wir erkenn
 3. **Sitemap-XML laden:**  
    - Wenn **Sitemap-Index** (`<sitemap><loc>...</loc></sitemap>`): bis zu N Index-Einträge folgen, daraus `<url><loc>...</loc></url>` sammeln.  
    - Wenn **URL-Set** (`<url><loc>...</loc></url>`): URLs direkt auslesen.  
-   - Nur URLs mit gleichem **Origin** behalten, max. **MAX_PAGES** (z. B. 25).
+   - Nur URLs mit gleichem **Site** behalten (www/apex-insensitive; z. B. `vkb.de` ↔ `www.vkb.de`), max. **maxPages**.
 4. **Queue befüllen:**  
    - Wenn Sitemap-URLs gefunden: Queue = diese URLs (+ Start-URL falls nicht enthalten). **Zusätzlich** werden beim Scan aus jeder Seite interne Links in die Queue gelegt (Hybrid), damit verlinkte Seiten wie `/impact` nicht fehlen.  
    - Wenn **keine** Sitemap: BFS von Start-URL, Links folgen.

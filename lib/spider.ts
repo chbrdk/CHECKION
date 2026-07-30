@@ -1,5 +1,5 @@
 import { runScan } from './scanner';
-import { getSitemapUrlFromRobots, fetchSitemapUrls } from './sitemap';
+import { discoverSitemapPageUrls } from './sitemap';
 import type { ScanResult, DomainScanResult, DomainScanResultWithFullPages, EeatDomainAggregate } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeScanUrl } from '@/lib/url-normalize';
@@ -192,25 +192,23 @@ export async function* runDomainScan(
     let sitemapMode = false;
 
     if (useSitemap) {
-        const sitemapUrl = await getSitemapUrlFromRobots(origin);
-        if (sitemapUrl) {
-            const sitemapUrls = await fetchSitemapUrls(sitemapUrl, origin, maxPages);
-            // Only use sitemap when it provides enough URLs; otherwise fall back to link crawl so we discover pages from the first scan
-            if (sitemapUrls.length > 1) {
-                const startNorm = normalizeScanUrl(startUrl);
-                sitemapUrls.forEach((u) => {
-                    const n = normalizeScanUrl(u);
-                    if (!visited.has(n)) {
-                        visited.add(n);
-                        queue.push({ url: u, depth: 0 });
-                    }
-                });
-                if (!visited.has(startNorm)) {
-                    visited.add(startNorm);
-                    queue.unshift({ url: startUrl, depth: 0 });
+        // www-insensitive same-site filter + all robots Sitemap: entries (e.g. vkb.de → www.vkb.de)
+        const sitemapUrls = await discoverSitemapPageUrls(origin, maxPages);
+        // Only use sitemap when it provides enough URLs; otherwise fall back to link crawl so we discover pages from the first scan
+        if (sitemapUrls.length > 1) {
+            const startNorm = normalizeScanUrl(startUrl);
+            sitemapUrls.forEach((u) => {
+                const n = normalizeScanUrl(u);
+                if (!visited.has(n)) {
+                    visited.add(n);
+                    queue.push({ url: u, depth: 0 });
                 }
-                sitemapMode = true;
+            });
+            if (!visited.has(startNorm)) {
+                visited.add(startNorm);
+                queue.unshift({ url: startUrl, depth: 0 });
             }
+            sitemapMode = true;
         }
     }
 
