@@ -1274,7 +1274,7 @@ export default function ResultsPage() {
                             <MsqdxMoleculeCard
                                 title="UX/CX Check"
                                 headerActions={<InfoTooltip title={t('info.uxCxCheck')} ariaLabel={t('common.info')} />}
-                                subtitle="Heuristische Evaluation gemäß DIN EN ISO 9241-110 (Dialogprinzipien)"
+                                subtitle={t('results.summary.subtitle')}
                                 variant="flat"
                                 sx={{
                                     bgcolor: 'var(--color-card-bg)',
@@ -1307,7 +1307,7 @@ export default function ResultsPage() {
                                         {result.llmSummary.themes?.length > 0 && (
                                             <Box>
                                                 <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                                                    Themen
+                                                    {t('topics')}
                                                 </MsqdxTypography>
                                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                                     {result.llmSummary.themes.map((t, i) => (
@@ -1334,7 +1334,7 @@ export default function ResultsPage() {
                                         {result.llmSummary.recommendations?.length > 0 && (
                                             <Box>
                                                 <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                                                    Handlungsempfehlungen
+                                                    {t('recommendations')}
                                                 </MsqdxTypography>
                                                 <Box
                                                     component="ol"
@@ -1383,7 +1383,7 @@ export default function ResultsPage() {
                                             sx={{ color: `${MSQDX_NEUTRAL['700']}` }}
                                             component="div"
                                         >
-                                            Generiert mit {result.llmSummary.modelUsed} am{' '}
+                                            {t('results.summary.generated', { model: result.llmSummary.modelUsed })}{' '}
                                             <span suppressHydrationWarning>
                                                 {new Date(result.llmSummary.generatedAt).toLocaleString('de-DE')}
                                             </span>
@@ -1404,9 +1404,7 @@ export default function ResultsPage() {
                                             variant="body2"
                                             sx={{ color: `${MSQDX_NEUTRAL['700']}`, textAlign: 'center' }}
                                         >
-                                            Heuristische UX-Evaluation (DIN EN ISO 9241-110): Probleme,
-                                            Bewertungstabelle, Impact-Effort-Matrix und Handlungsempfehlungen werden von
-                                            einem Claude-Agenten erzeugt.
+                                            {t('results.summary.notice')}
                                         </MsqdxTypography>
                                         {summarizeError && (
                                             <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.error.base }}>
@@ -1426,18 +1424,21 @@ export default function ResultsPage() {
                                                         method: 'POST',
                                                     });
                                                     const data = await res.json().catch(() => ({}));
-                                                    if (!res.ok) throw new Error(data.error ?? 'Fehler beim UX-Check');
+                                                    if (!res.ok)
+                                                        throw new Error(data.error ?? t('results.summary.error'));
                                                     setResult((prev) => (prev ? { ...prev, llmSummary: data } : null));
                                                 } catch (e) {
                                                     setSummarizeError(
-                                                        e instanceof Error ? e.message : 'Unbekannter Fehler',
+                                                        e instanceof Error ? e.message : t('error.unknown'),
                                                     );
                                                 } finally {
                                                     setSummarizing(false);
                                                 }
                                             }}
                                         >
-                                            {summarizing ? 'UX-Check läuft…' : 'UX-Check starten'}
+                                            {summarizing
+                                                ? t('results.summary.inProgress')
+                                                : t('results.summary.startCheck')}
                                         </MsqdxButton>
                                     </Box>
                                 )}
@@ -1714,8 +1715,7 @@ export default function ResultsPage() {
                                             }}
                                         >
                                             <MsqdxTypography variant="h6" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
-                                                Keine validierten Elemente gefunden (oder Scan wurde nicht mit
-                                                Validierung durchgeführt).
+                                                {t('results.noValidation')}
                                             </MsqdxTypography>
                                         </Box>
                                     )
@@ -1755,7 +1755,7 @@ export default function ResultsPage() {
 
                         {viewMode === 'visual' && (
                             <MsqdxMoleculeCard
-                                title="Visuelle Analyse"
+                                title={t('results.tab.visual')}
                                 variant="flat"
                                 sx={{
                                     bgcolor: 'var(--color-card-bg)',
@@ -2200,14 +2200,13 @@ export default function ResultsPage() {
                         {viewMode === 'ux' && (
                             <MsqdxMoleculeCard
                                 title="User Experience Issues"
-                                headerActions={<InfoTooltip title={t('info.uxIssues')} ariaLabel={t('common.info')} />}
-                                subtitle="User Experience Issues"
+                                subtitle={t('info.uxIssues')}
                                 sx={{ bgcolor: 'var(--color-card-bg)', border: '1px solid var(--color-card-border)' }}
                             >
                                 {result.ux ? (
                                     <UxIssueList ux={result.ux} />
                                 ) : (
-                                    <MsqdxTypography>No UX data available for this scan.</MsqdxTypography>
+                                    <MsqdxTypography>{t('results.uxAudit.noData')}</MsqdxTypography>
                                 )}
                             </MsqdxMoleculeCard>
                         )}
@@ -2238,14 +2237,8 @@ export default function ResultsPage() {
 
                                 return (
                                     <MsqdxMoleculeCard
-                                        title={t('results.structureSemanticsCardTitle')}
-                                        headerActions={
-                                            <InfoTooltip
-                                                title={t('info.structureSemantics')}
-                                                ariaLabel={t('common.info')}
-                                            />
-                                        }
-                                        subtitle={t('results.structureSemanticsCardSubtitle')}
+                                        title={t('results.tab.structureSemantics')}
+                                        subtitle={t('info.structureSemantics')}
                                         sx={{
                                             bgcolor: 'var(--color-card-bg)',
                                             border: '1px solid var(--color-card-border)',
@@ -2290,7 +2283,15 @@ export default function ResultsPage() {
                                                         <Alert
                                                             severity="warning"
                                                             variant="outlined"
-                                                            sx={{ py: 0.75, '& .MuiAlert-message': { width: '100%' } }}
+                                                            sx={{
+                                                                borderColor: MSQDX_STATUS.warning.base,
+                                                                py: 0.75,
+                                                                width: 'fit-content',
+                                                                '& .MuiAlert-message': {
+                                                                    width: '100%',
+                                                                    color: MSQDX_STATUS.warning.base,
+                                                                },
+                                                            }}
                                                         >
                                                             <Box component="div">
                                                                 {!qualitySingleH1 && (
@@ -2404,7 +2405,7 @@ export default function ResultsPage() {
                                             border: '1px solid var(--color-card-border)',
                                         }}
                                     >
-                                        <MsqdxTypography>Keine SEO Daten verfügbar.</MsqdxTypography>
+                                        <MsqdxTypography>{t('resuts.seo.noData')}</MsqdxTypography>
                                     </MsqdxMoleculeCard>
                                 )}
 
@@ -2419,7 +2420,7 @@ export default function ResultsPage() {
                                             border: '1px solid var(--color-card-border)',
                                         }}
                                     >
-                                        <MsqdxTypography>Keine Link Daten verfügbar.</MsqdxTypography>
+                                        <MsqdxTypography>{t('results.sedo.noLinkData')}</MsqdxTypography>
                                     </MsqdxMoleculeCard>
                                 )}
                             </Box>

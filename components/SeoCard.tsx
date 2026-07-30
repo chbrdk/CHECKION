@@ -1,14 +1,17 @@
 import { Box, alpha } from '@mui/material';
-import { MsqdxTypography, MsqdxCard, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
+import { MsqdxTypography, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
 import { MSQDX_SPACING, MSQDX_THEME, MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { SeoAudit } from '@/lib/types';
 import { CheckCircle, XCircle, AlertTriangle, BarChart3 } from 'lucide-react';
+import { useI18n } from './i18n/I18nProvider';
 
 export function SeoCard({ seo }: { seo: SeoAudit }) {
+    const { t } = useI18n();
+
     return (
         <MsqdxMoleculeCard
             title="SEO & Meta"
-            subtitle="Basic Search Engine Optimization check."
+            subtitle={t('results.seo.subtitle')}
             variant="flat"
             borderRadius="lg"
             sx={{ bgcolor: 'var(--color-card-bg)', height: '100%' }}
@@ -42,9 +45,9 @@ export function SeoCard({ seo }: { seo: SeoAudit }) {
                     label="robots.txt"
                     value={
                         seo.robotsTxtPresent === true
-                            ? 'Vorhanden'
+                            ? t('available.true')
                             : seo.robotsTxtPresent === false
-                              ? 'Fehlt'
+                              ? t('missing')
                               : undefined
                     }
                 />
@@ -54,16 +57,16 @@ export function SeoCard({ seo }: { seo: SeoAudit }) {
                     <>
                         <Box sx={{ height: 1, bgcolor: 'var(--color-secondary-dx-grey-light-tint)', my: 1 }} />
                         {seo.bodyWordCount != null && (
-                            <SeoItem label="Wörter (Body)" value={String(seo.bodyWordCount)} />
+                            <SeoItem label={t('results.seo.wordCountLabel')} value={String(seo.bodyWordCount)} />
                         )}
                         {seo.duplicateContentWarning && (
                             <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.warning.base }}>
-                                Title und Meta-Description sind sehr ähnlich (Duplicate-Content-Risiko).
+                                {t('results.seo.duplicateContentWarning')}
                             </MsqdxTypography>
                         )}
                         {seo.skinnyContent && (
                             <MsqdxTypography variant="caption" sx={{ color: MSQDX_STATUS.warning.base }}>
-                                Wenig Inhalt (&lt;300 Wörter) – Skinny Content.
+                                {t('results.seo.lowContentWarning')}
                             </MsqdxTypography>
                         )}
                     </>
@@ -78,7 +81,7 @@ export function SeoCard({ seo }: { seo: SeoAudit }) {
                                 mb: 'var(--msqdx-spacing-xxs)',
                             }}
                         >
-                            Schema Pflichtfelder fehlen
+                            {t('results.seo.structuredData')}
                         </MsqdxTypography>
                         {seo.structuredDataRequiredFields.map((item, i) => (
                             <MsqdxTypography
@@ -124,15 +127,14 @@ export function SeoCard({ seo }: { seo: SeoAudit }) {
                                 variant="subtitle2"
                                 sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}
                             >
-                                Keyword-Analyse
+                                {t('results.seo.keywordAnalysis')}
                             </MsqdxTypography>
                         </Box>
                         <MsqdxTypography
                             variant="caption"
                             sx={{ color: `${MSQDX_NEUTRAL['700']}`, display: 'block', mb: 1 }}
                         >
-                            {seo.keywordAnalysis.totalWords} Wörter im Body · Top-Begriffe (Stopwörter entfernt), Dichte
-                            in %
+                            {t('results.seo.totalWords', { totalWords: seo.keywordAnalysis.totalWords })}
                         </MsqdxTypography>
                         <Box
                             sx={{
@@ -229,7 +231,7 @@ export function SeoCard({ seo }: { seo: SeoAudit }) {
                                                         variant="caption"
                                                         sx={{ color: `${MSQDX_NEUTRAL['700']}` }}
                                                     >
-                                                        nur im Fließtext
+                                                        {t('results.seo.notInCritical')}
                                                     </MsqdxTypography>
                                                 )}
                                             </Box>
@@ -304,9 +306,15 @@ function SeoItem({
                         >
                             {value}
                         </MsqdxTypography>
-                        {status === 'good' && <CheckCircle size={16} color={MSQDX_STATUS.success.base} />}
-                        {status === 'warn' && <AlertTriangle size={16} color={MSQDX_STATUS.warning.base} />}
-                        {status === 'bad' && <XCircle size={16} color={MSQDX_STATUS.error.base} />}
+                        {status === 'good' && (
+                            <CheckCircle size={16} color={MSQDX_STATUS.success.base} style={{ flexShrink: 0 }} />
+                        )}
+                        {status === 'warn' && (
+                            <AlertTriangle size={16} color={MSQDX_STATUS.warning.base} style={{ flexShrink: 0 }} />
+                        )}
+                        {status === 'bad' && (
+                            <XCircle size={16} color={MSQDX_STATUS.error.base} style={{ flexShrink: 0 }} />
+                        )}
                     </Box>
                 ) : (
                     <MsqdxChip

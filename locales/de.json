@@ -28,6 +28,10 @@
       "title": "Konto erstellen"
     }
   },
+  "available": {
+    "false": "Nicht vorhanden",
+    "true": "Vorhanden"
+  },
   "common": {
     "backToPlexon": "Zurück zu PLEXON",
     "cancel": "Abbrechen",
@@ -517,6 +521,10 @@
     "visualMapDescription": "Knoten = gescannte Seiten, Linien = Verlinkung (von welcher Seite auf welche). Basierend auf den pro Seite erfassten Links.",
     "visualMapLoadError": "Link-Graph konnte nicht geladen werden. Bitte erneut versuchen oder Seite neu laden."
   },
+  "error": {
+    "unknown": "Unbekannter Fehler"
+  },
+  "fonts": "Schriftarten",
   "geoEeat": {
     "authoritativeness": "Authoritativeness",
     "avgPosition": "Ø Position",
@@ -674,6 +682,7 @@
     "de": "Deutsch",
     "en": "English"
   },
+  "missing": "Fehlt",
   "nav": {
     "dashboard": "Dashboard",
     "deepScans": "Domain-Scans",
@@ -1075,6 +1084,7 @@
       "summary": "Übersicht"
     }
   },
+  "recommendations": "Handlungsempfehlungen",
   "results": {
     "UXScan": {
       "CLSLabel": "Visuelle Stabilität (CLS)",
@@ -1084,16 +1094,13 @@
         "true": "CSS berücksichtigt prefers-reduced-motion"
       },
       "focusableElements": "fokussierbare Elemente ohne sichtbaren Fokus-Stil",
-      "fonts": "Schriftarten",
       "headings": "Überschriften",
       "images": "Bilder",
       "metaRefresh": {
-        "false": "Nicht vorhanden",
         "true": "Vorhanden (nicht empfohlen)"
       },
       "skipLink": {
-        "false": "Fehlt – Empfohlen für Tastatur-/Screenreader-Nutzung.",
-        "true": "Vorhanden"
+        "false": "Fehlt – Empfohlen für Tastatur-/Screenreader-Nutzung."
       }
     },
     "attentionHeatmapComputing": "Wird berechnet…",
@@ -1143,6 +1150,7 @@
     "hoverToHighlight": "Hover über eine Region, um sie auf dem Screenshot zu markieren.",
     "labLongTasksLine": "{count} Tasks, längste Spitze {maxMs} ms",
     "labLongTasksTitle": "Lange Hauptthread-Tasks (Lab)",
+    "noValidation": "Keine validierten Elemente gefunden (oder Scan wurde nicht mit Validierung durchgeführt).",
     "overviewHint": "Scan-Infos, Seitenthema sowie Eco-, Performance- und UX-Karten befinden sich oben.",
     "pageClassificationSubtitle": "Inhaltliche Einordnung (Tags & Wichtigkeit)",
     "pageClassificationSummary": "Kurzbeschreibung",
@@ -1174,6 +1182,26 @@
     "scanVerified": "Scan Verifiziert",
     "score": "SCORE",
     "securityCardSubtitle": "HTTP-Header des Hauptdokuments (Momentaufnahme)",
+    "sedo": {
+      "noLinkData": "Keine Link Daten verfügbar."
+    },
+    "seo": {
+      "brokenLinks": "{brokenLinks} Defekte Links",
+      "duplicateContentWarning": "Title und Meta-Description sind sehr ähnlich (Duplicate-Content-Risiko).",
+      "keywordAnalysis": "Keyword-Analyse",
+      "linkedPdfs": "{pdfs} PDF(s) verlinkt – Barrierefreiheit der PDFs separat prüfen",
+      "linksMissingNoopener": "Links ohne rel=noopener ({missing})",
+      "linksMissingNoopenerDescription": "Externe Links mit target=\"_blank\" sollten rel=\"noopener noreferrer\" setzen.",
+      "lowContentWarning": "Wenig Inhalt (<300 Wörter)",
+      "morePdfs": "+ {morePdfs} weitere PDFs",
+      "noBrokenLinks": "Es wurden keine defekten Links gefunden",
+      "noBrokenLinksDescription": "Die ersten 25 Links wurden überprüft.",
+      "notInCritical": "nur im Fließtext",
+      "structuredData": "Schema Pflichtfelder fehlen",
+      "subtitle": "Grundlegende Überprüfung der Suchmaschinenoptimierung.",
+      "totalWords": "{totalWords} Wörter im Body · Top-Begriffe (Stopwörter entfernt), Dichte in %",
+      "wordCountLabel": "Wörter (Body)"
+    },
     "sessionPartialDevicesHint": "Diese Session umfasst weniger als drei Geräte (z. B. Schnellscan nur Desktop). Keine weiteren Tablet-/Mobile-Ergebnisse für diesen Lauf.",
     "share": "Teilen",
     "shareCopied": "Link kopiert",
@@ -1182,7 +1210,7 @@
     "showRegionHighlight": "Regionen hervorheben",
     "showScanpath": "Scanpath anzeigen",
     "structureMapFootnote": "Landmarks (z. B. nav, main) sind hervorgehoben; Überschriften sind nach Ebene eingerückt.",
-    "structureMapHeadings": "Headings",
+    "structureMapHeadings": "Überschriften",
     "structureMapLandmarks": "Landmarks",
     "structureMapNoData": "Keine Strukturdaten",
     "structureMapSectionTitle": "Reihenfolge im Dokument",
@@ -1196,10 +1224,19 @@
     "structureQualityOk": "Überschriften-Hierarchie: formal in Ordnung.",
     "structureQualitySingleH1": "Eine H1",
     "structureQualitySkippedLevels": "Übersprungene Level: {list}",
-    "structureSemanticsCardSubtitle": "Landmarks, Überschriften und optionaler Seiten-Index — ohne doppelte Listen.",
+    "structureSummary": {
+      "noData": "Keine Strukturdaten"
+    },
     "structureSummaryHeadingsOnly": "{landmarks} Landmarks · {headings} Überschriften",
     "structureSummaryLine": "{landmarks} Landmarks · {headings} Überschriften — {levels}",
-    "structureSummaryNoData": "Keine Strukturdaten",
+    "summary": {
+      "error": "Fehler beim UX-Check",
+      "generated": "Generiert mit {model} am",
+      "inProgress": "UX/CX Check läuft…",
+      "notice": "Heuristische UX-Evaluation (DIN EN ISO 9241-110): Probleme, Bewertungstabelle, Impact-Effort-Matrix und Handlungsempfehlungen werden von einem Claude-Agenten erzeugt.",
+      "startCheck": "UX/CX Check starten",
+      "subtitle": "Heuristische Evaluation gemäß DIN EN ISO 9241-110 (Dialogprinzipien)"
+    },
     "tab": {
       "list": "Liste & Details",
       "overview": "Übersicht",
@@ -1211,7 +1248,38 @@
     "tabErrors": "Errors",
     "tabNotices": "Notices",
     "tabValidated": "Validiert",
-    "tabWarnings": "Warnings"
+    "tabWarnings": "Warnings",
+    "uxAudit": {
+      "brokenAria": "Fehlerhafte ARIA-Referenz",
+      "brokenLink": "Defekter Link",
+      "fontDisplayIssues": "Schriftarten: {withoutFontDisplay} @font-face ohne font-display, {blockCount} mit block",
+      "fontDisplayIssuesDesc": "font-display: swap (oder optional) reduziert FOUT/CLS. Ohne font-display oder mit block kann Text unsichtbar bleiben oder springen.",
+      "formIssue": "Problem mit der Barrierefreiheit des Formulars",
+      "headingHierarchyIssuesDesc": "Eine H1 pro Seite und keine Sprünge in der Hierarchie (z. B. H2 direkt zu H4) verbessern Struktur und A11y.",
+      "iframeWithoutTitleDesc": "Jeder iframe sollte ein title-Attribut für Barrierefreiheit haben.",
+      "imageIssues": "Bilder: Dimensionen / Lazy Loading / srcset",
+      "imageIssuesDesc": "Fehlende width/height können CLS verursachen. loading=\"lazy\" und srcset verbessern Performance.",
+      "linkCodeReturn": "Dieser Link gibt einen {status}-Fehlercode zurück.",
+      "linkText": "Linktext:",
+      "metaRefreshPresent": "Meta Refresh vorhanden (nicht empfohlen für A11y/SEO)",
+      "metaRefreshPresentDesc": "meta http-equiv=\"refresh\" kann Nutzer mit Screenreadern verwirren und wird für Redirects nicht empfohlen.",
+      "mobileViewportError": "Fehler bei der Konfiguration des mobilen Viewports",
+      "negativeImpact": "Dies kann sich negativ auf die Suchmaschinenoptimierung (SEO) und die Benutzerfreundlichkeit auf Mobilgeräten auswirken.",
+      "noData": "Für diesen Scan liegen keine UX-Daten vor.",
+      "noIssues": "Es wurden keine kritischen UX-Probleme festgestellt!",
+      "noIssuesSub": "Ihre Website erfüllt unsere grundlegenden UX-Prüfungen hinsichtlich Mobilfreundlichkeit, Interaktivität und Stabilität.",
+      "skippedHeadings": "Übersprungene Level",
+      "smallTapTarget": "Das Antippziel ist zu klein",
+      "tapTargetTooSmall": "Dieses interaktive Element ist kleiner als die empfohlenen 44x44px.",
+      "textContent": "Textinhalt:",
+      "vagueLinkText": "Unklarer Link-Text",
+      "vagueLinkTextDesc": "Link-Text sollte den Zweck des Links beschreiben (nicht \"Mehr\", \"Hier klicken\", etc.)."
+    }
+  },
+  "resuts": {
+    "seo": {
+      "noData": "Keine SEO Daten verfügbar."
+    }
   },
   "runners": {
     "axe": "axe-core (Deque axe accessibility engine)",
@@ -1317,6 +1385,7 @@
     "urlPlaceholderDeep": "https://example.com",
     "urlPlaceholderSingle": "https://example.com/page"
   },
+  "selector": "Selektor:",
   "settings": {
     "about": {
       "body": "CHECKION nutzt **pa11y** und **axe-core** für automatisierte WCAG-Checks. Basiert auf dem MSQDX Design System · v0.1.0",
@@ -1451,5 +1520,6 @@
     "wcag2aa": "Level AA - Empfohlen für die meisten Websites",
     "wcag2aaa": "Level AAA - Höchstes Level der Barrierefreiheit"
   },
+  "topics": "Themen",
   "without": "ohne"
 }

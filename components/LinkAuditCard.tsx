@@ -1,10 +1,12 @@
 import { Box, alpha } from '@mui/material';
-import { MsqdxTypography, MsqdxMoleculeCard, MsqdxChip, MsqdxAccordion, MsqdxAccordionItem } from '@msqdx/react';
-import { MSQDX_SPACING, MSQDX_THEME, MSQDX_STATUS, MSQDX_BRAND_PRIMARY, MSQDX_NEUTRAL } from '@msqdx/tokens';
+import { MsqdxTypography, MsqdxMoleculeCard, MsqdxChip } from '@msqdx/react';
+import { MSQDX_SPACING, MSQDX_STATUS, MSQDX_NEUTRAL } from '@msqdx/tokens';
 import type { LinkAudit } from '@/lib/types';
 import { Link2, Link, ExternalLink, AlertTriangle, CheckCircle, FileText } from 'lucide-react';
+import { useI18n } from './i18n/I18nProvider';
 
 export function LinkAuditCard({ links }: { links: LinkAudit }) {
+    const { t } = useI18n();
     if (!links) return null;
 
     return (
@@ -41,7 +43,7 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                         }}
                     >
                         <AlertTriangle size={16} />
-                        Broken Links ({links.broken.length})
+                        {t('results.seo.brokenLinks', { brokenLinks: links.broken.length })}
                     </MsqdxTypography>
                     <Box
                         sx={{
@@ -116,10 +118,10 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                     <CheckCircle size={24} color={MSQDX_STATUS.success.base} />
                     <Box>
                         <MsqdxTypography variant="subtitle2" sx={{ color: MSQDX_STATUS.success.dark }}>
-                            No broken links found
+                            {t('results.seo.noBrokenLinks')}
                         </MsqdxTypography>
                         <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
-                            Verified first 25 links.
+                            {t('results.seo.noBrokenLinksDescription')}
                         </MsqdxTypography>
                     </Box>
                 </Box>
@@ -138,7 +140,7 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                         }}
                     >
                         <AlertTriangle size={16} />
-                        Links ohne rel=noopener ({links.missingNoopener.length})
+                        {t('results.seo.linksMissingNoopener', { missing: links.missingNoopener.length })}
                     </MsqdxTypography>
                     <MsqdxTypography
                         variant="caption"
@@ -148,7 +150,7 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                             mb: 'var(--msqdx-spacing-xs)',
                         }}
                     >
-                        Externe Links mit target="_blank" sollten rel="noopener noreferrer" setzen.
+                        {t('results.seo.linksMissingNoopenerDescription')}
                     </MsqdxTypography>
                     <Box
                         sx={{
@@ -210,7 +212,7 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                         }}
                     >
                         <FileText size={16} />
-                        {links.pdfLinks.length} PDF(s) verlinkt – Barrierefreiheit der PDFs separat prüfen
+                        {t('results.seo.linkedPdfs', { pdfs: links.pdfLinks.length })}
                     </MsqdxTypography>
                     <Box
                         sx={{
@@ -258,7 +260,7 @@ export function LinkAuditCard({ links }: { links: LinkAudit }) {
                         {links.pdfLinks.length > 8 && (
                             <Box sx={{ p: 'var(--msqdx-spacing-sm)' }}>
                                 <MsqdxTypography variant="caption" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
-                                    + {links.pdfLinks.length - 8} weitere PDFs
+                                    {t('results.seo.morePdfs', { morePdfs: links.pdfLinks.length - 8 })}
                                 </MsqdxTypography>
                             </Box>
                         )}

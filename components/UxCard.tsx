@@ -226,7 +226,7 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                 </MsqdxTypography>
                                 {ux.hasSkipLink ? (
                                     <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.success.base }}>
-                                        {`${t('results.UXScan.skiplink.true')} ${ux.skipLinkHref ? ux.skipLinkHref : ''}`}
+                                        {`${t('available.true')} ${ux.skipLinkHref ? ux.skipLinkHref : ''}`}
                                     </MsqdxTypography>
                                 ) : (
                                     <MsqdxTypography variant="body2" sx={{ color: `${MSQDX_NEUTRAL['700']}` }}>
@@ -443,7 +443,7 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                 >
                                     {ux.metaRefreshPresent
                                         ? t('results.UXScan.metaRefresh.true')
-                                        : t('results.UXScan.metaRefresh.false')}
+                                        : t('available.false')}
                                 </MsqdxTypography>
                             </Box>,
                         );
@@ -458,7 +458,7 @@ export const UxCard = ({ ux, sx }: UxCardProps) => {
                                     variant="caption"
                                     sx={{ fontWeight: 600, color: 'var(--color-text-on-light)' }}
                                 >
-                                    {t('results.UXScan.fonts')}
+                                    {t('fonts')}
                                 </MsqdxTypography>
                                 <MsqdxTypography variant="body2" sx={{ color: MSQDX_STATUS.warning.base }}>
                                     {ux.fontDisplayIssues.withoutFontDisplay > 0 &&

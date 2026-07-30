@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box } from '@mui/material';
 import { MsqdxTypography, MsqdxAccordion, MsqdxAccordionItem, MsqdxChip } from '@msqdx/react';
 import { MSQDX_SPACING, MSQDX_STATUS, MSQDX_THEME, MSQDX_NEUTRAL } from '@msqdx/tokens';
@@ -16,12 +15,14 @@ import {
     Type,
     RefreshCw,
 } from 'lucide-react';
+import { useI18n } from './i18n/I18nProvider';
 
 interface UxIssueListProps {
     ux: UxResult;
 }
 
 export const UxIssueList = ({ ux }: UxIssueListProps) => {
+    const { t } = useI18n();
     const hasIssues =
         ux.tapTargets.issues.length > 0 ||
         !ux.viewport.isMobileFriendly ||
@@ -43,6 +44,8 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
     const textSecondary = MSQDX_THEME.light.text.secondary;
     const textTertiary = MSQDX_THEME.light.text.tertiary;
 
+    console.log('UX Issues:', ux.tapTargets);
+
     if (!hasIssues) {
         return (
             <Box
@@ -54,10 +57,10 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                 }}
             >
                 <MsqdxTypography variant="h6" sx={{ color: MSQDX_STATUS.success.base }}>
-                    No critical UX issues found!
+                    {t('results.uxAudit.noIssues')}
                 </MsqdxTypography>
-                <MsqdxTypography variant="body2" sx={{ color: textTertiary }}>
-                    Your site passes our core UX checks for mobile friendliness, interactivity, and stability.
+                <MsqdxTypography variant="body2" sx={{ color: MSQDX_NEUTRAL[600] }}>
+                    {t('results.uxAudit.noIssuesSub')}
                 </MsqdxTypography>
             </Box>
         );
@@ -100,7 +103,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                                             variant="subtitle2"
                                             sx={{ fontWeight: 600, color: textPrimary }}
                                         >
-                                            Mobile Viewport Configuration Error
+                                            {t('results.uxAudit.mobileViewportError')}
                                         </MsqdxTypography>
                                     </Box>
                                     <MsqdxChip label="Critical" color="error" size="small" variant="outlined" />
@@ -108,7 +111,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                             }
                         >
                             <MsqdxTypography variant="body2">
-                                {issue}. This can negatively impact SEO and usability on mobile devices.
+                                {`${issue}. ${t('results.uxAudit.negativeImpact')}`}
                             </MsqdxTypography>
                         </MsqdxAccordionItem>
                     ))}
@@ -202,7 +205,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                                             variant="subtitle2"
                                             sx={{ fontWeight: 600, color: textPrimary }}
                                         >
-                                            Broken Link ({link.status})
+                                            {`${t('results.uxAudit.brokenLink')} (${link.status})`}
                                         </MsqdxTypography>
                                         <MsqdxTypography
                                             variant="caption"
@@ -217,10 +220,10 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                         >
                             <Box sx={{ p: 1 }}>
                                 <MsqdxTypography variant="body2" sx={{ color: textPrimary }} gutterBottom>
-                                    This link returns a {link.status} error code.
+                                    {t('results.uxAudit.linkCodeReturn', { status: link.status })}
                                 </MsqdxTypography>
                                 <MsqdxTypography variant="caption" sx={{ color: textTertiary }} display="block">
-                                    <strong>Link Text:</strong> "{link.text}"
+                                    <strong>{t('results.uxAudit.linkText')}</strong> &quot;{link.text}&quot;
                                 </MsqdxTypography>
                                 <a
                                     href={link.href}
@@ -251,9 +254,9 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                                 }}
                             >
                                 <MousePointerClick size={20} color={MSQDX_STATUS.warning.base} />
-                                <Box sx={{ flex: 1 }}>
+                                <Box>
                                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
-                                        Tap Target Too Small
+                                        {t('results.uxAudit.smallTapTarget')}
                                     </MsqdxTypography>
                                     <MsqdxTypography
                                         variant="caption"
@@ -273,13 +276,13 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                     >
                         <Box sx={{ p: 1 }}>
                             <MsqdxTypography variant="body2" sx={{ color: textPrimary }} gutterBottom>
-                                This interactive element is smaller than the recommended 44x44px.
+                                {t('results.uxAudit.tapTargetTooSmall')}
                             </MsqdxTypography>
                             <MsqdxTypography variant="caption" sx={{ color: textTertiary }} display="block">
-                                <strong>Text Content:</strong> "{issue.text}"
+                                <strong>{t('results.uxAudit.textContent')}</strong> &quot;{issue.text}&quot;
                             </MsqdxTypography>
                             <MsqdxTypography variant="caption" sx={{ color: textTertiary }} display="block">
-                                <strong>Selector:</strong> {issue.selector}
+                                <strong>{t('selector')}</strong> {issue.selector}
                             </MsqdxTypography>
                         </Box>
                     </MsqdxAccordionItem>
@@ -302,13 +305,13 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                                 <FileCode size={20} color={MSQDX_STATUS.warning.base} />
                                 <Box sx={{ flex: 1 }}>
                                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
-                                        Broken ARIA Reference
+                                        {t('results.uxAudit.brokenAria')}
                                     </MsqdxTypography>
                                     <MsqdxTypography
                                         variant="caption"
                                         sx={{ color: textTertiary, fontFamily: 'monospace' }}
                                     >
-                                        {issue.element}[{issue.attribute}="{issue.value}"]
+                                        {issue.element}[{issue.attribute}=&quot;{issue.value}&quot;]
                                     </MsqdxTypography>
                                 </Box>
                                 <MsqdxChip label="ARIA" color="warning" size="small" variant="outlined" />
@@ -347,10 +350,10 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                                             variant="subtitle2"
                                             sx={{ fontWeight: 600, color: textPrimary }}
                                         >
-                                            Unklarer Link-Text (WCAG 2.4.4)
+                                            {t('results.uxAudit.vagueLinkText')}
                                         </MsqdxTypography>
                                         <MsqdxTypography variant="caption" sx={{ color: textTertiary }}>
-                                            "{item.text}" → {item.href.slice(0, 40)}…
+                                            &quot;{item.text}&quot; → {item.href.slice(0, 40)}…
                                         </MsqdxTypography>
                                     </Box>
                                     <MsqdxChip label="2.4.4" color="warning" size="small" variant="outlined" />
@@ -359,8 +362,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                         >
                             <Box sx={{ p: 1 }}>
                                 <MsqdxTypography variant="body2">
-                                    Link-Text sollte den Zweck des Links beschreiben (nicht "Mehr", "Hier klicken",
-                                    etc.).
+                                    {t('results.uxAudit.vagueLinkTextDesc')}
                                 </MsqdxTypography>
                                 <MsqdxTypography
                                     variant="caption"
@@ -395,7 +397,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                                             variant="subtitle2"
                                             sx={{ fontWeight: 600, color: textPrimary }}
                                         >
-                                            Bilder: Dimensionen / Lazy Loading / srcset
+                                            {t('results.uxAudit.imageIssues')}
                                         </MsqdxTypography>
                                         <MsqdxTypography variant="caption" sx={{ color: textTertiary }}>
                                             {ux.imageIssues.missingDimensions > 0 &&
@@ -415,8 +417,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                         >
                             <Box sx={{ p: 1 }}>
                                 <MsqdxTypography variant="body2">
-                                    Fehlende width/height können CLS verursachen. loading="lazy" und srcset verbessern
-                                    Performance.
+                                    {t('results.uxAudit.imageIssuesDesc')}
                                 </MsqdxTypography>
                                 {ux.imageIssues.details?.slice(0, 5).map((d, i) => (
                                     <MsqdxTypography
@@ -456,7 +457,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                     >
                         <Box sx={{ p: 1 }}>
                             <MsqdxTypography variant="body2">
-                                Jeder iframe sollte ein title-Attribut für Barrierefreiheit haben.
+                                {t('results.uxAudit.iframeWithoutTitleDesc')}
                             </MsqdxTypography>
                             {ux.iframeIssues
                                 .filter((i) => !i.hasTitle)
@@ -489,15 +490,12 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                             >
                                 <RefreshCw size={20} color={MSQDX_STATUS.warning.base} />
                                 <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
-                                    Meta Refresh vorhanden (nicht empfohlen für A11y/SEO)
+                                    {t('results.uxAudit.metaRefreshPresent')}
                                 </MsqdxTypography>
                             </Box>
                         }
                     >
-                        <MsqdxTypography variant="body2">
-                            meta http-equiv="refresh" kann Nutzer mit Screenreadern verwirren und wird für Redirects
-                            nicht empfohlen.
-                        </MsqdxTypography>
+                        <MsqdxTypography variant="body2">{t('results.uxAudit.metaRefreshPresentDesc')}</MsqdxTypography>
                     </MsqdxAccordionItem>
                 )}
 
@@ -518,15 +516,16 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                                 >
                                     <Type size={20} color={MSQDX_STATUS.warning.base} />
                                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
-                                        Schriftarten: {ux.fontDisplayIssues.withoutFontDisplay} @font-face ohne
-                                        font-display, {ux.fontDisplayIssues.blockCount} mit block
+                                        {t('results.uxAudit.fontDisplayIssues', {
+                                            withoutFontDisplay: ux.fontDisplayIssues.withoutFontDisplay,
+                                            blockCount: ux.fontDisplayIssues.blockCount,
+                                        })}
                                     </MsqdxTypography>
                                 </Box>
                             }
                         >
                             <MsqdxTypography variant="body2">
-                                font-display: swap (oder optional) reduziert FOUT/CLS. Ohne font-display oder mit block
-                                kann Text unsichtbar bleiben oder springen.
+                                {t('results.uxAudit.fontDisplayIssuesDesc')}
                             </MsqdxTypography>
                         </MsqdxAccordionItem>
                     )}
@@ -548,20 +547,19 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                                 >
                                     <Type size={20} color={MSQDX_STATUS.warning.base} />
                                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
-                                        Überschriften:{' '}
+                                        {t('results.structureMapHeadings')}:{' '}
                                         {!ux.headingHierarchy.hasSingleH1 && `${ux.headingHierarchy.h1Count} H1`}
                                         {!ux.headingHierarchy.hasSingleH1 &&
                                             ux.headingHierarchy.skippedLevels.length > 0 &&
                                             ', '}
                                         {ux.headingHierarchy.skippedLevels.length > 0 &&
-                                            `Übersprungene Level: ${ux.headingHierarchy.skippedLevels.map((s) => `H${s.from}→H${s.to}`).join(', ')}`}
+                                            `${t('results.uxAudit.skippedHeadings')}: ${ux.headingHierarchy.skippedLevels.map((s) => `H${s.from}→H${s.to}`).join(', ')}`}
                                     </MsqdxTypography>
                                 </Box>
                             }
                         >
                             <MsqdxTypography variant="body2">
-                                Eine H1 pro Seite und keine Sprünge in der Hierarchie (z. B. H2 direkt zu H4) verbessern
-                                Struktur und A11y.
+                                {t('results.uxAudit.headingHierarchyIssuesDesc')}
                             </MsqdxTypography>
                         </MsqdxAccordionItem>
                     )}
@@ -583,7 +581,7 @@ export const UxIssueList = ({ ux }: UxIssueListProps) => {
                                 <Keyboard size={20} color={MSQDX_STATUS.warning.base} />
                                 <Box sx={{ flex: 1 }}>
                                     <MsqdxTypography variant="subtitle2" sx={{ fontWeight: 600, color: textPrimary }}>
-                                        Form Accessibility Issue
+                                        {t('results.uxAudit.formIssue')}
                                     </MsqdxTypography>
                                     <MsqdxTypography
                                         variant="caption"
