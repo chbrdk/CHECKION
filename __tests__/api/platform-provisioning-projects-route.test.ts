@@ -12,11 +12,19 @@ vi.mock('@/lib/db/projects', () => ({
 
 vi.mock('@/lib/db/scans', () => ({
   countScansByProjectId: vi.fn(),
+  getSharedProjectDomainScansCount: vi.fn(),
+  listSharedProjectDomainScanSummaries: vi.fn(),
+  listSharedProjectStandaloneScanSummaries: vi.fn(),
 }));
 
 import { getDb } from '@/lib/db';
 import { getProject, getProjectRowByPlatformProjectId, insertProject } from '@/lib/db/projects';
-import { countScansByProjectId } from '@/lib/db/scans';
+import {
+  countScansByProjectId,
+  getSharedProjectDomainScansCount,
+  listSharedProjectDomainScanSummaries,
+  listSharedProjectStandaloneScanSummaries,
+} from '@/lib/db/scans';
 
 describe('platform provisioning projects route', () => {
   beforeEach(() => {
@@ -76,7 +84,7 @@ describe('platform provisioning projects route', () => {
     expect(insertProject).toHaveBeenCalled();
   });
 
-  it('GET returns scan count for authorized plexon user', async () => {
+  it('GET returns scan catalog for authorized plexon user', async () => {
     vi.mocked(getProjectRowByPlatformProjectId).mockResolvedValue({
       id: 'local-1',
       userId: 'plexon-owner-1',
@@ -93,7 +101,40 @@ describe('platform provisioning projects route', () => {
       updatedAt: new Date(),
     } as never);
     vi.mocked(getProject).mockResolvedValue({ id: 'local-1' } as never);
-    vi.mocked(countScansByProjectId).mockResolvedValue(5);
+    vi.mocked(countScansByProjectId).mockResolvedValue(2);
+    vi.mocked(getSharedProjectDomainScansCount).mockResolvedValue(1);
+    vi.mocked(listSharedProjectDomainScanSummaries).mockResolvedValue([
+      {
+        id: 'dom-1',
+        domain: 'example.com',
+        timestamp: '2026-07-01T00:00:00.000Z',
+        status: 'complete',
+        score: 88,
+        totalPages: 12,
+        lineageVersion: 1,
+        projectId: 'local-1',
+        userId: 'u1',
+        industry: null,
+        projectTags: [],
+        tags: [],
+      },
+    ] as never);
+    vi.mocked(listSharedProjectStandaloneScanSummaries).mockResolvedValue([
+      {
+        id: 'scan-1',
+        url: 'https://example.com/a',
+        timestamp: '2026-07-01T00:00:00.000Z',
+        score: 70,
+        stats: { errors: 0, warnings: 0, notices: 0 },
+        projectId: 'local-1',
+        groupId: null,
+        scanSessionId: null,
+        device: 'desktop',
+        tags: [],
+        projectTags: [],
+        industry: null,
+      },
+    ] as never);
 
     const { GET } = await import('@/app/api/platform/provisioning/projects/[id]/route');
     const res = await GET(
@@ -109,6 +150,26 @@ describe('platform provisioning projects route', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.externalProjectId).toBe('local-1');
-    expect(body.scanCount).toBe(5);
+    expect(body.standaloneScanCount).toBe(2);
+    expect(body.domainScanCount).toBe(1);
+    expect(body.scanCount).toBe(3);
+    expect(body.domainScans).toEqual([
+      {
+        id: 'dom-1',
+        domain: 'example.com',
+        status: 'complete',
+        score: 88,
+        timestamp: '2026-07-01T00:00:00.000Z',
+        totalPages: 12,
+      },
+    ]);
+    expect(body.standaloneScans).toEqual([
+      {
+        id: 'scan-1',
+        url: 'https://example.com/a',
+        score: 70,
+        timestamp: '2026-07-01T00:00:00.000Z',
+      },
+    ]);
   });
 });

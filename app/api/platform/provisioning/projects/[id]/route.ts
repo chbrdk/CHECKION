@@ -5,13 +5,21 @@ import { z } from 'zod';
 import { API_STATUS, apiError } from '@/lib/api-error-handler';
 import { getDb } from '@/lib/db';
 import { getProject, getProjectRowByPlatformProjectId, insertProject } from '@/lib/db/projects';
-import { countScansByProjectId } from '@/lib/db/scans';
+import {
+    countScansByProjectId,
+    getSharedProjectDomainScansCount,
+    listSharedProjectDomainScanSummaries,
+    listSharedProjectStandaloneScanSummaries,
+} from '@/lib/db/scans';
 import { projects } from '@/lib/db/schema';
 import {
     PLEXON_CONTRACT_VERSION_HEADER,
     PLEXON_FEDERATION_CONTRACT_VERSION,
     PLEXON_SERVICE_SECRET_HEADER,
 } from '@/lib/plexon-contract';
+
+/** Cap catalog arrays returned to PLEXON Collection dashboards. */
+const CATALOG_LIST_LIMIT = 25;
 
 const upsertSchema = z.object({
     platformCompanyId: z.string().min(1),
@@ -123,9 +131,36 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     if (!allowed) {
         return apiError('Forbidden', API_STATUS.FORBIDDEN);
     }
-    const scanCount = await countScansByProjectId(row.id);
+
+    const projectIds = [row.id];
+    const [standaloneScanCount, domainScanCount, domainRows, standaloneRows] = await Promise.all([
+        countScansByProjectId(row.id),
+        getSharedProjectDomainScansCount(projectIds),
+        listSharedProjectDomainScanSummaries(projectIds, { limit: CATALOG_LIST_LIMIT }),
+        listSharedProjectStandaloneScanSummaries(projectIds, { limit: CATALOG_LIST_LIMIT }),
+    ]);
+
+    const domainScans = domainRows.map((s) => ({
+        id: s.id,
+        domain: s.domain,
+        status: s.status,
+        score: s.score,
+        timestamp: s.timestamp,
+        totalPages: s.totalPages,
+    }));
+    const standaloneScans = standaloneRows.map((s) => ({
+        id: s.id,
+        url: s.url,
+        score: s.score,
+        timestamp: s.timestamp,
+    }));
+
     return jsonWithContract({
         externalProjectId: row.id,
-        scanCount,
+        domainScanCount,
+        standaloneScanCount,
+        scanCount: domainScanCount + standaloneScanCount,
+        domainScans,
+        standaloneScans,
     });
 }
