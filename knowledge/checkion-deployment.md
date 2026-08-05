@@ -19,7 +19,9 @@
 
 ## Schema beim Start
 
-Der Container führt beim Start automatisch `npx drizzle-kit push` aus (siehe `scripts/docker-entrypoint.sh`). Tabellen werden angelegt/aktualisiert, sobald `DATABASE_URL` gesetzt ist – kein manueller Schritt nötig.
+Der Container führt beim Start automatisch `npx drizzle-kit push` aus (siehe `scripts/docker-entrypoint.sh`). Tabellen und Spalten werden aus `lib/db/schema.ts` angelegt bzw. aktualisiert, sobald `DATABASE_URL` gesetzt ist – **kein manuelles Ausführen einzelner Migrations-SQL-Dateien** nötig (z. B. `serp_organic` für Rank-Tracking-SERP-Preview).
+
+Ausnahme: Migration `0004` (PLEXON user_id FKs) läuft zusätzlich einmalig über `scripts/run-migration-0004.mjs`. SQL-Dateien unter `lib/db/migrations/` dienen oft als Dokumentation/Referenz; neue Spalten gehören ins Drizzle-Schema, damit `push` sie beim Deploy setzt.
 
 ## Docker-Build-Fehler (z. B. „exit code 1“ bei `npm run build`)
 

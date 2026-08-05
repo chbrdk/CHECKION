@@ -10,8 +10,7 @@ Rank tracking uses the Serper API (google.serper.dev) to determine at which **po
 - **Position**: We still check at which **position** the domain appears in this combined list (1-based). If not in top ~100, position is stored as `null`.
 - **Competitor positions**: If the project has competitors (see project page), `fetchSerpPosition` is called with `competitorDomains`. The same SERP response is used to compute the first position of each competitor domain. Results are stored in `rank_tracking_positions.competitor_positions` (jsonb: domain → position). No extra API calls.
 - **Erstplatziert / SERP leader**: The first organic result (position 1) is always captured as `serpLeader` (`domain`, `url`) and stored per snapshot in `rank_tracking_positions.serp_leader_domain` / `serp_leader_url`. Shown on the project rankings page after refresh.
-- **Google SERP preview**: Modal on rankings; first page + single-scan per URL via `pathScanSinglePage`.
-- **Google SERP preview**: Full organic listings (title, snippet, URL, position) are stored in `rank_tracking_positions.serp_organic` (jsonb) and shown in a Google-style modal on `/projects/[id]/rankings` via `GET /api/rank-tracking/keywords/[id]/serp-preview` and `components/SerpGooglePreviewModal.tsx`.
+- **Google SERP preview**: Full organic listings in `serp_organic`; modal on `/projects/[id]/rankings` (`SerpGooglePreviewModal`, top 10, single-page scan per URL).
 - **gl / hl**: Every Serper request sends `gl` (country) and `hl` (language). Defaults: `de`/`de`; main markets are defined in `lib/serp-markets.ts` (`SERP_MAIN_MARKETS`).
 
 ## Key files
